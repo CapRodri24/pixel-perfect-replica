@@ -1,0 +1,100 @@
+{
+  "brand": { "name": "Asociación Armonía", "tagline": "Bird and biodiversity conservation in Bolivia" },
+  "nav": {
+    "about": "About us", "landscapes": "Landscapes", "resources": "Resources", "news": "News", "contact": "Contact",
+    "menu": "Menu", "close": "Close", "language": "Language",
+    "aboutItems": ["Who we are", "Our team", "Board of Directors", "Partners and allies", "Opportunities"],
+    "landscapesItems": ["Landscapes overview map", "Beni Grasslands", "Yungas", "High Andes", "Inter-Andean Dry Forest", "Amazon", "Acción Andina"],
+    "resourcesItems": ["Reports and annual reviews", "Scientific and technical publications", "GIS resources and maps", "Collaborations", "Legal tools"],
+    "newsItems": ["Institutional news", "Conservation stories", "Events calendar", "Multimedia"],
+    "contactItems": ["Donations and membership", "Tourism and reserves", "Press contact", "Offices"]
+  },
+  "quick": { "donate": "Donate", "member": "Become a member", "reserves": "Visit our reserves", "guide": "Field Guide Birds of Bolivia", "anniversary": "30 years of Armonía" },
+  "hero": {
+    "badge": "30 years conserving Bolivia",
+    "title": "Conserving Bolivia's biodiversity",
+    "text": "We research, protect and restore the habitats of Bolivia's threatened birds, working hand in hand with local communities, partners and allies.",
+    "primary": "Discover our work", "secondary": "Explore our landscapes",
+    "pillars": ["Research", "Protected areas", "Communities"],
+    "photo": "Placeholder photo"
+  },
+  "about": {
+    "eyebrow": "About us", "title": "A Bolivian organization devoted to birds and their habitats",
+    "text": "For three decades, Armonía has combined science, reserve management and community work to protect threatened species and the landscapes they depend on.",
+    "more": "Learn more",
+    "cards": [
+      { "title": "Who we are", "text": "Our mission, history and way of working." },
+      { "title": "Our team", "text": "Biologists, rangers and field specialists." },
+      { "title": "Board of Directors", "text": "Those who guide and oversee the organization." },
+      { "title": "Partners and allies", "text": "Funders, strategic allies and corporate members." },
+      { "title": "Opportunities", "text": "Volunteering, jobs and research." }
+    ]
+  },
+  "landscapes": {
+    "eyebrow": "Landscapes", "title": "Five landscapes, one mission",
+    "text": "Our work is organized across Bolivia's great landscapes. Each one has its own species, challenges and communities.",
+    "explore": "Explore landscape", "back": "Back to landscapes", "programs": "Programs in this landscape", "lines": "Lines of work",
+    "items": {
+      "beni": { "name": "Beni Grasslands", "text": "Seasonally flooded savannas and wetlands, home to the Blue-throated Macaw and migratory birds.", "lines": ["Barba Azul Nature Reserve", "Eco-ranching", "Migratory shorebirds", "Birdwatching tourism"] },
+      "yungas": { "name": "Yungas", "text": "Montane cloud forests with outstanding diversity and endemic species.", "lines": ["Community conservation areas", "Honey and coffee", "Nurseries and restoration", "Community birdwatching"] },
+      "andes": { "name": "High Andes", "text": "Mountains, high wetlands and native forests that sustain water and life.", "lines": ["Tunari National Park", "Native forest restoration", "Community firefighters", "High wetland census"] },
+      "seco": { "name": "Inter-Andean Dry Forest", "text": "Dry valleys and canyons where the Red-fronted Macaw, endemic to Bolivia, nests.", "lines": ["Red-fronted Macaw Community Reserve", "Monitoring in four river basins", "Nest boxes in palms", "Archaeology, honey and textiles"] },
+      "amazonia": { "name": "Amazon", "text": "Tropical forests and rivers of northern Bolivia, refuge of the Masked Antpitta.", "lines": ["Census and monitoring", "Aquicuana Municipal Protected Area", "Work with communities", "Lago San José and Antofagasta"] }
+    }
+  },
+  "programs": {
+    "eyebrow": "Programs", "title": "Conservation programs", "text": "Long-term initiatives for priority species and their habitats.",
+    "all": "All", "national": "National", "more": "Learn more",
+    "items": {
+      "barbaazul": { "name": "Blue-throated Macaw Program", "text": "Reserves, nest boxes and monitoring for one of the world's most threatened birds." },
+      "palkachupa": { "name": "Palkachupa Program", "text": "Community conservation in Apolo with indigenous peoples and producers." },
+      "tunari": { "name": "Tunari Program", "text": "Restoration, water and fire prevention in Tunari National Park." },
+      "frenteroja": { "name": "Red-fronted Macaw Program", "text": "Species action plan across four dry forest river basins." },
+      "tororoi": { "name": "Masked Antpitta Program", "text": "Censuses and municipal protected areas in the Bolivian Amazon." },
+      "conservaaves": { "name": "Conserva Aves", "text": "Regional initiative strengthening key biodiversity areas." },
+      "accionandina": { "name": "Acción Andina", "text": "A movement to restore high Andean forests with communities." }
+    }
+  },
+  "resources": {
+    "eyebrow": "Resources", "title": "Open knowledge for conservation", "open": "Open",
+    "items": [
+      { "title": "Reports and annual reviews", "text": "Annual reviews and institutional reports." },
+      { "title": "Scientific and technical publications", "text": "Articles, studies and technical documents." },
+      { "title": "GIS resources and maps", "text": "Geographic layers and landscape cartography." },
+      { "title": "Collaborations", "text": "Joint projects with allied institutions." },
+      { "title": "Legal tools", "text": "Regulations and guides for protected areas." }
+    ]
+  },
+  "news": {
+    "eyebrow": "News and multimedia", "title": "Stories from the field",
+    "search": "Search news…", "landscape": "Landscape", "program": "Program", "allLandscapes": "All landscapes", "allPrograms": "All programs",
+    "allCategories": "All", "read": "View content", "empty": "No results match these filters.", "clear": "Clear filters", "demo": "Demo content",
+    "categories": { "institutional": "Institutional news", "stories": "Conservation stories", "events": "Events calendar", "videos": "Videos", "infographics": "Infographics", "gallery": "Photo gallery" },
+    "items": {
+      "n1": { "title": "Nest box season at Barba Azul Reserve", "text": "The field team checks nest boxes ahead of the breeding season." },
+      "n2": { "title": "Apolo communities bet on honey", "text": "Beekeeping joins the effort to conserve the Palkachupa's forest." },
+      "n3": { "title": "Restoration day in the Tunari", "text": "Volunteers and communities plant native high-altitude species." },
+      "n4": { "title": "Watch the Red-fronted Macaw fly", "text": "A video about the Mizque river canyons and their colonies." },
+      "n5": { "title": "Infographic: Armonía's five landscapes", "text": "A visual look at where and how we work." },
+      "n6": { "title": "Gallery: birds of the Bolivian Amazon", "text": "Photos from monitoring work in Riberalta." },
+      "n7": { "title": "Celebrating 30 years of Armonía", "text": "Calendar of activities for our anniversary." },
+      "n8": { "title": "Migratory shorebird census", "text": "Volunteers join the count in the Beni wetlands." }
+    }
+  },
+  "contact": {
+    "eyebrow": "Get involved", "title": "Join the conservation effort",
+    "cards": [
+      { "title": "Donations", "text": "Your gift protects habitats and species.", "cta": "Donate" },
+      { "title": "Membership", "text": "Become part of the Armonía community.", "cta": "Become a member" },
+      { "title": "Tourism and reserves", "text": "Enjoy birdwatching at our reserves.", "cta": "Plan a visit" },
+      { "title": "Press contact", "text": "Information for the media.", "cta": "Contact press" }
+    ],
+    "office": "Office", "officeText": "Santa Cruz de la Sierra, Bolivia (address to be confirmed)",
+    "form": { "title": "Send us your inquiry", "name": "Name", "email": "Email", "topic": "Topic", "message": "Message", "send": "Send inquiry", "sent": "Thank you! This form is a demo and does not send data.", "topics": ["General inquiry", "Donations", "Tourism", "Press", "Volunteering"] }
+  },
+  "footer": {
+    "text": "A Bolivian organization devoted to conserving birds and their habitats through science, reserve management and work with communities.",
+    "explore": "Explore", "access": "Quick links", "follow": "Follow us", "contact": "Contact", "rights": "All rights reserved."
+  },
+  "meta": { "title": "Asociación Armonía · Conserving Bolivia's biodiversity", "description": "Conservation of Bolivia's birds and landscapes: Beni Grasslands, Yungas, High Andes, Inter-Andean Dry Forest and Amazon." }
+}

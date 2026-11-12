@@ -1,0 +1,100 @@
+{
+  "brand": { "name": "Asociación Armonía", "tagline": "Conservación de aves y biodiversidad en Bolivia" },
+  "nav": {
+    "about": "Nosotros", "landscapes": "Paisajes", "resources": "Recursos", "news": "Noticias", "contact": "Contacto",
+    "menu": "Menú", "close": "Cerrar", "language": "Idioma",
+    "aboutItems": ["Quiénes somos", "Nuestro equipo", "Junta Directiva", "Socios y aliados", "Oportunidades"],
+    "landscapesItems": ["Mapa general de paisajes", "Pastizales del Beni", "Yungas", "Andes Altos", "Bosque Seco Interandino", "Amazonía", "Acción Andina"],
+    "resourcesItems": ["Informes y memorias", "Publicaciones científicas y técnicas", "Recursos SIG y mapas", "Colaboraciones", "Herramientas legales"],
+    "newsItems": ["Noticias institucionales", "Historias de conservación", "Agenda y eventos", "Multimedia"],
+    "contactItems": ["Donaciones y membresía", "Turismo y reservas", "Contacto de prensa", "Oficinas"]
+  },
+  "quick": { "donate": "Donar", "member": "Hazte miembro", "reserves": "Visita nuestras reservas", "guide": "Guía de campo Aves de Bolivia", "anniversary": "30 años de Armonía" },
+  "hero": {
+    "badge": "30 años conservando Bolivia",
+    "title": "Conservando la biodiversidad de Bolivia",
+    "text": "Investigamos, protegemos y restauramos los hábitats de las aves amenazadas de Bolivia, trabajando de la mano con comunidades locales, socios y aliados.",
+    "primary": "Conoce nuestro trabajo", "secondary": "Explora nuestros paisajes",
+    "pillars": ["Investigación", "Áreas protegidas", "Comunidades"],
+    "photo": "Foto provisional"
+  },
+  "about": {
+    "eyebrow": "Nosotros", "title": "Una organización boliviana dedicada a las aves y sus hábitats",
+    "text": "Desde hace tres décadas, Armonía combina ciencia, gestión de reservas y trabajo comunitario para proteger especies amenazadas y los paisajes de los que dependen.",
+    "more": "Ver más",
+    "cards": [
+      { "title": "Quiénes somos", "text": "Nuestra misión, historia y forma de trabajar." },
+      { "title": "Nuestro equipo", "text": "Biólogos, guardaparques y especialistas en campo." },
+      { "title": "Junta Directiva", "text": "Quienes orientan y supervisan la institución." },
+      { "title": "Socios y aliados", "text": "Financiadores, aliados estratégicos y miembros corporativos." },
+      { "title": "Oportunidades", "text": "Voluntariado, empleo e investigación." }
+    ]
+  },
+  "landscapes": {
+    "eyebrow": "Paisajes", "title": "Cinco paisajes, una misma misión",
+    "text": "Nuestro trabajo se organiza en los grandes paisajes de Bolivia. Cada uno tiene especies, desafíos y comunidades propias.",
+    "explore": "Explorar paisaje", "back": "Volver a paisajes", "programs": "Programas en este paisaje", "lines": "Líneas de trabajo",
+    "items": {
+      "beni": { "name": "Pastizales del Beni", "text": "Sabanas inundables y humedales, hogar de la Paraba Barba Azul y de aves migratorias.", "lines": ["Reserva Natural Barba Azul", "Ecoganadería", "Playeros migratorios", "Aviturismo"] },
+      "yungas": { "name": "Yungas", "text": "Bosques nublados de montaña con altísima diversidad y especies endémicas.", "lines": ["Áreas comunitarias de conservación", "Miel y café", "Viveros y restauración", "Aviturismo comunitario"] },
+      "andes": { "name": "Andes Altos", "text": "Montañas, bofedales y bosques nativos de altura que sostienen agua y vida.", "lines": ["Parque Nacional Tunari", "Restauración de bosque nativo", "Bomberos comunitarios", "Censo de bofedales"] },
+      "seco": { "name": "Bosque Seco Interandino", "text": "Valles secos y cañones donde anida la Paraba Frente Roja, endémica de Bolivia.", "lines": ["Reserva Comunitaria Frente Roja", "Monitoreo en cuatro cuencas", "Cajas nido en palmas", "Arqueología, miel y tejidos"] },
+      "amazonia": { "name": "Amazonía", "text": "Bosques tropicales y ríos del norte boliviano, refugio del Tororoi Enmascarado.", "lines": ["Censo y monitoreo", "Área Protegida Municipal Aquicuana", "Trabajo con comunidades", "Lago San José y Antofagasta"] }
+    }
+  },
+  "programs": {
+    "eyebrow": "Programas", "title": "Programas de conservación", "text": "Iniciativas de largo plazo para especies prioritarias y sus hábitats.",
+    "all": "Todos", "national": "Nacional", "more": "Conocer más",
+    "items": {
+      "barbaazul": { "name": "Programa Paraba Barba Azul", "text": "Reservas, cajas nido y monitoreo para una de las aves más amenazadas del mundo." },
+      "palkachupa": { "name": "Programa Palkachupa", "text": "Conservación comunitaria en Apolo junto a pueblos indígenas y productores." },
+      "tunari": { "name": "Programa Tunari", "text": "Restauración, agua y prevención de incendios en el Parque Nacional Tunari." },
+      "frenteroja": { "name": "Programa Frente Roja", "text": "Plan de acción de la especie en cuatro cuencas del bosque seco." },
+      "tororoi": { "name": "Programa Tororoi Enmascarado", "text": "Censos y áreas protegidas municipales en la Amazonía boliviana." },
+      "conservaaves": { "name": "Conserva Aves", "text": "Iniciativa regional que fortalece áreas clave para la biodiversidad." },
+      "accionandina": { "name": "Acción Andina", "text": "Movimiento para restaurar bosques altoandinos con comunidades." }
+    }
+  },
+  "resources": {
+    "eyebrow": "Recursos", "title": "Conocimiento abierto para la conservación", "open": "Abrir",
+    "items": [
+      { "title": "Informes y memorias", "text": "Memorias anuales y reportes institucionales." },
+      { "title": "Publicaciones científicas y técnicas", "text": "Artículos, estudios y documentos técnicos." },
+      { "title": "Recursos SIG y mapas", "text": "Capas geográficas y cartografía de paisajes." },
+      { "title": "Colaboraciones", "text": "Proyectos conjuntos con instituciones aliadas." },
+      { "title": "Herramientas legales", "text": "Normativa y guías para áreas protegidas." }
+    ]
+  },
+  "news": {
+    "eyebrow": "Noticias y multimedia", "title": "Historias desde el campo",
+    "search": "Buscar noticias…", "landscape": "Paisaje", "program": "Programa", "allLandscapes": "Todos los paisajes", "allPrograms": "Todos los programas",
+    "allCategories": "Todo", "read": "Ver contenido", "empty": "No hay resultados con esos filtros.", "clear": "Limpiar filtros", "demo": "Contenido de demostración",
+    "categories": { "institutional": "Noticias institucionales", "stories": "Historias de conservación", "events": "Agenda y eventos", "videos": "Videos", "infographics": "Infografías", "gallery": "Fotogalería" },
+    "items": {
+      "n1": { "title": "Temporada de cajas nido en la Reserva Barba Azul", "text": "El equipo de campo revisa las cajas nido antes de la época reproductiva." },
+      "n2": { "title": "Comunidades de Apolo apuestan por la miel", "text": "La producción apícola se suma a la conservación del bosque del Palkachupa." },
+      "n3": { "title": "Jornada de restauración en el Tunari", "text": "Voluntarios y comunidades plantan especies nativas de altura." },
+      "n4": { "title": "Así vuela la Paraba Frente Roja", "text": "Un video sobre los cañones del río Mizque y sus colonias." },
+      "n5": { "title": "Infografía: los cinco paisajes de Armonía", "text": "Una mirada visual a dónde y cómo trabajamos." },
+      "n6": { "title": "Galería: aves de la Amazonía boliviana", "text": "Fotografías del trabajo de monitoreo en Riberalta." },
+      "n7": { "title": "Celebramos 30 años de Armonía", "text": "Agenda de actividades por el aniversario institucional." },
+      "n8": { "title": "Censo de playeros migratorios", "text": "Voluntarios se unen al conteo en los humedales del Beni." }
+    }
+  },
+  "contact": {
+    "eyebrow": "Participa", "title": "Súmate a la conservación",
+    "cards": [
+      { "title": "Donaciones", "text": "Tu aporte protege hábitats y especies.", "cta": "Donar" },
+      { "title": "Membresía", "text": "Forma parte de la comunidad Armonía.", "cta": "Hazte miembro" },
+      { "title": "Turismo y reservas", "text": "Vive el aviturismo en nuestras reservas.", "cta": "Planificar visita" },
+      { "title": "Contacto de prensa", "text": "Información para medios de comunicación.", "cta": "Escribir a prensa" }
+    ],
+    "office": "Oficina", "officeText": "Santa Cruz de la Sierra, Bolivia (dirección por confirmar)",
+    "form": { "title": "Envíanos tu consulta", "name": "Nombre", "email": "Correo electrónico", "topic": "Tema", "message": "Mensaje", "send": "Enviar consulta", "sent": "¡Gracias! Este formulario es una demostración y no envía datos.", "topics": ["Consulta general", "Donaciones", "Turismo", "Prensa", "Voluntariado"] }
+  },
+  "footer": {
+    "text": "Organización boliviana dedicada a la conservación de las aves y sus hábitats a través de la ciencia, la gestión de reservas y el trabajo con comunidades.",
+    "explore": "Explora", "access": "Accesos", "follow": "Síguenos", "contact": "Contacto", "rights": "Todos los derechos reservados."
+  },
+  "meta": { "title": "Asociación Armonía · Conservando la biodiversidad de Bolivia", "description": "Conservación de aves y paisajes de Bolivia: Pastizales del Beni, Yungas, Andes Altos, Bosque Seco Interandino y Amazonía." }
+}
