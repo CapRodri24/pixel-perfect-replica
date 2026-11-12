@@ -89,7 +89,7 @@ export function Header() {
           </ul>
         </nav>
         <div className="flex items-center gap-2">
-          <LangSwitch />
+          <LangSwitch className="hidden sm:inline-flex" />
           <Button variant="ghost" size="icon" className="lg:hidden" aria-label={t("nav.menu")} aria-expanded={open} onClick={() => setOpen(true)}>
             <Menu className="size-6!" />
           </Button>
@@ -98,12 +98,15 @@ export function Header() {
 
       {/* Mobile menu */}
       {open && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-background lg:hidden">
-          <div className="container-site flex h-16 items-center justify-between border-b border-border">
+        <div className="fixed inset-0 z-[100] flex w-screen h-screen flex-col bg-background lg:hidden">
+          <div className="flex h-16 w-full items-center justify-between border-b border-border px-4">
             <Logo />
-            <Button variant="ghost" size="icon" aria-label={t("nav.close")} onClick={() => setOpen(false)}><X className="size-6!" /></Button>
+            <div className="flex items-center gap-2">
+              <LangSwitch />
+              <Button variant="ghost" size="icon" aria-label={t("nav.close")} onClick={() => setOpen(false)}><X className="size-6!" /></Button>
+            </div>
           </div>
-          <nav className="container-site flex-1 overflow-y-auto py-4">
+          <nav className="flex-1 overflow-y-auto py-4 px-4 w-full">
             {navSections.map((s) => (
               <details key={s.key} className="group border-b border-border">
                 <summary className="flex cursor-pointer list-none items-center justify-between py-4 text-base font-bold uppercase tracking-wide text-brand-deep">
