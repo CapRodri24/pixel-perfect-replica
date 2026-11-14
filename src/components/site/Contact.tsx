@@ -18,7 +18,7 @@ export function Contact() {
           <SectionHeading eyebrow={t("contact.eyebrow")} title={t("contact.title")} />
           <ul className="mt-10 grid gap-4 sm:grid-cols-2">
             {t<{ title: string; text: string; cta: string }[]>("contact.cards").map((c, i) => {
-              const Icon = icons[i];
+              const Icon = icons[i % icons.length]!;
               return (
                 <li key={c.title} className={`flex flex-col rounded-3xl p-6 ${i === 0 ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
                   <Icon className={`size-6 ${i === 0 ? "" : "text-primary"}`} />

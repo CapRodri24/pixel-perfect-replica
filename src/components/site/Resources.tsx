@@ -13,7 +13,7 @@ export function Resources() {
         </div>
         <ul className="mt-12 grid gap-px overflow-hidden rounded-3xl bg-primary-foreground/15 sm:grid-cols-2 lg:grid-cols-5">
           {t<{ title: string; text: string }[]>("resources.items").map((r, i) => {
-            const Icon = icons[i];
+            const Icon = icons[i % icons.length]!;
             return (
               <li key={r.title}>
                 <a href="#recursos" className="group flex h-full flex-col bg-brand-deep p-6 transition-colors hover:bg-primary">

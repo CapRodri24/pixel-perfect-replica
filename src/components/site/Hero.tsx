@@ -24,7 +24,7 @@ export function Hero() {
           </div>
           <ul className="mt-12 flex flex-wrap gap-x-8 gap-y-3 border-t border-primary-foreground/20 pt-6 text-sm text-primary-foreground/85">
             {t<string[]>("hero.pillars").map((p, i) => {
-              const Icon = icons[i];
+              const Icon = icons[i % icons.length]!;
               return <li key={p} className="flex items-center gap-2"><Icon className="size-4 text-brand-light" /> {p}</li>;
             })}
           </ul>
