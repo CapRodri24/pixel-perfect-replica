@@ -18,7 +18,7 @@ export function About() {
         </div>
         <ul className="grid gap-4 sm:grid-cols-2">
           {cards.map((c, i) => {
-            const Icon = icons[i];
+            const Icon = icons[i % icons.length]!;
             return (
               <li key={c.title} className={i === 0 ? "sm:col-span-2" : ""}>
                 <a href="#nosotros" className={`group flex h-full flex-col rounded-3xl border border-border p-6 transition-all hover:-translate-y-1 hover:shadow-card ${i === 0 ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
