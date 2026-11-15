@@ -65,7 +65,7 @@ export function ContentManager({ kind }: { kind: ContentKind }) {
   const save = async (e: FormEvent) => {
     e.preventDefault();
     if (!draft) return;
-    if (kind === "library" && !draft.file_url) return toast.error("Sube un documento");
+    if (kind === "library" && !draft.file_url) { toast.error("Sube un documento");
     setBusy("save");
     let d = draft;
     if (!d.title_en || (d.body_es && !d.body_en)) {
@@ -77,7 +77,7 @@ export function ContentManager({ kind }: { kind: ContentKind }) {
     };
     const { error } = d.id ? await supabase.from("content_items").update(row).eq("id", d.id) : await supabase.from("content_items").insert(row);
     setBusy("");
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message);
     toast.success("Guardado. Ya aparece en el sitio.");
     setDraft(null);
     qc.invalidateQueries({ queryKey: contentQueryKey });
@@ -85,7 +85,7 @@ export function ContentManager({ kind }: { kind: ContentKind }) {
   const remove = async (id: string) => {
     if (!confirm("¿Eliminar este elemento?")) return;
     const { error } = await supabase.from("content_items").delete().eq("id", id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message);
     qc.invalidateQueries({ queryKey: contentQueryKey });
   };
   const landscapeName = (ref: string | null) => {
