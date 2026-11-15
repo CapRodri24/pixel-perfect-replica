@@ -28,3 +28,6 @@ use the editor.
   own key and store it in Secrets.
 - **Secrets.** Lovable manages them. Do not put secret values in the repo.
 <!-- LOVABLE:END -->
+- CMS content lives in one `content_items` table (kind = landscape|program|news|team|library) with _es/_en columns; landing merges it with static demo data from src/config. Why: one admin UI and one query for all sections.
+- Admin login maps username → `<user>@armonia.local`; access requires `admin` in `user_roles`. Why: user wanted username login.
+- Media bucket is private (workspace blocks public buckets); uploads store long-lived signed URLs.
