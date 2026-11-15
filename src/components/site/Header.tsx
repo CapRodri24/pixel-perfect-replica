@@ -3,6 +3,7 @@ import { ChevronDown, Menu, X, Heart, UserPlus, MapPin, BookOpen, Sparkles } fro
 import { useI18n, type Lang } from "@/i18n/I18nProvider";
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
+import { LogIn } from "lucide-react";
 
 export const quickLinks = [
   { key: "donate", href: "#contacto", icon: Heart },
@@ -103,6 +104,7 @@ export function Header() {
             <Logo />
             <div className="flex items-center gap-2">
               <LangSwitch />
+          <Button asChild variant="hero" size="sm" className="hidden sm:inline-flex"><a href="/login"><LogIn /> {t("nav.login")}</a></Button>
               <Button variant="ghost" size="icon" aria-label={t("nav.close")} onClick={() => setOpen(false)}><X className="size-6!" /></Button>
             </div>
           </div>
@@ -119,7 +121,8 @@ export function Header() {
                 </ul>
               </details>
             ))}
-            <div className="mt-6 grid grid-cols-2 gap-2">
+            <a href="/login" className="mt-6 flex items-center justify-center gap-2 rounded-2xl border border-primary p-3 text-sm font-semibold text-primary"><LogIn className="size-4" /> {t("nav.login")}</a>
+            <div className="mt-3 grid grid-cols-2 gap-2">
               {quickLinks.map(({ key, href, icon: Icon }) => (
                 <a key={key} href={href} onClick={() => setOpen(false)} className={`flex items-center gap-2 rounded-2xl p-3 text-sm font-semibold ${key === "donate" ? "col-span-2 bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"}`}>
                   <Icon className="size-4 shrink-0" /> {t(`quick.${key}`)}

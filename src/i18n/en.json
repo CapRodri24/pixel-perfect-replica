@@ -2,7 +2,7 @@
   "brand": { "name": "Asociación Armonía", "tagline": "Bird and biodiversity conservation in Bolivia" },
   "nav": {
     "about": "About us", "landscapes": "Landscapes", "resources": "Resources", "news": "News", "contact": "Contact",
-    "menu": "Menu", "close": "Close", "language": "Language",
+    "login": "Sign in", "team": "Our team", "library": "Library and downloads", "download": "Download", "menu": "Menu", "close": "Close", "language": "Language",
     "aboutItems": ["Who we are", "Our team", "Board of Directors", "Partners and allies", "Opportunities"],
     "landscapesItems": ["Landscapes overview map", "Beni Grasslands", "Yungas", "High Andes", "Inter-Andean Dry Forest", "Amazon", "Acción Andina"],
     "resourcesItems": ["Reports and annual reviews", "Scientific and technical publications", "GIS resources and maps", "Collaborations", "Legal tools"],
