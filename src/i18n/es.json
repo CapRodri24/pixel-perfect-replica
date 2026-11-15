@@ -2,7 +2,7 @@
   "brand": { "name": "Asociación Armonía", "tagline": "Conservación de aves y biodiversidad en Bolivia" },
   "nav": {
     "about": "Nosotros", "landscapes": "Paisajes", "resources": "Recursos", "news": "Noticias", "contact": "Contacto",
-    "menu": "Menú", "close": "Cerrar", "language": "Idioma",
+    "login": "Iniciar sesión", "team": "Nuestro equipo", "library": "Biblioteca y descargas", "download": "Descargar", "menu": "Menú", "close": "Cerrar", "language": "Idioma",
     "aboutItems": ["Quiénes somos", "Nuestro equipo", "Junta Directiva", "Socios y aliados", "Oportunidades"],
     "landscapesItems": ["Mapa general de paisajes", "Pastizales del Beni", "Yungas", "Andes Altos", "Bosque Seco Interandino", "Amazonía", "Acción Andina"],
     "resourcesItems": ["Informes y memorias", "Publicaciones científicas y técnicas", "Recursos SIG y mapas", "Colaboraciones", "Herramientas legales"],

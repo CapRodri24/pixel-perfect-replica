@@ -2,9 +2,11 @@ import { ArrowUpRight, Compass, Users, Landmark, Handshake, Briefcase } from "lu
 import { useI18n } from "@/i18n/I18nProvider";
 import { images } from "@/config/images";
 import { SectionHeading } from "./SectionHeading";
+import { pick, useContentOf } from "@/lib/cms";
 
 export function About() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const team = useContentOf("team");
   const cards = t<{ title: string; text: string }[]>("about.cards");
   const icons = [Compass, Users, Landmark, Handshake, Briefcase];
   return (
@@ -34,6 +36,20 @@ export function About() {
           })}
         </ul>
       </div>
+      {team.length > 0 && (
+        <div className="container-site mt-20">
+          <h3 className="text-2xl text-brand-deep sm:text-3xl">{t("nav.team")}</h3>
+          <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {team.map((m) => (
+              <li key={m.id} className="rounded-3xl bg-secondary p-5 text-center">
+                {m.images[0] ? <img src={m.images[0]} alt={m.title_es} loading="lazy" className="mx-auto size-32 rounded-full object-cover" /> : <div className="mx-auto grid size-32 place-items-center rounded-full bg-background font-display text-3xl text-primary">{m.title_es.charAt(0)}</div>}
+                <h4 className="mt-4 font-display text-lg text-brand-deep">{pick(m, "title", lang)}</h4>
+                <p className="mt-2 whitespace-pre-line text-sm text-muted-foreground">{pick(m, "body", lang)}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   );
 }
