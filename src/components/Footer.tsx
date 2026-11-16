@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom"; // <-- CORREGIDO
 import { Mail, Phone, MapPin } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { Logo } from "./Logo";

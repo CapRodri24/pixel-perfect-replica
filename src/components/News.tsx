@@ -4,7 +4,7 @@ import { landscapes, news, newsCategories, programs, type NewsCategory } from "@
 import { useI18n } from "@/i18n/I18nProvider";
 import { SectionHeading } from "./SectionHeading";
 import { Button } from "@/components/ui/button";
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom"; // <-- CORREGIDO
 
 const selectCls = "h-11 w-full rounded-full border border-input bg-background px-4 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
@@ -77,7 +77,10 @@ export function News() {
                   </div>
                   <h3 className={`mt-3 leading-snug text-brand-deep ${i === 0 && list.length > 3 ? "text-2xl" : "text-lg"}`}>{n.title}</h3>
                   <p className="mt-2 flex-1 text-sm text-muted-foreground">{n.text}</p>
-                  <Button asChild variant="ghost" className="mt-4 w-fit px-0"><Link to="/noticias/$id" params={{ id: n.id }}>{t("news.read")} <ArrowRight className="size-4" /></Link></Button>
+                  <Button asChild variant="ghost" className="mt-4 w-fit px-0">
+                    {/* AQUI EL CAMBIO A REACT ROUTER */}
+                    <Link to={`/noticias/${n.id}`}>{t("news.read")} <ArrowRight className="size-4" /></Link>
+                  </Button>
                 </div>
               </article>
             ))}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useLocation } from "react-router-dom"; // <-- CORREGIDO
 import { ChevronDown, Menu, X, Heart } from "lucide-react";
 import { useI18n, type Lang } from "@/i18n/I18nProvider";
 import { Logo } from "./Logo";
@@ -32,12 +32,18 @@ function LangSwitch() {
 export function Header() {
   const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
-  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  
+  // CORREGIDO: Usamos useLocation en lugar de useRouterState
+  const location = useLocation();
+  const pathname = location.pathname;
+
   const label = (key: string) => key === "programs" ? (lang === "es" ? "Programas" : "Programs") : t<string>(`nav.${key}`);
+  
   useEffect(() => {
     document.body.style.overflow = open ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [open]);
+  
   useEffect(() => { setOpen(false); }, [pathname]);
 
   return <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
@@ -52,7 +58,8 @@ export function Header() {
             <div className="invisible absolute left-0 top-full w-60 pt-2 opacity-0 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
               <div className="rounded-lg border border-border bg-popover p-2 shadow-card">
                 <Button asChild variant="ghost" className="w-full justify-start"><Link to={s.to}>{lang === "es" ? "Ver sección completa" : "View full section"}</Link></Button>
-                <Button asChild variant="ghost" className="w-full justify-start"><Link to="/" hash={s.hash}>{lang === "es" ? "Atajo en inicio" : "Home shortcut"}</Link></Button>
+                {/* CORREGIDO: En React Router el hash se concatena en el "to" */}
+                <Button asChild variant="ghost" className="w-full justify-start"><Link to={`/#${s.hash}`}>{lang === "es" ? "Atajo en inicio" : "Home shortcut"}</Link></Button>
               </div>
             </div>
           </li>)}
@@ -69,7 +76,8 @@ export function Header() {
       <nav aria-label="Menú móvil" className="flex-1 overflow-y-auto px-4 py-5">
         {navSections.map((s) => <div key={s.key} className="border-b border-border py-3">
           <Button asChild variant="ghost" className="w-full justify-start text-base"><Link to={s.to} onClick={() => setOpen(false)}>{label(s.key)}</Link></Button>
-          <Button asChild variant="link" size="sm"><Link to="/" hash={s.hash} onClick={() => setOpen(false)}>{lang === "es" ? "Atajo en inicio" : "Home shortcut"}</Link></Button>
+          {/* CORREGIDO: Mismo cambio del hash aquí */}
+          <Button asChild variant="link" size="sm"><Link to={`/#${s.hash}`} onClick={() => setOpen(false)}>{lang === "es" ? "Atajo en inicio" : "Home shortcut"}</Link></Button>
         </div>)}
         <Button asChild variant="hero" size="lg" className="mt-6 w-full"><Link to="/donar" onClick={() => setOpen(false)}><Heart />{lang === "es" ? "Donar" : "Donate"}</Link></Button>
       </nav>

@@ -1,5 +1,6 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom"; // <-- CORREGIDO
 import { Feather } from "lucide-react";
+
 export function Logo({ light }: { light?: boolean }) {
   return (
     <Link to="/" className="flex items-center gap-2.5" aria-label="Asociación Armonía">

@@ -1,5 +1,6 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { Navigate } from "react-router-dom";
 
-export const Route = createFileRoute("/login")({
-  beforeLoad: () => { throw redirect({ to: "/", statusCode: 301 }); },
-});
+export default function Login() {
+  // Redirige al inicio automáticamente
+  return <Navigate to="/" replace />;
+}

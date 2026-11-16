@@ -8,17 +8,17 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { DonationReminder } from "@/components/DonationForm";
 
-// Vistas (Páginas)
-import Home from "@/pages/landing/Home";
-import Donar from "@/pages/landing/Donar";
-import Nosotros from "@/pages/landing/Nosotros";
-import Contacto from "@/pages/landing/Contacto";
-import Noticias from "@/pages/landing/Noticias";
-import NoticiaDetalle from "@/pages/landing/NoticiaDetalle";
-import Programas from "@/pages/landing/Programas";
-import ProgramaDetalle from "@/pages/landing/ProgramaDetalle";
-import Paisajes from "@/pages/landing/Paisajes";
-import Recursos from "@/pages/landing/Recursos";
+// Vistas (Páginas) - Importaciones ajustadas a tus nombres de archivo
+import Home from "@/pages/landing/home";
+import Donar from "@/pages/landing/donar"; 
+import Nosotros from "@/pages/landing/nosotros";
+import Contacto from "@/pages/landing/contacto";
+import Noticias from "@/pages/landing/noticias";
+import NoticiaDetalle from "@/pages/landing/noticias_.$id";
+import Programas from "@/pages/landing/programas";
+import ProgramaDetalle from "@/pages/landing/programas_.$id";
+import Paisajes from "@/pages/landing/paisajes";
+import Recursos from "@/pages/landing/recursos";
 import Login from "@/pages/login/Login";
 
 const queryClient = new QueryClient();
@@ -52,13 +52,10 @@ export default function App() {
       <I18nProvider>
         <BrowserRouter>
           <div className="flex min-h-screen flex-col">
-            {/* El Header va fuera de las rutas para que se mantenga fijo */}
             <Header />
             
-            {/* El main contiene las rutas dinámicas */}
             <main className="flex-1">
               <Routes>
-                {/* Rutas Públicas (Landing) */}
                 <Route path="/" element={<Home />} />
                 <Route path="/donar" element={<Donar />} />
                 <Route path="/nosotros" element={<Nosotros />} />
@@ -69,19 +66,12 @@ export default function App() {
                 <Route path="/programas/:id" element={<ProgramaDetalle />} />
                 <Route path="/paisajes" element={<Paisajes />} />
                 <Route path="/recursos" element={<Recursos />} />
-                
-                {/* Rutas de Autenticación */}
                 <Route path="/login" element={<Login />} />
-                
-                {/* Ruta 404 */}
                 <Route path="*" element={<NotFoundComponent />} />
               </Routes>
             </main>
 
-            {/* El Footer va fuera de las rutas */}
             <Footer />
-            
-            {/* El recordatorio de donación flotante */}
             <DonationReminder />
           </div>
           

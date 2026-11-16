@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link } from "react-router-dom"; // <-- CORREGIDO
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import type { ProgramId, LandscapeId } from "@/config/content";
@@ -17,9 +17,12 @@ export function ProgramCard({ id, landscape, image }: { id: ProgramId; landscape
         </span>
         <h3 className="mt-4 text-xl text-brand-deep">{t(`programs.items.${id}.name`)}</h3>
         <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{t(`programs.items.${id}.text`)}</p>
-        <Button asChild variant="ghost" className="mt-5 w-fit px-0"><Link to="/programas/$id" params={{ id }}>
-          {t("programs.more")} <ArrowRight className="size-4" />
-        </Link></Button>
+        <Button asChild variant="ghost" className="mt-5 w-fit px-0">
+          {/* AQUI EL CAMBIO DE RUTA */}
+          <Link to={`/programas/${id}`}>
+            {t("programs.more")} <ArrowRight className="size-4" />
+          </Link>
+        </Button>
       </div>
     </article>
   );
