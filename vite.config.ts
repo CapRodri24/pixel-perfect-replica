@@ -1,15 +1,20 @@
-import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react-swc"; // o el plugin que uses
+import path from "path";
+import tailwindcss from "@tailwindcss/vite"; // <-- IMPORTAR
 
-export default defineConfig({
-  tanstackStart: {
-    server: { entry: "server" },
+export default defineConfig(({ mode }) => ({
+  server: {
+    host: "::",
+    port: 8080,
   },
-  nitro: {
-    preset: 'netlify',
-    output: {
-      dir: 'dist',
-      publicDir: 'dist/public',
-      serverDir: 'dist/server',
+  plugins: [
+    react(),
+    tailwindcss(), // <-- AÑADIR AQUÍ
+  ],
+  resolve: {
+    alias: {
+      "@": path.resolve(__dirname, "./src"),
     },
   },
-});
+}));
