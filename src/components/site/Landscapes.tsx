@@ -58,9 +58,6 @@ export function Landscapes({ initialSelected = null }: { initialSelected?: strin
             <div className="mt-12 grid auto-rows-[minmax(22rem,auto)] gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {landscapes.map((l, i) => <LandscapeCard key={l.id} {...l} featured={i === 0} onSelect={() => select(l.id)} />)}
             </div>
-                </button>
-              ))}
-            </div>
           </>
         )}
       </div>
