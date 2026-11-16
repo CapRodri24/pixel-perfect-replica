@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom"; // <-- CORREGIDO
+import { Link } from "react-router-dom";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { Logo } from "./Logo";
@@ -26,7 +26,8 @@ const YoutubeIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export function Footer() {
   const { t } = useI18n();
-  const nav = [["about", "/nosotros"], ["landscapes", "/paisajes"], ["resources", "/recursos"], ["news", "/noticias"], ["contact", "/contacto"]] as const;
+  // ELIMINADO: ["resources", "/recursos"]
+  const nav = [["about", "/nosotros"], ["landscapes", "/paisajes"], ["news", "/noticias"], ["contact", "/contacto"]] as const;
   const head = "text-xs font-bold uppercase tracking-[0.2em] text-brand-light";
   const link = "text-sm text-primary-foreground/75 hover:text-primary-foreground";
   return (

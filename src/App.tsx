@@ -14,7 +14,7 @@ import Donar from "@/pages/landing/donar";
 import Nosotros from "@/pages/landing/nosotros";
 import Contacto from "@/pages/landing/contacto";
 import Paisajes from "@/pages/landing/paisajes";
-import Recursos from "@/pages/landing/recursos";
+// import Recursos from "@/pages/landing/recursos"; // <-- ELIMINADO
 
 // Vistas con Sub-rutas (Fusionadas)
 import { Noticias, NoticiaDetalle } from "@/pages/landing/noticias";
@@ -24,7 +24,6 @@ import Login from "@/pages/login/Login";
 
 const queryClient = new QueryClient();
 
-// Componente para páginas no encontradas (404)
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -62,16 +61,15 @@ export default function App() {
                 <Route path="/nosotros" element={<Nosotros />} />
                 <Route path="/contacto" element={<Contacto />} />
                 
-                {/* Rutas de Noticias */}
                 <Route path="/noticias" element={<Noticias />} />
                 <Route path="/noticias/:id" element={<NoticiaDetalle />} />
                 
-                {/* Rutas de Programas */}
                 <Route path="/programas" element={<Programas />} />
                 <Route path="/programas/:id" element={<ProgramaDetalle />} />
                 
                 <Route path="/paisajes" element={<Paisajes />} />
-                <Route path="/recursos" element={<Recursos />} />
+                {/* <Route path="/recursos" element={<Recursos />} /> ELIMINADO */}
+                
                 <Route path="/login" element={<Login />} />
                 <Route path="*" element={<NotFoundComponent />} />
               </Routes>

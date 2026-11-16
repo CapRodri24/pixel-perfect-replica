@@ -1,11 +1,10 @@
 {
   "brand": { "name": "Asociación Armonía", "tagline": "Conservación de aves y biodiversidad en Bolivia" },
   "nav": {
-    "about": "Nosotros", "landscapes": "Paisajes", "resources": "Recursos", "news": "Noticias", "contact": "Contacto",
+    "about": "Nosotros", "landscapes": "Paisajes", "news": "Noticias", "contact": "Contacto",
     "login": "Iniciar sesión", "team": "Nuestro equipo", "library": "Biblioteca y descargas", "download": "Descargar", "menu": "Menú", "close": "Cerrar", "language": "Idioma",
     "aboutItems": ["Quiénes somos", "Nuestro equipo", "Junta Directiva", "Socios y aliados", "Oportunidades"],
     "landscapesItems": ["Mapa general de paisajes", "Pastizales del Beni", "Yungas", "Andes Altos", "Bosque Seco Interandino", "Amazonía", "Acción Andina"],
-    "resourcesItems": ["Informes y memorias", "Publicaciones científicas y técnicas", "Recursos SIG y mapas", "Colaboraciones", "Herramientas legales"],
     "newsItems": ["Noticias institucionales", "Historias de conservación", "Agenda y eventos", "Multimedia"],
     "contactItems": ["Donaciones y membresía", "Turismo y reservas", "Contacto de prensa", "Oficinas"]
   },
@@ -54,16 +53,6 @@
       "conservaaves": { "name": "Conserva Aves", "text": "Iniciativa regional que fortalece áreas clave para la biodiversidad." },
       "accionandina": { "name": "Acción Andina", "text": "Movimiento para restaurar bosques altoandinos con comunidades." }
     }
-  },
-  "resources": {
-    "eyebrow": "Recursos", "title": "Conocimiento abierto para la conservación", "open": "Abrir",
-    "items": [
-      { "title": "Informes y memorias", "text": "Memorias anuales y reportes institucionales." },
-      { "title": "Publicaciones científicas y técnicas", "text": "Artículos, estudios y documentos técnicos." },
-      { "title": "Recursos SIG y mapas", "text": "Capas geográficas y cartografía de paisajes." },
-      { "title": "Colaboraciones", "text": "Proyectos conjuntos con instituciones aliadas." },
-      { "title": "Herramientas legales", "text": "Normativa y guías para áreas protegidas." }
-    ]
   },
   "news": {
     "eyebrow": "Noticias y multimedia", "title": "Historias desde el campo",

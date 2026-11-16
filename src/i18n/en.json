@@ -1,11 +1,10 @@
 {
   "brand": { "name": "Asociación Armonía", "tagline": "Bird and biodiversity conservation in Bolivia" },
   "nav": {
-    "about": "About us", "landscapes": "Landscapes", "resources": "Resources", "news": "News", "contact": "Contact",
+    "about": "About us", "landscapes": "Landscapes", "news": "News", "contact": "Contact",
     "login": "Sign in", "team": "Our team", "library": "Library and downloads", "download": "Download", "menu": "Menu", "close": "Close", "language": "Language",
     "aboutItems": ["Who we are", "Our team", "Board of Directors", "Partners and allies", "Opportunities"],
     "landscapesItems": ["Landscapes overview map", "Beni Grasslands", "Yungas", "High Andes", "Inter-Andean Dry Forest", "Amazon", "Acción Andina"],
-    "resourcesItems": ["Reports and annual reviews", "Scientific and technical publications", "GIS resources and maps", "Collaborations", "Legal tools"],
     "newsItems": ["Institutional news", "Conservation stories", "Events calendar", "Multimedia"],
     "contactItems": ["Donations and membership", "Tourism and reserves", "Press contact", "Offices"]
   },
@@ -54,16 +53,6 @@
       "conservaaves": { "name": "Conserva Aves", "text": "Regional initiative strengthening key biodiversity areas." },
       "accionandina": { "name": "Acción Andina", "text": "A movement to restore high Andean forests with communities." }
     }
-  },
-  "resources": {
-    "eyebrow": "Resources", "title": "Open knowledge for conservation", "open": "Open",
-    "items": [
-      { "title": "Reports and annual reviews", "text": "Annual reviews and institutional reports." },
-      { "title": "Scientific and technical publications", "text": "Articles, studies and technical documents." },
-      { "title": "GIS resources and maps", "text": "Geographic layers and landscape cartography." },
-      { "title": "Collaborations", "text": "Joint projects with allied institutions." },
-      { "title": "Legal tools", "text": "Regulations and guides for protected areas." }
-    ]
   },
   "news": {
     "eyebrow": "News and multimedia", "title": "Stories from the field",

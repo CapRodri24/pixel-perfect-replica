@@ -3,7 +3,14 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { images } from "@/config/images";
 import { Button } from "@/components/ui/button";
 
-// --- COMPONENTE HERO FUSIONADO ---
+import { About } from "@/components/About";
+import { Landscapes } from "@/components/Landscapes";
+import { Programs } from "@/components/Programs";
+import { SectionShortcut } from "@/components/SectionView";
+
+// Importamos la lista de noticias
+import { Noticias } from "./noticias";
+
 function Hero() {
   const { t } = useI18n();
   const icons = [Microscope, Trees, Users];
@@ -36,13 +43,6 @@ function Hero() {
   );
 }
 
-// --- RESTO DE COMPONENTES ---
-import { About } from "@/components/About";
-import { Landscapes } from "@/components/Landscapes";
-import { Programs } from "@/components/Programs";
-import { Resources } from "@/components/Resources";
-import { SectionShortcut } from "@/components/SectionView";
-
 export default function Home() {
   return (
     <main>
@@ -56,13 +56,11 @@ export default function Home() {
       <Programs />
       <SectionShortcut to="/programas" />
       
-      <Resources />
-      <SectionShortcut to="/recursos" />
+      {/* La sección de Recursos ha sido eliminada */}
       
-      {/* Botón para ir a Noticias */}
+      <Noticias />
       <SectionShortcut to="/noticias" />
       
-      {/* Botón para ir a Contacto */}
       <SectionShortcut to="/contacto" />
     </main>
   );
