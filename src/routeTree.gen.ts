@@ -11,8 +11,17 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as ContactoRouteImport } from './routes/contacto'
+import { Route as DonarRouteImport } from './routes/donar'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as NosotrosRouteImport } from './routes/nosotros'
+import { Route as NoticiasRouteImport } from './routes/noticias'
+import { Route as PaisajesRouteImport } from './routes/paisajes'
+import { Route as ProgramasRouteImport } from './routes/programas'
+import { Route as RecursosRouteImport } from './routes/recursos'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as NoticiasIdRouteImport } from './routes/noticias_.$id'
+import { Route as ProgramasIdRouteImport } from './routes/programas_.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -23,9 +32,44 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContactoRoute = ContactoRouteImport.update({
+  id: '/contacto',
+  path: '/contacto',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DonarRoute = DonarRouteImport.update({
+  id: '/donar',
+  path: '/donar',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NosotrosRoute = NosotrosRouteImport.update({
+  id: '/nosotros',
+  path: '/nosotros',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NoticiasRoute = NoticiasRouteImport.update({
+  id: '/noticias',
+  path: '/noticias',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PaisajesRoute = PaisajesRouteImport.update({
+  id: '/paisajes',
+  path: '/paisajes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProgramasRoute = ProgramasRouteImport.update({
+  id: '/programas',
+  path: '/programas',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecursosRoute = RecursosRouteImport.update({
+  id: '/recursos',
+  path: '/recursos',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
@@ -33,36 +77,120 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const NoticiasIdRoute = NoticiasIdRouteImport.update({
+  id: '/noticias_/$id',
+  path: '/noticias/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProgramasIdRoute = ProgramasIdRouteImport.update({
+  id: '/programas_/$id',
+  path: '/programas/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/contacto': typeof ContactoRoute
+  '/donar': typeof DonarRoute
   '/login': typeof LoginRoute
+  '/nosotros': typeof NosotrosRoute
+  '/noticias': typeof NoticiasRoute
+  '/paisajes': typeof PaisajesRoute
+  '/programas': typeof ProgramasRoute
+  '/recursos': typeof RecursosRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/noticias/$id': typeof NoticiasIdRoute
+  '/programas/$id': typeof ProgramasIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/contacto': typeof ContactoRoute
+  '/donar': typeof DonarRoute
   '/login': typeof LoginRoute
+  '/nosotros': typeof NosotrosRoute
+  '/noticias': typeof NoticiasRoute
+  '/paisajes': typeof PaisajesRoute
+  '/programas': typeof ProgramasRoute
+  '/recursos': typeof RecursosRoute
   '/admin': typeof AuthenticatedAdminRoute
+  '/noticias/$id': typeof NoticiasIdRoute
+  '/programas/$id': typeof ProgramasIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/contacto': typeof ContactoRoute
+  '/donar': typeof DonarRoute
   '/login': typeof LoginRoute
+  '/nosotros': typeof NosotrosRoute
+  '/noticias': typeof NoticiasRoute
+  '/paisajes': typeof PaisajesRoute
+  '/programas': typeof ProgramasRoute
+  '/recursos': typeof RecursosRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/noticias_/$id': typeof NoticiasIdRoute
+  '/programas_/$id': typeof ProgramasIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/admin'
+  fullPaths:
+    | '/'
+    | '/contacto'
+    | '/donar'
+    | '/login'
+    | '/nosotros'
+    | '/noticias'
+    | '/paisajes'
+    | '/programas'
+    | '/recursos'
+    | '/admin'
+    | '/noticias/$id'
+    | '/programas/$id'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/admin'
-  id: '__root__' | '/' | '/_authenticated' | '/login' | '/_authenticated/admin'
+  to:
+    | '/'
+    | '/contacto'
+    | '/donar'
+    | '/login'
+    | '/nosotros'
+    | '/noticias'
+    | '/paisajes'
+    | '/programas'
+    | '/recursos'
+    | '/admin'
+    | '/noticias/$id'
+    | '/programas/$id'
+  id:
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/contacto'
+    | '/donar'
+    | '/login'
+    | '/nosotros'
+    | '/noticias'
+    | '/paisajes'
+    | '/programas'
+    | '/recursos'
+    | '/_authenticated/admin'
+    | '/noticias_/$id'
+    | '/programas_/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  ContactoRoute: typeof ContactoRoute
+  DonarRoute: typeof DonarRoute
   LoginRoute: typeof LoginRoute
+  NosotrosRoute: typeof NosotrosRoute
+  NoticiasRoute: typeof NoticiasRoute
+  PaisajesRoute: typeof PaisajesRoute
+  ProgramasRoute: typeof ProgramasRoute
+  RecursosRoute: typeof RecursosRoute
+  NoticiasIdRoute: typeof NoticiasIdRoute
+  ProgramasIdRoute: typeof ProgramasIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -81,11 +209,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/contacto': {
+      id: '/contacto'
+      path: '/contacto'
+      fullPath: '/contacto'
+      preLoaderRoute: typeof ContactoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/donar': {
+      id: '/donar'
+      path: '/donar'
+      fullPath: '/donar'
+      preLoaderRoute: typeof DonarRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nosotros': {
+      id: '/nosotros'
+      path: '/nosotros'
+      fullPath: '/nosotros'
+      preLoaderRoute: typeof NosotrosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/noticias': {
+      id: '/noticias'
+      path: '/noticias'
+      fullPath: '/noticias'
+      preLoaderRoute: typeof NoticiasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/paisajes': {
+      id: '/paisajes'
+      path: '/paisajes'
+      fullPath: '/paisajes'
+      preLoaderRoute: typeof PaisajesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/programas': {
+      id: '/programas'
+      path: '/programas'
+      fullPath: '/programas'
+      preLoaderRoute: typeof ProgramasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recursos': {
+      id: '/recursos'
+      path: '/recursos'
+      fullPath: '/recursos'
+      preLoaderRoute: typeof RecursosRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/admin': {
@@ -94,6 +271,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/noticias_/$id': {
+      id: '/noticias_/$id'
+      path: '/noticias/$id'
+      fullPath: '/noticias/$id'
+      preLoaderRoute: typeof NoticiasIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/programas_/$id': {
+      id: '/programas_/$id'
+      path: '/programas/$id'
+      fullPath: '/programas/$id'
+      preLoaderRoute: typeof ProgramasIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -112,7 +303,16 @@ const AuthenticatedRouteRouteWithChildren =
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  ContactoRoute: ContactoRoute,
+  DonarRoute: DonarRoute,
   LoginRoute: LoginRoute,
+  NosotrosRoute: NosotrosRoute,
+  NoticiasRoute: NoticiasRoute,
+  PaisajesRoute: PaisajesRoute,
+  ProgramasRoute: ProgramasRoute,
+  RecursosRoute: RecursosRoute,
+  NoticiasIdRoute: NoticiasIdRoute,
+  ProgramasIdRoute: ProgramasIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

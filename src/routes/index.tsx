@@ -1,14 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { I18nProvider } from "@/i18n/I18nProvider";
-import { Header } from "@/components/site/Header";
 import { Hero } from "@/components/site/Hero";
 import { About } from "@/components/site/About";
 import { Landscapes } from "@/components/site/Landscapes";
 import { Programs } from "@/components/site/Programs";
 import { Resources } from "@/components/site/Resources";
 import { News } from "@/components/site/News";
+import { SectionShortcut } from "@/components/site/SectionView";
 import { Contact } from "@/components/site/Contact";
-import { Footer } from "@/components/site/Footer";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -26,18 +24,20 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   return (
-    <I18nProvider>
-      <Header />
       <main>
         <Hero />
         <About />
+        <SectionShortcut to="/nosotros" />
         <Landscapes />
+        <SectionShortcut to="/paisajes" />
         <Programs />
+        <SectionShortcut to="/programas" />
         <Resources />
+        <SectionShortcut to="/recursos" />
         <News />
+        <SectionShortcut to="/noticias" />
         <Contact />
+        <SectionShortcut to="/contacto" />
       </main>
-      <Footer />
-    </I18nProvider>
   );
 }

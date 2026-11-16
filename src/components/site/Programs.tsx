@@ -3,13 +3,10 @@ import { landscapes, programs, type LandscapeId } from "@/config/content";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SectionHeading } from "./SectionHeading";
 import { ProgramCard } from "./ProgramCard";
-import { DynCard } from "./DynCard";
-import { useContentOf } from "@/lib/cms";
 
 export function Programs() {
   const { t } = useI18n();
   const [filter, setFilter] = useState<LandscapeId | "all" | "national">("all");
-  const dyn = useContentOf("program").filter((p) => filter === "all" || (filter === "national" ? !p.landscape_ref : p.landscape_ref === filter));
   const list = programs.filter((p) => filter === "all" || (filter === "national" ? !p.landscape : p.landscape === filter));
   const chips: { id: typeof filter; label: string }[] = [
     { id: "all", label: t("programs.all") },
@@ -29,7 +26,6 @@ export function Programs() {
           ))}
         </div>
         <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {dyn.map((p) => <DynCard key={p.id} item={p} cta={t("programs.more")} />)}
           {list.map((p) => <ProgramCard key={p.id} {...p} />)}
         </div>
       </div>

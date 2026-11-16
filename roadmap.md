@@ -1,5 +1,6 @@
 # Roadmap
-- [x] Landing page Armonía (ES/EN, paisajes, programas, noticias, recursos, contacto)
-- [x] Botón "Iniciar sesión" + login admin (usuario admin / spiderlabs)
-- [x] Dashboard con sidebar: Paisajes, Noticias (YouTube, paisaje opcional), Programas, Equipo, Biblioteca (PDF)
-- [x] Contenido creado se refleja en la landing con traducción al inglés
+- [ ] Retirar la barra superior y destacar donaciones Givebutter en todas las páginas.
+- [ ] Retirar acceso, administración y consultas de datos; mantener contenido estático ES/EN.
+- [ ] Añadir páginas completas y lectura de noticias sin quitar las secciones de inicio.
+- [ ] Verificar navegación y donación en escritorio y móvil.
+- [ ] Desconectar Lovable Cloud: requiere que un administrador confirme la eliminación irreversible desde los ajustes.

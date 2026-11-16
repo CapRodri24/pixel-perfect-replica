@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { Logo } from "./Logo";
@@ -25,7 +26,7 @@ const YoutubeIcon = (props: React.SVGProps<SVGSVGElement>) => (
 
 export function Footer() {
   const { t } = useI18n();
-  const nav = [["about", "#nosotros"], ["landscapes", "#paisajes"], ["resources", "#recursos"], ["news", "#noticias"], ["contact", "#contacto"]];
+  const nav = [["about", "/nosotros"], ["landscapes", "/paisajes"], ["resources", "/recursos"], ["news", "/noticias"], ["contact", "/contacto"]] as const;
   const head = "text-xs font-bold uppercase tracking-[0.2em] text-brand-light";
   const link = "text-sm text-primary-foreground/75 hover:text-primary-foreground";
   return (
@@ -42,11 +43,11 @@ export function Footer() {
         </div>
         <nav aria-label={t("footer.explore")}>
           <h3 className={head}>{t("footer.explore")}</h3>
-          <ul className="mt-4 space-y-2.5">{nav.map(([k, h]) => <li key={k}><a href={h} className={link}>{t(`nav.${k}`)}</a></li>)}</ul>
+          <ul className="mt-4 space-y-2.5">{nav.map(([k, h]) => <li key={k}><Link to={h} className={link}>{t(`nav.${k}`)}</Link></li>)}</ul>
         </nav>
         <div>
           <h3 className={head}>{t("footer.access")}</h3>
-          <ul className="mt-4 space-y-2.5">{quickLinks.map((q) => <li key={q.key}><a href={q.href} className={link}>{t(`quick.${q.key}`)}</a></li>)}</ul>
+          <ul className="mt-4 space-y-2.5">{quickLinks.map((q) => <li key={q.key}><Link to={q.href} className={link}>{t(`quick.${q.key}`)}</Link></li>)}</ul>
         </div>
         <div>
           <h3 className={head}>{t("footer.contact")}</h3>
