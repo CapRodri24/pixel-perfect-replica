@@ -3,10 +3,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { Toaster } from "@/components/ui/sonner";
 
+// Layout Público
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { DonationReminder } from "@/components/DonationForm";
 
+// Layout Admin
+import { AdminSidebar } from "@/components/AdminSidebar";
+
+// Vistas Públicas
 import Home from "@/pages/landing/home";
 import Donar from "@/pages/landing/donar"; 
 import Nosotros from "@/pages/landing/nosotros";
@@ -15,6 +20,14 @@ import Paisajes from "@/pages/landing/paisajes";
 import { Noticias, NoticiaDetalle } from "@/pages/landing/noticias";
 import { Programas, ProgramaDetalle } from "@/pages/landing/programas";
 import Login from "@/pages/login/Login";
+
+// Vistas Admin
+import Dashboard from "@/pages/admin/Dashboard";
+import PaisajesAdmin from "@/pages/admin/PaisajesAdmin";
+import NoticiasAdmin from "@/pages/admin/NoticiasAdmin";
+import ProgramasAdmin from "@/pages/admin/ProgramasAdmin";
+import EquipoAdmin from "@/pages/admin/EquipoAdmin";
+import BibliotecaAdmin from "@/pages/admin/BibliotecaAdmin";
 
 const queryClient = new QueryClient();
 
@@ -33,15 +46,28 @@ function PublicLayout() {
   );
 }
 
+function AdminLayout() {
+  return (
+    <div className="flex min-h-screen bg-muted/20">
+      <AdminSidebar />
+      <main className="flex-1 p-8 overflow-y-auto">
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+
 function AppRoutes() {
   const location = useLocation();
 
+  // El Login va fuera de todo
   if (location.pathname === "/login") {
     return <Login />;
   }
 
   return (
     <Routes>
+      {/* Rutas Públicas */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/donar" element={<Donar />} />
@@ -52,8 +78,19 @@ function AppRoutes() {
         <Route path="/programas" element={<Programas />} />
         <Route path="/programas/:id" element={<ProgramaDetalle />} />
         <Route path="/paisajes" element={<Paisajes />} />
-        <Route path="*" element={<NotFoundComponent />} />
       </Route>
+
+      {/* Rutas de Administración */}
+      <Route path="/admin" element={<AdminLayout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="paisajes" element={<PaisajesAdmin />} />
+        <Route path="noticias" element={<NoticiasAdmin />} />
+        <Route path="programas" element={<ProgramasAdmin />} />
+        <Route path="equipo" element={<EquipoAdmin />} />
+        <Route path="biblioteca" element={<BibliotecaAdmin />} />
+      </Route>
+
+      <Route path="*" element={<NotFoundComponent />} />
     </Routes>
   );
 }

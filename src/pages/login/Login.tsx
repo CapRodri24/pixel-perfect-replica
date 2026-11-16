@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Lock, ArrowLeft } from "lucide-react";
+import { Lock, ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { images } from "@/config/images";
@@ -12,6 +12,9 @@ export default function Login() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   
+  // Estado para controlar si la contraseña se ve o no
+  const [showPassword, setShowPassword] = useState(false);
+
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
@@ -21,13 +24,15 @@ export default function Login() {
     setLoading(true); 
     setError("");
 
-    // Lógica Mock
+    // Lógica Mock (Cualquier usuario y contraseña entran)
     setTimeout(() => {
-      if (user && password.length >= 4) {
+      if (user && password) {
+        // Guardamos un token falso
         localStorage.setItem("auth_token", "mock-token-12345");
-        navigate("/");
+        // Redirigimos al panel de administración
+        navigate("/admin"); 
       } else {
-        setError("Usuario o contraseña incorrectos (mínimo 4 caracteres).");
+        setError("Por favor, ingresa un usuario y una contraseña.");
       }
       setLoading(false);
     }, 1000);
@@ -35,11 +40,13 @@ export default function Login() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
+      {/* Imagen lateral */}
       <div className="relative hidden lg:block">
         <img src={images.landscapes.andes} alt="Paisaje de los Andes" className="absolute inset-0 size-full object-cover" />
         <div className="hero-overlay absolute inset-0" />
       </div>
 
+      {/* Formulario */}
       <div className="flex items-center justify-center p-6 bg-background">
         <form onSubmit={submit} className="w-full max-w-sm">
           <div className="mb-8">
@@ -63,14 +70,25 @@ export default function Login() {
             
             <label className="block text-sm font-semibold">
               Contraseña
-              <input 
-                name="password" 
-                type="password" 
-                required 
-                autoComplete="current-password" 
-                className={field} 
-                placeholder="••••••••"
-              />
+              <div className="relative">
+                <input 
+                  name="password" 
+                  type={showPassword ? "text" : "password"} 
+                  required 
+                  autoComplete="current-password" 
+                  className={`${field} pr-12`} 
+                  placeholder="••••••••"
+                />
+                {/* Botón del ojito */}
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  {showPassword ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+                </button>
+              </div>
             </label>
           </div>
 
