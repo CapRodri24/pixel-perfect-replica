@@ -8,17 +8,18 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { DonationReminder } from "@/components/DonationForm";
 
-// Vistas (Páginas) - Importaciones ajustadas a tus nombres de archivo
+// Vistas (Páginas) 
 import Home from "@/pages/landing/home";
 import Donar from "@/pages/landing/donar"; 
 import Nosotros from "@/pages/landing/nosotros";
 import Contacto from "@/pages/landing/contacto";
-import Noticias from "@/pages/landing/noticias";
-import NoticiaDetalle from "@/pages/landing/noticias_.$id";
-import Programas from "@/pages/landing/programas";
-import ProgramaDetalle from "@/pages/landing/programas_.$id";
 import Paisajes from "@/pages/landing/paisajes";
 import Recursos from "@/pages/landing/recursos";
+
+// Vistas con Sub-rutas (Fusionadas)
+import { Noticias, NoticiaDetalle } from "@/pages/landing/noticias";
+import { Programas, ProgramaDetalle } from "@/pages/landing/programas";
+
 import Login from "@/pages/login/Login";
 
 const queryClient = new QueryClient();
@@ -60,10 +61,15 @@ export default function App() {
                 <Route path="/donar" element={<Donar />} />
                 <Route path="/nosotros" element={<Nosotros />} />
                 <Route path="/contacto" element={<Contacto />} />
+                
+                {/* Rutas de Noticias */}
                 <Route path="/noticias" element={<Noticias />} />
                 <Route path="/noticias/:id" element={<NoticiaDetalle />} />
+                
+                {/* Rutas de Programas */}
                 <Route path="/programas" element={<Programas />} />
                 <Route path="/programas/:id" element={<ProgramaDetalle />} />
+                
                 <Route path="/paisajes" element={<Paisajes />} />
                 <Route path="/recursos" element={<Recursos />} />
                 <Route path="/login" element={<Login />} />
