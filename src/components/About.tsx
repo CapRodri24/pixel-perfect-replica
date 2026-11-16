@@ -1,7 +1,7 @@
 import { ArrowUpRight, Compass, Users, Landmark, Handshake, Briefcase } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { images } from "@/config/images";
-import { SectionHeading } from "./SectionHeading";
+import { SectionHeading } from "../components/site/SectionHeading";
 
 export function About() {
   const { t } = useI18n();

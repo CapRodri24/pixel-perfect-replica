@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Landscapes } from "@/components/site/Landscapes";
-import { SectionView } from "@/components/site/SectionView";
+import { Landscapes } from "@/components/Landscapes";
+import { SectionView } from "@/components/SectionView";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export const Route = createFileRoute("/paisajes")({

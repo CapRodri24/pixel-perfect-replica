@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Resources } from "@/components/site/Resources";
-import { SectionView } from "@/components/site/SectionView";
+import { Resources } from "@/components/Resources";
+import { SectionView } from "@/components/SectionView";
 import { useI18n } from "@/i18n/I18nProvider";
 
 export const Route = createFileRoute("/recursos")({

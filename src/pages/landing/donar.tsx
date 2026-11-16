@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { DonationForm } from "@/components/site/DonationForm";
-import { SectionView } from "@/components/site/SectionView";
+import { DonationForm } from "@/components/DonationForm";
+import { SectionView } from "@/components/SectionView";
 import { useI18n } from "@/i18n/I18nProvider";
 import { images } from "@/config/images";
 

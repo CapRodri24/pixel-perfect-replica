@@ -1,0 +1,204 @@
+/*
+ * Tailwind v4 entry: config lives here, with no tailwind.config.js or PostCSS plugin.
+ * - Keep every @import in this top block, above @theme and the rest of the file. Install an
+ *   npm package before @importing its CSS. Never @import a remote URL (web fonts, CDN CSS): the
+ *   build resolves @import from the filesystem. Load those with a <link> in the head() of
+ *   src/routes/__root.tsx and name the family in a --font-* token in @theme inline below.
+ */
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Design system definition.
+ * ...
+ */
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Figtree", system-ui, sans-serif;
+  --color-brand: var(--brand);
+  --color-brand-light: var(--brand-light);
+  --color-brand-gray: var(--brand-gray);
+  --color-brand-deep: var(--brand-deep);
+  --color-lp: var(--lp);
+  --color-lp-2: var(--lp-2);
+  --color-lp-soft: var(--lp-soft);
+  --color-overlay: var(--overlay);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+:root {
+  --radius: 1rem;
+  
+  /* Institutional Colors: #2381C4, #99CCFF, #999999, #FFFFFF */
+  --brand: oklch(0.584 0.147 248.2); /* #2381C4 */
+  --brand-light: oklch(0.824 0.098 242.7); /* #99CCFF */
+  --brand-gray: oklch(0.674 0 0); /* #999999 */
+  
+  /* Forzamos a que el "deep" (usado en Footer y Títulos) sea el mismo azul para que no haya #004479 */
+  --brand-deep: oklch(0.584 0.147 248.2); 
+  
+  --overlay: oklch(0.250 0.050 250);
+  
+  /* Landscape palettes */
+  --beni: oklch(0.69 0.12 72); --beni-2: var(--brand); --beni-soft: oklch(0.94 0.03 80);
+  --yungas: oklch(0.49 0.09 162); --yungas-2: oklch(0.36 0.07 155); --yungas-soft: oklch(0.94 0.02 165);
+  --andes: oklch(0.59 0.07 230); --andes-2: oklch(0.6 0.04 60); --andes-soft: oklch(0.94 0.015 220);
+  --seco: oklch(0.58 0.12 38); --seco-2: oklch(0.56 0.12 65); --seco-soft: oklch(0.93 0.025 45);
+  --amazonia: oklch(0.6 0.11 128); --amazonia-2: oklch(0.79 0.11 120); --amazonia-soft: oklch(0.94 0.03 120);
+  
+  --lp: var(--brand); --lp-2: var(--brand-light); --lp-soft: var(--secondary);
+
+  --background: oklch(1 0 0);
+  
+  /* Los textos principales también pasan a ser el nuevo azul */
+  --foreground: oklch(0.584 0.147 248.2); 
+  
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.584 0.147 248.2);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.584 0.147 248.2);
+  
+  --primary: oklch(0.584 0.147 248.2); /* #2381C4 */
+  --primary-foreground: oklch(1 0 0);
+  
+  --secondary: oklch(0.96 0.015 245);
+  --secondary-foreground: oklch(0.584 0.147 248.2);
+  --muted: oklch(0.97 0.006 245);
+  --muted-foreground: oklch(0.5 0.006 270);
+  --accent: oklch(0.93 0.03 245);
+  --accent-foreground: oklch(0.584 0.147 248.2);
+  --destructive: oklch(0.577 0.245 27.325);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.91 0.01 245);
+  --input: oklch(0.89 0.01 245);
+  --ring: oklch(0.584 0.147 248.2);
+  
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.984 0.003 247.858);
+  --sidebar-foreground: oklch(0.584 0.147 248.2);
+  --sidebar-primary: oklch(0.584 0.147 248.2);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.968 0.007 247.896);
+  --sidebar-accent-foreground: oklch(0.584 0.147 248.2);
+  --sidebar-border: oklch(0.929 0.013 255.508);
+  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --shadow-card: 0 18px 40px -24px color-mix(in oklab, var(--brand-deep) 45%, transparent);
+}
+
+.theme-beni { --lp: var(--beni); --lp-2: var(--beni-2); --lp-soft: var(--beni-soft); }
+.theme-yungas { --lp: var(--yungas); --lp-2: var(--yungas-2); --lp-soft: var(--yungas-soft); }
+.theme-andes { --lp: var(--andes); --lp-2: var(--andes-2); --lp-soft: var(--andes-soft); }
+.theme-seco { --lp: var(--seco); --lp-2: var(--seco-2); --lp-soft: var(--seco-soft); }
+.theme-amazonia { --lp: var(--amazonia); --lp-2: var(--amazonia-2); --lp-soft: var(--amazonia-soft); }
+
+.dark {
+  --background: oklch(0.129 0.042 264.695);
+  --foreground: oklch(0.984 0.003 247.858);
+  --card: oklch(0.208 0.042 265.755);
+  --card-foreground: oklch(0.984 0.003 247.858);
+  --popover: oklch(0.208 0.042 265.755);
+  --popover-foreground: oklch(0.984 0.003 247.858);
+  --primary: oklch(0.929 0.013 255.508);
+  --primary-foreground: oklch(0.208 0.042 265.755);
+  --secondary: oklch(0.279 0.041 260.031);
+  --secondary-foreground: oklch(0.984 0.003 247.858);
+  --muted: oklch(0.279 0.041 260.031);
+  --muted-foreground: oklch(0.704 0.04 256.788);
+  --accent: oklch(0.279 0.041 260.031);
+  --accent-foreground: oklch(0.984 0.003 247.858);
+  --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.984 0.003 247.858);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.551 0.027 264.364);
+  --chart-1: oklch(0.488 0.243 264.376);
+  --chart-2: oklch(0.696 0.17 162.48);
+  --chart-3: oklch(0.769 0.188 70.08);
+  --chart-4: oklch(0.627 0.265 303.9);
+  --chart-5: oklch(0.645 0.246 16.439);
+  --sidebar: oklch(0.208 0.042 265.755);
+  --sidebar-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-accent: oklch(0.279 0.041 260.031);
+  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.551 0.027 264.364);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+  }
+}
+
+@layer base {
+  html { scroll-behavior: smooth; scroll-padding-top: 7rem; }
+  body { font-family: var(--font-sans); overflow-x: hidden; }
+  h1, h2, h3 { font-family: var(--font-display); letter-spacing: -0.01em; }
+}
+
+@utility shadow-card { box-shadow: var(--shadow-card); }
+@utility hero-overlay {
+  background: linear-gradient(90deg, color-mix(in oklab, var(--overlay) 82%, transparent) 0%, color-mix(in oklab, var(--overlay) 45%, transparent) 55%, color-mix(in oklab, var(--overlay) 15%, transparent) 100%);
+}
+@utility card-overlay {
+  background: linear-gradient(180deg, transparent 30%, color-mix(in oklab, var(--overlay) 85%, transparent) 100%);
+}
+@utility section { padding-block: clamp(4rem, 8vw, 7rem); }
+@utility container-site { width: 100%; max-width: 80rem; margin-inline: auto; padding-inline: clamp(1rem, 4vw, 2rem); }
+
+@keyframes rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+@utility animate-rise { animation: rise 0.8s cubic-bezier(.2,.7,.2,1) both; }
