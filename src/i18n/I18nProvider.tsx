@@ -21,7 +21,6 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, []);
   useEffect(() => {
     document.documentElement.lang = lang;
-    document.title = (dictionaries[lang].meta.title);
   }, [lang]);
   const setLang = useCallback((l: Lang) => {
     setLangState(l);

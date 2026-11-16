@@ -10,6 +10,10 @@ import {
 } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 
+import { I18nProvider } from "@/i18n/I18nProvider";
+import { Header } from "@/components/site/Header";
+import { Footer } from "@/components/site/Footer";
+import { DonationReminder } from "@/components/site/DonationForm";
 import { Toaster } from "@/components/ui/sonner";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -123,7 +127,12 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Outlet />
+      <I18nProvider>
+        <Header />
+        <Outlet />
+        <Footer />
+        <DonationReminder />
+      </I18nProvider>
       <Toaster />
     </QueryClientProvider>
   );

@@ -1,8 +1,9 @@
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
 import { Heart, UserPlus, MapPin, Newspaper, Building2, CheckCircle2 } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SectionHeading } from "./SectionHeading";
 import { Button } from "@/components/ui/button";
+import { DonationForm } from "./DonationForm";
 
 const field = "mt-1.5 w-full rounded-2xl border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring";
 
@@ -17,17 +18,6 @@ export function Contact() {
     e.currentTarget.reset();
   };
 
-  // Cargar el script de Givebutter solo en el cliente para evitar errores de SSR
-  useEffect(() => {
-    if (typeof window !== "undefined" && !document.getElementById("givebutter-script")) {
-      const script = document.createElement("script");
-      script.src = "https://widgets.givebutter.com/latest.umd.cjs?acct=d3Z2XsELTXeIww2E"; 
-      script.async = true;
-      script.id = "givebutter-script";
-      document.head.appendChild(script);
-    }
-  }, []);
-
   return (
     <section id="contacto" className="section">
       <div className="container-site grid gap-12 lg:grid-cols-2">
@@ -35,7 +25,7 @@ export function Contact() {
           <SectionHeading eyebrow={t("contact.eyebrow")} title={t("contact.title")} />
           <ul className="mt-10 grid gap-4 sm:grid-cols-2">
             {t<{ title: string; text: string; cta: string }[]>("contact.cards").map((c, i) => {
-              const Icon = icons[i % icons.length]!;
+              const Icon = icons[i % icons.length] ?? Heart;
               const isDonate = i === 0;
               return (
                 <li
@@ -70,16 +60,7 @@ export function Contact() {
         </div>
 
         <div className="space-y-8">
-          {/* Formulario Givebutter incrustado */}
-          <div id="givebutter-form" className="rounded-3xl bg-muted p-6 sm:p-8">
-            <h3 className="text-2xl text-brand-deep">Donar</h3>
-            <div className="mt-4 w-full flex justify-center">
-              <givebutter-widget 
-                id="L4E3Vq" 
-                style={{ width: "100%", maxWidth: "440px" }}
-              ></givebutter-widget>
-            </div>
-          </div>
+          <DonationForm />
 
           {/* Formulario de contacto existente */}
           <form id="form" onSubmit={submit} className="h-fit rounded-3xl bg-muted p-6 sm:p-10">
