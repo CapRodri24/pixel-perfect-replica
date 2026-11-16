@@ -5,6 +5,7 @@ import { Landscapes } from "@/components/site/Landscapes";
 import { Programs } from "@/components/site/Programs";
 import { Resources } from "@/components/site/Resources";
 import { News } from "@/components/site/News";
+import { SectionShortcut } from "@/components/site/SectionView";
 import { Contact } from "@/components/site/Contact";
 
 export const Route = createFileRoute("/")({
@@ -26,11 +27,17 @@ function Index() {
       <main>
         <Hero />
         <About />
+        <SectionShortcut to="/nosotros" />
         <Landscapes />
+        <SectionShortcut to="/paisajes" />
         <Programs />
+        <SectionShortcut to="/programas" />
         <Resources />
+        <SectionShortcut to="/recursos" />
         <News />
+        <SectionShortcut to="/noticias" />
         <Contact />
+        <SectionShortcut to="/contacto" />
       </main>
   );
 }

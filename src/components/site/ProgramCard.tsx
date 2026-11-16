@@ -1,3 +1,5 @@
+import { Link } from "@tanstack/react-router";
+import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import type { ProgramId, LandscapeId } from "@/config/content";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -15,9 +17,9 @@ export function ProgramCard({ id, landscape, image }: { id: ProgramId; landscape
         </span>
         <h3 className="mt-4 text-xl text-brand-deep">{t(`programs.items.${id}.name`)}</h3>
         <p className="mt-2 flex-1 text-sm leading-relaxed text-muted-foreground">{t(`programs.items.${id}.text`)}</p>
-        <a href="#programas" className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-primary hover:gap-3 transition-all">
+        <Button asChild variant="ghost" className="mt-5 w-fit px-0"><Link to="/programas/$id" params={{ id }}>
           {t("programs.more")} <ArrowRight className="size-4" />
-        </a>
+        </Link></Button>
       </div>
     </article>
   );
