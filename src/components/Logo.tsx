@@ -1,16 +1,15 @@
-import { Link } from "react-router-dom"; // <-- CORREGIDO
-import { Feather } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export function Logo({ light }: { light?: boolean }) {
   return (
-    <Link to="/" className="flex items-center gap-2.5" aria-label="Asociación Armonía">
-      <span className={`grid size-10 place-items-center rounded-full ${light ? "bg-primary-foreground text-primary" : "bg-primary text-primary-foreground"}`}>
-        <Feather className="size-5" />
-      </span>
-      <span className="leading-none">
-        <span className={`block text-[0.65rem] font-semibold uppercase tracking-[0.25em] ${light ? "text-brand-light" : "text-brand-gray"}`}>Asociación</span>
-        <span className={`block font-display text-xl font-semibold ${light ? "text-primary-foreground" : "text-primary"}`}>Armonía</span>
-      </span>
+    <Link to="/" className="flex items-center gap-2.5 shrink-0" aria-label="Asociación Armonía">
+      <img 
+        src={light ? "/images/logo-blanco.png" : "/images/logo.png"} 
+        alt="Asociación Armonía" 
+        // h-12 (48px de alto) o h-14 (56px), w-auto, y rounded-xl para esquinas suaves.
+        // Si quieres que sea un círculo perfecto, cambia "rounded-xl" por "rounded-full"
+        className="h-12 w-auto object-contain rounded-xl" 
+      />
     </Link>
   );
 }

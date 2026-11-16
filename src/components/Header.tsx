@@ -9,7 +9,6 @@ export const quickLinks = [
   { key: "donate", href: "/donar" },
   { key: "member", href: "/contacto" },
   { key: "reserves", href: "/paisajes" },
-  // { key: "guide", href: "/recursos" }, // <-- ELIMINADO
   { key: "anniversary", href: "/noticias" },
 ] as const;
 
@@ -17,7 +16,6 @@ const navSections = [
   { key: "about", to: "/nosotros", hash: "nosotros" },
   { key: "landscapes", to: "/paisajes", hash: "paisajes" },
   { key: "programs", to: "/programas", hash: "programas" },
-  // { key: "resources", to: "/recursos", hash: "recursos" }, // <-- ELIMINADO
   { key: "news", to: "/noticias", hash: "noticias" },
   { key: "contact", to: "/contacto", hash: "contacto" },
 ] as const;
@@ -46,10 +44,12 @@ export function Header() {
   useEffect(() => { setOpen(false); }, [pathname]);
 
   return <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
-    <div className="container-site flex h-16 items-center justify-between gap-3 xl:h-20">
+    {/* ALTURA AJUSTADA AQUÍ: h-16 (móvil) y xl:h-20 (escritorio) */}
+    <div className="mx-auto max-w-[1600px] flex h-16 items-center justify-between gap-6 px-4 sm:px-8 xl:h-20">
       <Logo />
+      
       <nav aria-label="Principal" className="hidden xl:block">
-        <ul className="flex gap-0.5">
+        <ul className="flex gap-1">
           {navSections.map((s) => <li key={s.key} className="group relative">
             <Button asChild variant="ghost" className={pathname.startsWith(s.to) ? "bg-secondary text-primary" : "text-brand-deep"}>
               <Link to={s.to}>{label(s.key)}<ChevronDown className="size-3" /></Link>
@@ -63,12 +63,14 @@ export function Header() {
           </li>)}
         </ul>
       </nav>
-      <div className="flex shrink-0 items-center gap-2">
+      
+      <div className="flex shrink-0 items-center gap-4">
         <div className="hidden sm:block"><LangSwitch /></div>
         <Button asChild variant="hero"><Link to="/donar"><Heart />{lang === "es" ? "Donar" : "Donate"}</Link></Button>
         <Button variant="ghost" size="icon" className="xl:hidden" aria-label={t("nav.menu")} aria-expanded={open} onClick={() => setOpen(true)}><Menu /></Button>
       </div>
     </div>
+    
     {open && <div className="fixed inset-0 z-[100] flex h-dvh flex-col bg-background xl:hidden">
       <div className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4"><Logo /><div className="flex items-center gap-2"><LangSwitch /><Button variant="ghost" size="icon" aria-label={t("nav.close")} onClick={() => setOpen(false)}><X /></Button></div></div>
       <nav aria-label="Menú móvil" className="flex-1 overflow-y-auto px-4 py-5">

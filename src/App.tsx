@@ -8,7 +8,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { DonationReminder } from "@/components/DonationForm";
 
-// Layout Admin
+// Layout Admin (Ahora contiene todo el layout del admin)
 import { AdminSidebar } from "@/components/AdminSidebar";
 
 // Vistas Públicas
@@ -46,15 +46,9 @@ function PublicLayout() {
   );
 }
 
+// El Layout de Admin ahora solo renderiza el Sidebar
 function AdminLayout() {
-  return (
-    <div className="flex min-h-screen bg-muted/20">
-      <AdminSidebar />
-      <main className="flex-1 p-8 overflow-y-auto">
-        <Outlet />
-      </main>
-    </div>
-  );
+  return <AdminSidebar />;
 }
 
 function AppRoutes() {
