@@ -120,8 +120,6 @@ export function Landscapes({ initialSelected = null }: { initialSelected?: strin
   // Claim (i18n con fallback)
   const tagline =
     lang === "es"
-      ? "Diferentes paisajes, una misma misión"
-      : "Different landscapes, one same mission";
   const searchPlaceholder = lang === "es" ? "Buscar paisajes…" : "Search landscapes…";
   const searchLabel = lang === "es" ? "Buscar" : "Search";
   const clearLabel = lang === "es" ? "Limpiar" : "Clear";
