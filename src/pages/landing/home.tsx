@@ -61,7 +61,6 @@ export default function Home() {
       <Noticias />
       <SectionShortcut to="/noticias" />
       
-      <SectionShortcut to="/contacto" />
     </main>
   );
 }

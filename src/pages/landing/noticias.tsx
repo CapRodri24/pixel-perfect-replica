@@ -15,16 +15,13 @@ export function Noticias() {
   const { t, lang } = useI18n();
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<NewsCategory | "all">("all");
-  const [land, setLand] = useState("all");
-  const [prog, setProg] = useState("all");
 
-  const landLabel = (ref: string | null) => ref ? { name: t(`landscapes.items.${ref}.name`), theme: `theme-${ref}` } : null;
   const all = useMemo(() => news.map((n) => ({ ...n, title: t<string>(`news.items.${n.id}.title`), text: t<string>(`news.items.${n.id}.text`) })), [t]);
   const list = useMemo(() => all.filter((n) => {
     const text = `${n.title} ${n.text}`.toLowerCase();
-    return (cat === "all" || n.category === cat) && (land === "all" || n.landscape === land) && (prog === "all" || n.program === prog) && text.includes(q.trim().toLowerCase());
-  }), [q, cat, land, prog, all]);
-  const reset = () => { setQ(""); setCat("all"); setLand("all"); setProg("all"); };
+    return (cat === "all" || n.category === cat) && text.includes(q.trim().toLowerCase());
+  }), [q, cat, all]);
+  const reset = () => { setQ(""); setCat("all"); };
   const fmt = (d: string) => new Date(d + "T12:00:00").toLocaleDateString(lang === "es" ? "es-BO" : "en-US", { day: "numeric", month: "short", year: "numeric" });
 
   const title = lang === "es" ? "Noticias" : "News";
@@ -33,20 +30,12 @@ export function Noticias() {
     <SectionView title={title}>
       <div className="container-site pb-16 pt-8">
         {/* FILTROS */}
-        <div className="grid gap-3 md:grid-cols-[1.4fr_1fr_1fr]">
+        <div className="grid gap-3 md:grid-cols-1">
           <label className="relative">
             <span className="sr-only">{t("news.search")}</span>
             <Search className="absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={t("news.search")} className={`${selectCls} pl-11`} />
           </label>
-          <select aria-label={t("news.landscape")} value={land} onChange={(e) => setLand(e.target.value)} className={selectCls}>
-            <option value="all">{t("news.allLandscapes")}</option>
-            {landscapes.map((l) => <option key={l.id} value={l.id}>{t(`landscapes.items.${l.id}.name`)}</option>)}
-          </select>
-          <select aria-label={t("news.program")} value={prog} onChange={(e) => setProg(e.target.value)} className={selectCls}>
-            <option value="all">{t("news.allPrograms")}</option>
-            {programs.map((p) => <option key={p.id} value={p.id}>{t(`programs.items.${p.id}.name`)}</option>)}
-          </select>
         </div>
         <div className="-mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
           {(["all", ...newsCategories] as const).map((c) => (
@@ -66,7 +55,7 @@ export function Noticias() {
         ) : (
           <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {list.map((n, i) => (
-              <article key={n.id} className={`${landLabel(n.landscape)?.theme ?? ""} group flex flex-col overflow-hidden rounded-3xl bg-background transition-all hover:-translate-y-1 hover:shadow-card border border-border ${i === 0 && list.length > 3 ? "sm:col-span-2 lg:row-span-2" : ""}`}>
+              <article key={n.id} className={`group flex flex-col overflow-hidden rounded-3xl bg-background transition-all hover:-translate-y-1 hover:shadow-card border border-border ${i === 0 && list.length > 3 ? "sm:col-span-2 lg:row-span-2" : ""}`}>
                 <div className="relative overflow-hidden">
                   <img src={n.image} alt="" loading="lazy" width={1600} height={1008} className={`w-full object-cover transition-transform duration-700 group-hover:scale-105 ${i === 0 && list.length > 3 ? "aspect-[16/10] lg:aspect-[4/3]" : "aspect-[16/10]"}`} />
                   {(n.category === "videos") && <PlayCircle className="absolute left-1/2 top-1/2 size-14 -translate-x-1/2 -translate-y-1/2 text-primary-foreground drop-shadow-lg" />}
@@ -75,7 +64,6 @@ export function Noticias() {
                 <div className="flex flex-1 flex-col p-5">
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Calendar className="size-3.5" /> {fmt(n.date)}
-                    {n.landscape && <><span className="ml-1 size-2 rounded-full bg-lp" />{landLabel(n.landscape)?.name}</>}
                   </div>
                   <h3 className={`mt-3 leading-snug text-brand-deep ${i === 0 && list.length > 3 ? "text-2xl" : "text-lg"}`}>{n.title}</h3>
                   <p className="mt-2 flex-1 text-sm text-muted-foreground">{n.text}</p>

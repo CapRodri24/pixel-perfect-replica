@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/I18nProvider";
 
-export type SectionPath = "/nosotros" | "/paisajes" | "/programas" | "/recursos" | "/noticias" | "/contacto";
+export type SectionPath = "/nosotros" | "/paisajes" | "/programas" | "/recursos" | "/noticias";
 
 export function SectionView({ title, children }: { title: string; children: ReactNode }) {
   const { lang } = useI18n();

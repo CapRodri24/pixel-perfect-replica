@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowRight, Search, X } from "lucide-react";
 import { Link } from "react-router-dom";
 import { landscapes, programs, type LandscapeId, type ProgramId } from "@/config/content";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -31,32 +31,142 @@ function ProgramCard({ id, landscape, image }: { id: ProgramId; landscape: Lands
 }
 
 // --- COMPONENTE PRINCIPAL DE PROGRAMAS ---
+type FilterId = LandscapeId | "all" | "national";
+
 export function Programs() {
-  const { t } = useI18n();
-  const [filter, setFilter] = useState<LandscapeId | "all" | "national">("all");
-  const list = programs.filter((p) => filter === "all" || (filter === "national" ? !p.landscape : p.landscape === filter));
-  
-  const chips: { id: typeof filter; label: string }[] = [
+  const { t, lang } = useI18n();
+  const isEs = lang === "es";
+
+  const tagline = isEs
+    ? "Diferentes programas, una misma misión"
+    : "Different programs, one same mission";
+  const searchPlaceholder = isEs
+    ? "Buscar programas, paisajes, misiones…"
+    : "Search programs, landscapes, missions…";
+  const searchLabel = isEs ? "Buscar" : "Search";
+  const clearLabel = isEs ? "Limpiar" : "Clear";
+  const noResults = isEs
+    ? "No se encontraron programas."
+    : "No programs found.";
+
+  const [filter, setFilter] = useState<FilterId>("all");
+  const [query, setQuery] = useState("");
+
+  const chips: { id: FilterId; label: string }[] = [
     { id: "all", label: t("programs.all") },
-    ...landscapes.map((l) => ({ id: l.id, label: t(`landscapes.items.${l.id}.name`) })),
+    ...landscapes.map((l) => ({ id: l.id as FilterId, label: t(`landscapes.items.${l.id}.name`) })),
     { id: "national", label: t("programs.national") },
   ];
+
+  // Filtrado combinado: chip + texto
+  const list = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return programs.filter((p) => {
+      // 1) Filtro por chip
+      const matchesChip =
+        filter === "all" ||
+        (filter === "national" ? !p.landscape : p.landscape === filter);
+
+      if (!matchesChip) return false;
+
+      // 2) Filtro por texto
+      if (!q) return true;
+
+      const name = t(`programs.items.${p.id}.name`).toLowerCase();
+      const text = t(`programs.items.${p.id}.text`).toLowerCase();
+      const landscapeName = p.landscape
+        ? t(`landscapes.items.${p.landscape}.name`).toLowerCase()
+        : t("programs.national").toLowerCase();
+
+      return name.includes(q) || text.includes(q) || landscapeName.includes(q);
+    });
+  }, [filter, query, t]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // El filtrado ya es reactivo.
+  };
+
+  const handleClear = () => {
+    setQuery("");
+    setFilter("all");
+  };
 
   return (
     <section id="programas" className="section">
       <div className="container-site">
-        <SectionHeading eyebrow={t("programs.eyebrow")} title={t("programs.title")} text={t("programs.text")} />
-        <div className="-mx-4 mt-8 flex gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
+        <SectionHeading
+          eyebrow={t("programs.eyebrow")}
+          title={t("programs.title")}
+          text={t("programs.text")}
+        />
+
+        {/* Claim */}
+        <p className="mt-6 text-lg font-semibold text-brand-deep sm:text-xl">
+          {tagline}
+        </p>
+
+        {/* Buscador */}
+        <form
+          onSubmit={handleSubmit}
+          role="search"
+          className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center"
+        >
+          <label htmlFor="program-search" className="sr-only">
+            {searchLabel}
+          </label>
+          <div className="relative w-full">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              id="program-search"
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder={searchPlaceholder}
+              className="w-full rounded-full border border-border bg-background py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+          <Button type="submit">{searchLabel}</Button>
+          {(query || filter !== "all") && (
+            <Button type="button" variant="outline" onClick={handleClear}>
+              <X className="size-4" /> {clearLabel}
+            </Button>
+          )}
+        </form>
+
+        {/* Chips relacionados (filtro por paisaje) */}
+        <div className="-mx-4 mt-6 flex gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none]">
           {chips.map((c) => (
-            <button key={c.id} onClick={() => setFilter(c.id)} aria-pressed={filter === c.id}
-              className={`${c.id !== "all" && c.id !== "national" ? `theme-${c.id}` : ""} flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${filter === c.id ? "border-primary bg-primary text-primary-foreground" : "border-border hover:border-primary hover:text-primary"}`}>
-              {c.id !== "all" && c.id !== "national" && <span className="size-2.5 rounded-full bg-lp" />}{c.label}
+            <button
+              key={c.id}
+              onClick={() => setFilter(c.id)}
+              aria-pressed={filter === c.id}
+              className={`${
+                c.id !== "all" && c.id !== "national" ? `theme-${c.id}` : ""
+              } flex shrink-0 items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+                filter === c.id
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border hover:border-primary hover:text-primary"
+              }`}
+            >
+              {c.id !== "all" && c.id !== "national" && (
+                <span className="size-2.5 rounded-full bg-lp" />
+              )}
+              {c.label}
             </button>
           ))}
         </div>
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {list.map((p) => <ProgramCard key={p.id} {...p} />)}
-        </div>
+
+        {/* Lista filtrada */}
+        {list.length === 0 ? (
+          <p className="mt-12 py-10 text-center text-muted-foreground">{noResults}</p>
+        ) : (
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {list.map((p) => (
+              <ProgramCard key={p.id} {...p} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
