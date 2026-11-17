@@ -15,6 +15,12 @@ type Landscape = {
   blocks: Block[];
 };
 
+type ConfirmState =
+  | { kind: "create"; blocks: Block[] }
+  | { kind: "update"; id: string; blocks: Block[] }
+  | { kind: "delete"; id: string; title: string }
+  | null;
+
 const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
 
 const BLOCK_LABELS: Record<BlockType, string> = {
@@ -62,9 +68,11 @@ function fileToDataUrl(file: File): Promise<string> {
 
 export default function PaisajesAdmin() {
   const [items, setItems] = useState<Landscape[]>([]);
-  const [isCreating, setIsCreating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [blocks, setBlocks] = useState<Block[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [confirm, setConfirm] = useState<ConfirmState>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("admin_paisajes");
@@ -95,13 +103,22 @@ export default function PaisajesAdmin() {
   };
 
   const openCreate = () => {
+    setEditingId(null);
     setBlocks([{ id: uid(), type: "title", value: "" }]);
     setError(null);
-    setIsCreating(true);
+    setIsEditing(true);
   };
 
-  const cancelCreate = () => {
-    setIsCreating(false);
+  const openEdit = (item: Landscape) => {
+    setEditingId(item.id);
+    setBlocks(item.blocks.map((b) => ({ ...b })));
+    setError(null);
+    setIsEditing(true);
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditingId(null);
     setBlocks([]);
     setError(null);
   };
@@ -146,47 +163,73 @@ export default function PaisajesAdmin() {
     });
   };
 
+  const validateBlocks = (list: Block[]): string | null => {
+    const titleBlock = list.find((b) => b.type === "title");
+    if (!titleBlock || !titleBlock.value.trim()) return "El título es obligatorio.";
+
+    const clean = list.filter((b) => {
+      if (b.type === "subtitle" || b.type === "text") return stripHtml(b.value).length > 0;
+      return b.value.trim().length > 0;
+    });
+    if (clean.length < 2) return "Añade al menos un bloque adicional con contenido.";
+
+    const badVideo = clean.find((b) => b.type === "video" && !getYouTubeId(b.value));
+    if (badVideo) return "Cada vídeo debe ser un enlace válido de YouTube.";
+
+    return null;
+  };
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-
-    const titleBlock = blocks.find((b) => b.type === "title");
-    if (!titleBlock || !titleBlock.value.trim()) {
-      setError("El título es obligatorio.");
+    const validationError = validateBlocks(blocks);
+    if (validationError) {
+      setError(validationError);
       return;
     }
-
-    const cleanBlocks = blocks.filter((b) => {
+    const clean = blocks.filter((b) => {
       if (b.type === "subtitle" || b.type === "text") return stripHtml(b.value).length > 0;
       return b.value.trim().length > 0;
     });
 
-    if (cleanBlocks.length < 2) {
-      setError("Añade al menos un bloque adicional con contenido.");
-      return;
+    if (editingId) {
+      setConfirm({ kind: "update", id: editingId, blocks: clean });
+    } else {
+      setConfirm({ kind: "create", blocks: clean });
     }
-
-    const badVideo = cleanBlocks.find(
-      (b) => b.type === "video" && !getYouTubeId(b.value)
-    );
-    if (badVideo) {
-      setError("Cada vídeo debe ser un enlace válido de YouTube.");
-      return;
-    }
-
-    const newItem: Landscape = { id: uid(), blocks: cleanBlocks };
-    persist([...items, newItem]);
-    cancelCreate();
   };
 
-  const handleDelete = (id: string) => {
-    persist(items.filter((i) => i.id !== id));
+  const confirmAction = () => {
+    if (!confirm) return;
+
+    if (confirm.kind === "create") {
+      const newItem: Landscape = { id: uid(), blocks: confirm.blocks };
+      persist([...items, newItem]);
+      cancelEdit();
+    } else if (confirm.kind === "update") {
+      persist(items.map((i) => (i.id === confirm.id ? { ...i, blocks: confirm.blocks } : i)));
+      cancelEdit();
+    } else if (confirm.kind === "delete") {
+      persist(items.filter((i) => i.id !== confirm.id));
+      if (editingId === confirm.id) cancelEdit();
+    }
+
+    setConfirm(null);
+  };
+
+  const askDelete = (item: Landscape) => {
+    const title = item.blocks.find((b) => b.type === "title");
+    setConfirm({
+      kind: "delete",
+      id: item.id,
+      title: title ? stripHtml(title.value) : "(Sin título)",
+    });
   };
 
   return (
     <div>
       <div className="mb-6 flex items-center justify-between gap-4">
         <h1 className="text-3xl font-display text-brand-deep">Gestión de Paisajes</h1>
-        {!isCreating && (
+        {!isEditing && (
           <button
             onClick={openCreate}
             className="bg-primary text-white px-5 py-2.5 rounded-xl font-semibold hover:opacity-90"
@@ -196,17 +239,20 @@ export default function PaisajesAdmin() {
         )}
       </div>
 
-      {isCreating && (
+      {/* --- Editor + vista previa --- */}
+      {isEditing && (
         <div className="mb-8 grid gap-6 lg:grid-cols-2">
           <form
             onSubmit={handleSubmit}
             className="space-y-4 rounded-2xl border border-border bg-white p-6"
           >
             <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold text-brand-deep">Nuevo paisaje</h2>
+              <h2 className="text-xl font-semibold text-brand-deep">
+                {editingId ? "Editar paisaje" : "Nuevo paisaje"}
+              </h2>
               <button
                 type="button"
-                onClick={cancelCreate}
+                onClick={cancelEdit}
                 className="text-sm text-muted-foreground hover:text-foreground"
               >
                 Cancelar
@@ -253,11 +299,11 @@ export default function PaisajesAdmin() {
                 type="submit"
                 className="rounded-xl bg-primary px-6 py-2 font-semibold text-white hover:opacity-90"
               >
-                Guardar paisaje
+                {editingId ? "Guardar cambios" : "Guardar paisaje"}
               </button>
               <button
                 type="button"
-                onClick={cancelCreate}
+                onClick={cancelEdit}
                 className="rounded-xl border border-border px-6 py-2 font-semibold hover:bg-muted"
               >
                 Cancelar
@@ -274,58 +320,167 @@ export default function PaisajesAdmin() {
         </div>
       )}
 
-      <div className="space-y-4">
-        {items.length === 0 && !isCreating && (
-          <p className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
-            No hay paisajes todavía. Pulsa "+ Añadir paisaje" para crear el primero.
-          </p>
-        )}
+      {/* --- Lista: solo visible cuando NO se está editando --- */}
+      {!isEditing && (
+        <div className="space-y-4">
+          {items.length === 0 && (
+            <p className="rounded-xl border border-dashed border-border p-8 text-center text-muted-foreground">
+              No hay paisajes todavía. Pulsa "+ Añadir paisaje" para crear el primero.
+            </p>
+          )}
 
-        {items.map((item) => {
-          const titleBlock = item.blocks.find((b) => b.type === "title");
-          const imageBlock = item.blocks.find((b) => b.type === "image");
-          const textBlock = item.blocks.find((b) => b.type === "text");
+          {items.map((item) => {
+            const titleBlock = item.blocks.find((b) => b.type === "title");
+            const imageBlock = item.blocks.find((b) => b.type === "image");
+            const textBlock = item.blocks.find((b) => b.type === "text");
 
-          return (
-            <div key={item.id} className="flex items-start gap-4 rounded-xl border bg-white p-4">
-              {imageBlock ? (
-                <img
-                  src={imageBlock.value}
-                  alt=""
-                  className="h-24 w-24 shrink-0 rounded-lg object-cover"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).style.display = "none";
-                  }}
-                />
-              ) : (
-                <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg bg-muted text-xs text-muted-foreground">
-                  Sin foto
-                </div>
-              )}
-
-              <div className="min-w-0 flex-1">
-                <h3 className="font-bold">
-                  {titleBlock ? stripHtml(titleBlock.value) : "(Sin título)"}
-                </h3>
-                {textBlock && (
-                  <p className="line-clamp-3 text-sm text-muted-foreground">
-                    {stripHtml(textBlock.value)}
-                  </p>
+            return (
+              <div key={item.id} className="flex items-start gap-4 rounded-xl border bg-white p-4">
+                {imageBlock ? (
+                  <img
+                    src={imageBlock.value}
+                    alt=""
+                    className="h-24 w-24 shrink-0 rounded-lg object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).style.display = "none";
+                    }}
+                  />
+                ) : (
+                  <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-lg bg-muted text-xs text-muted-foreground">
+                    Sin foto
+                  </div>
                 )}
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {item.blocks.length} bloque{item.blocks.length === 1 ? "" : "s"}
-                </p>
-              </div>
 
-              <button
-                onClick={() => handleDelete(item.id)}
-                className="shrink-0 px-4 font-bold text-red-500"
-              >
-                Borrar
-              </button>
-            </div>
-          );
-        })}
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-bold">
+                    {titleBlock ? stripHtml(titleBlock.value) : "(Sin título)"}
+                  </h3>
+                  {textBlock && (
+                    <p className="line-clamp-3 text-sm text-muted-foreground">
+                      {stripHtml(textBlock.value)}
+                    </p>
+                  )}
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {item.blocks.length} bloque{item.blocks.length === 1 ? "" : "s"}
+                  </p>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    onClick={() => openEdit(item)}
+                    className="rounded-lg p-2 text-muted-foreground hover:bg-muted hover:text-foreground"
+                    aria-label="Editar paisaje"
+                    title="Editar"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={() => askDelete(item)}
+                    className="rounded-lg p-2 text-red-500 hover:bg-red-50"
+                    aria-label="Eliminar paisaje"
+                    title="Eliminar"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="size-5">
+                      <path d="M3 6h18" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                      <path d="M10 11v6" />
+                      <path d="M14 11v6" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* --- Diálogo de confirmación --- */}
+      <ConfirmDialog state={confirm} onConfirm={confirmAction} onCancel={() => setConfirm(null)} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Diálogo de confirmación
+// ---------------------------------------------------------------------------
+function ConfirmDialog({
+  state,
+  onConfirm,
+  onCancel,
+}: {
+  state: ConfirmState;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  useEffect(() => {
+    if (!state) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onCancel();
+      if (e.key === "Enter") onConfirm();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [state, onCancel, onConfirm]);
+
+  if (!state) return null;
+
+  const config = {
+    create: {
+      title: "¿Guardar paisaje?",
+      text: "Se añadirá este paisaje a la lista. Podrás editarlo o eliminarlo después.",
+      confirmLabel: "Guardar",
+      danger: false,
+    },
+    update: {
+      title: "¿Guardar cambios?",
+      text: "Se actualizará el paisaje con el contenido actual.",
+      confirmLabel: "Guardar cambios",
+      danger: false,
+    },
+    delete: {
+      title: "¿Eliminar paisaje?",
+      text: `Se eliminará "${state.kind === "delete" ? state.title : ""}". Esta acción no se puede deshacer.`,
+      confirmLabel: "Eliminar",
+      danger: true,
+    },
+  }[state.kind];
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={config.title}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-lg font-bold text-brand-deep">{config.title}</h3>
+        <p className="mt-2 text-sm text-muted-foreground">{config.text}</p>
+        <div className="mt-6 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-xl border border-border px-4 py-2 text-sm font-semibold hover:bg-muted"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold text-white hover:opacity-90 ${
+              config.danger ? "bg-red-600" : "bg-primary"
+            }`}
+          >
+            {config.confirmLabel}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -455,7 +610,7 @@ function RichTextEditor({
       editorRef.current.innerHTML = value || "";
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [value]);
 
   const handleInput = () => {
     if (editorRef.current) {
