@@ -142,7 +142,6 @@ export function DonationReminder() {
               style={{ animation: "heart-pulse 1.2s ease-in-out infinite" }}
             />
             {lang === "es" ? "Donar" : "Donate"}
-            <ArrowUpRight />
           </Link>
         </Button>
       </div>
