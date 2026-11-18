@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Heart, ArrowUpRight } from "lucide-react";
+import { Heart, ArrowUpRight, Users, Trees, BookOpen } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 
@@ -145,6 +145,78 @@ export function DonationReminder() {
           </Link>
         </Button>
       </div>
+    </aside>
+  );
+}
+
+/** Botones flotantes verticales — círculos solo icono, colores mate (rojo/amarillo/verde), texto al hover */
+export function FloatingSideButtons() {
+  const { lang } = useI18n();
+
+  const items = [
+    {
+      to: "/contacto",
+      icon: Users,
+      es: "Hazte miembro",
+      en: "Become a member",
+      // Rojo mate (desaturado)
+      circle: "bg-red-700/90 hover:bg-red-700 ring-red-900/20 shadow-red-900/20",
+      label: "bg-red-700/95 text-red-50",
+    },
+    {
+      to: "/paisajes",
+      icon: Trees,
+      es: "Visita nuestras reservas",
+      en: "Visit our reserves",
+      // Amarillo mate (mostaza)
+      circle: "bg-yellow-600/90 hover:bg-yellow-600 ring-yellow-900/20 shadow-yellow-900/20 text-yellow-50",
+      label: "bg-yellow-600/95 text-yellow-50",
+    },
+    {
+      to: "/paisajes", // cambia por la ruta real de la guía si la tienes, p. ej. "/guia-aves"
+      icon: BookOpen,
+      es: "Guía de campo aves de Bolivia",
+      en: "Bolivia field guide to birds",
+      // Verde mate (oliva)
+      circle: "bg-green-700/90 hover:bg-green-700 ring-green-900/20 shadow-green-900/20",
+      label: "bg-green-700/95 text-green-50",
+    },
+  ] as const;
+
+  return (
+    <aside
+      aria-label={lang === "es" ? "Accesos rápidos" : "Quick links"}
+      className="fixed left-4 top-1/2 z-40 hidden -translate-y-1/2 flex-col gap-4 md:flex"
+    >
+      {items.map(({ to, icon: Icon, es, en, circle, label }) => {
+        const text = lang === "es" ? es : en;
+        return (
+          <div key={es} className="group relative flex items-center">
+            {/* Círculo solo con icono */}
+            <Link
+              to={to}
+              aria-label={text}
+              className={`relative inline-flex size-12 items-center justify-center rounded-full text-white ring-1 shadow-md transition-all duration-300 hover:scale-105 focus-visible:outline-none focus-visible:ring-2 ${circle}`}
+            >
+              <Icon className="size-5" />
+            </Link>
+
+            {/* Etiqueta que se despliega al hacer hover/focus */}
+            <span
+              role="tooltip"
+              className={`pointer-events-none absolute left-14 whitespace-nowrap rounded-full px-4 py-2 text-sm font-semibold shadow-md opacity-0 -translate-x-2 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100 group-focus-within:translate-x-0 group-focus-within:opacity-100 ${label}`}
+            >
+              {text}
+              {/* flecha del tooltip */}
+              <span
+                className="absolute -left-1 top-1/2 size-2 -translate-y-1/2 rotate-45"
+                style={{ backgroundColor: "inherit" }}
+                aria-hidden="true"
+              />
+            </span>
+          </div>
+        );
+      })}
     </aside>
   );
 }
