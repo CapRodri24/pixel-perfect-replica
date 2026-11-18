@@ -221,18 +221,9 @@ function DesktopDropdown({ section }: { section: NavGroup }) {
   return (
     <div className="invisible absolute left-0 top-full z-50 w-80 pt-3 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
       <span className="absolute left-6 top-2 size-2.5 rotate-45 border-l border-t border-border bg-popover" />
-      {/* ⚠️ SIN overflow-hidden: permite que el subpanel lateral se despliegue */}
       <div className="relative rounded-xl border border-border bg-gradient-to-b from-popover to-popover/95 p-2 shadow-xl ring-1 ring-black/5">
         <div className="px-3 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {pick(lang, section.es, section.en)}
-        </div>
-        <div className="mt-0.5 rounded-lg bg-primary/5 px-2 py-1.5">
-          <Button asChild variant="ghost" className="w-full justify-start gap-2 rounded-md px-2 text-sm font-medium text-primary hover:bg-primary/10">
-            <Link to={section.to} className="flex w-full items-center justify-between">
-              <span>{pick(lang, "Ver sección completa", "View full section")}</span>
-              <ChevronRight className="size-3.5" />
-            </Link>
-          </Button>
         </div>
         <div className="my-2 h-px bg-gradient-to-r from-transparent via-border to-transparent" />
         <div className="flex flex-col gap-0.5">
