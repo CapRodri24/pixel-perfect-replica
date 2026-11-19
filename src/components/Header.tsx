@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { ChevronDown, ChevronRight, Menu, X } from "lucide-react";
 import { useI18n, type Lang } from "@/i18n/I18nProvider";
 import { Logo } from "./Logo";
+import { landscapes } from "@/config/content";
 import { Button } from "@/components/ui/button";
 
 export const quickLinks = [
@@ -59,24 +60,25 @@ const navSections: NavGroup[] = [
     hash: "paisajes",
     children: [
       { key: "land-map", es: "Mapa general de paisajes", en: "Landscapes overview map", to: "/paisajes", hash: "mapa" },
-      { key: "land-ben", es: "Pastizales del Beni", en: "Beni grasslands", to: "/paisajes", hash: "beni" },
-      { key: "land-yungas", es: "Yungas", en: "Yungas", to: "/paisajes", hash: "yungas" },
-      { key: "land-andes", es: "Andes altos", en: "High Andes", to: "/paisajes", hash: "andes" },
-      { key: "land-dry", es: "Bosque seco interandino", en: "Inter-Andean dry forest", to: "/paisajes", hash: "bosque-seco" },
-      { key: "land-amazon", es: "Amazonía", en: "Amazon", to: "/paisajes", hash: "amazonia" },
+      ...landscapes.map((landscape) => ({
+        key: `land-${landscape.id}`,
+        es: `landscapes.items.${landscape.id}.name`,
+        en: `landscapes.items.${landscape.id}.name`,
+        to: "/paisajes?paisaje=beni",
+      })),
       {
         key: "land-programs",
         es: "Programas de conservación de biodiversidad en Bolivia",
         en: "Biodiversity conservation programs in Bolivia",
-        to: "/programas",
+        to: "/paisajes?paisaje=beni",
         hash: "programas",
         children: [
-          { key: "land-prog-birds", es: "Conservas aves", en: "Bird conservation", to: "/programas", hash: "aves" },
-          { key: "land-prog-kba", es: "KBA / Áreas clave", en: "KBA / Key areas", to: "/programas", hash: "kba" },
-          { key: "land-prog-heart", es: "Nature's heartbeat", en: "Nature's heartbeat", to: "/programas", hash: "natures-heartbeat" },
+          { key: "land-prog-birds", es: "Conservas aves", en: "Bird conservation", to: "/paisajes?paisaje=beni", hash: "aves" },
+          { key: "land-prog-kba", es: "KBA / Áreas clave", en: "KBA / Key areas", to: "/paisajes?paisaje=beni", hash: "kba" },
+          { key: "land-prog-heart", es: "Nature's heartbeat", en: "Nature's heartbeat", to: "/paisajes?paisaje=beni", hash: "natures-heartbeat" },
         ],
       },
-      { key: "land-andina", es: "Acción andina", en: "Acción Andina", to: "/paisajes", hash: "accion-andina" },
+      { key: "land-andina", es: "Acción andina", en: "Acción Andina", to: "/paisajes?paisaje=beni", hash: "accion-andina" },
     ],
   },
   {
@@ -172,8 +174,8 @@ function DropdownItem({
   item: NavItem;
   onNavigate?: (() => void) | undefined;
 }) {
-  const { lang } = useI18n();
-  const label = pick(lang, item.es, item.en);
+  const { lang, t } = useI18n();
+  const label = item.es.startsWith("landscapes.items.") ? t(item.es) : pick(lang, item.es, item.en);
   const hasChildren = !!item.children?.length;
   const href = `${item.to}${item.hash ? `#${item.hash}` : ""}`;
   return (
@@ -235,7 +237,7 @@ function DesktopDropdown({ section }: { section: NavGroup }) {
               const { hash: _hash, ...parentItem } = item;
               return (
                 <div key={item.key} className="group/sub relative">
-                  <DropdownItem item={parentItem} />
+                  <DropdownItem item={["about-partners", "land-programs"].includes(item.key) ? item : parentItem} />
                   <SubDropdown items={item.children} alignLeft={alignLeft} />
                 </div>
               );
@@ -250,7 +252,7 @@ function DesktopDropdown({ section }: { section: NavGroup }) {
 
 /* Acordeón estilizado para el menú móvil */
 function MobileSection({ section, onNavigate }: { section: NavGroup; onNavigate: () => void }) {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
   const [open, setOpen] = useState(false);
   return (
     <div className="border-b border-border/70 py-2">
@@ -275,10 +277,16 @@ function MobileSection({ section, onNavigate }: { section: NavGroup; onNavigate:
             item.children?.length ? (
               <details key={item.key} className="group/sub rounded-md">
                 <summary className="flex cursor-pointer list-none items-start justify-between gap-2 rounded-md px-3 py-2 text-sm font-medium text-brand-deep transition-colors hover:bg-primary/5 hover:text-primary">
-                  <span className="min-w-0 flex-1 whitespace-normal leading-snug">{pick(lang, item.es, item.en)}</span>
+                  <span className="min-w-0 flex-1 whitespace-normal leading-snug">{item.es.startsWith("landscapes.items.") ? t(item.es) : pick(lang, item.es, item.en)}</span>
                   <ChevronDown className="mt-0.5 size-3.5 shrink-0 transition-transform duration-200 group-open/sub:rotate-180" />
                 </summary>
                 <div className="ml-3 border-l border-border/70 pl-2">
+                  {item.key === "land-programs" && (
+                    <DropdownItem item={{ key: item.key, es: item.es, en: item.en, to: item.to, ...(item.hash !== undefined ? { hash: item.hash } : {}) }} onNavigate={onNavigate} />
+                  )}
+                  {item.key === "about-partners" && (
+                    <DropdownItem item={{ key: item.key, es: "Ver socios y aliados", en: "View partners and allies", to: item.to, hash: "socios" }} onNavigate={onNavigate} />
+                  )}
                   {item.children.map((sub) => (
                     <Button
                       key={sub.key}
@@ -300,7 +308,7 @@ function MobileSection({ section, onNavigate }: { section: NavGroup; onNavigate:
                 size="sm"
                 className="h-auto w-full justify-start whitespace-normal rounded-md py-2 text-left text-sm font-normal leading-snug text-foreground/80 hover:bg-primary/5 hover:text-primary"
               >
-                <Link to={`${item.to}${item.hash ? `#${item.hash}` : ""}`} onClick={onNavigate}>{pick(lang, item.es, item.en)}</Link>
+                <Link to={`${item.to}${item.hash ? `#${item.hash}` : ""}`} onClick={onNavigate}>{item.es.startsWith("landscapes.items.") ? t(item.es) : pick(lang, item.es, item.en)}</Link>
               </Button>
             )
           )}
@@ -313,8 +321,9 @@ function MobileSection({ section, onNavigate }: { section: NavGroup; onNavigate:
 export function Header() {
   const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(() => window.scrollY > 40);
-  const { pathname } = useLocation();
+  const { pathname, key: locationKey } = useLocation();
   const isHome = pathname === "/";
   const solid = !isHome || scrolled || open;
 
@@ -339,7 +348,7 @@ export function Header() {
     };
   }, [open]);
 
-  useEffect(() => { setOpen(false); }, [pathname]);
+  useEffect(() => { setOpen(false); }, [locationKey]);
 
   useEffect(() => {
     const desktop = window.matchMedia("(min-width: 1280px)");
@@ -354,6 +363,9 @@ export function Header() {
       {!isHome && <div aria-hidden="true" className="h-16 xl:h-20" />}
 
       <header
+        onClickCapture={(event) => {
+          if (event.target instanceof Element && event.target.closest("a")) setOpen(false);
+        }}
         className={`fixed inset-x-0 top-0 z-50 text-white transition-[background-color,box-shadow] duration-400 motion-reduce:transition-none ${
           solid
             ? "bg-brand-deep/95 shadow-md"
@@ -371,7 +383,30 @@ export function Header() {
               {navSections.map((s) => {
                 const active = pathname === s.to || pathname.startsWith(`${s.to}/`);
                 return (
-                  <li key={s.key} className="group relative">
+                  <li
+                    key={s.key}
+                    className="group relative"
+                    onMouseLeave={() => setDismissed(current => current === s.key ? null : current)}
+                    onFocusCapture={(event) => {
+                      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                        setDismissed(current => current === s.key ? null : current);
+                      }
+                    }}
+                    onClickCapture={(event) => {
+                      if (event.target instanceof Element && event.target.closest("a")) {
+                        setDismissed(s.key);
+                      }
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        setDismissed(s.key);
+                        event.currentTarget.querySelector<HTMLAnchorElement>("a")?.focus();
+                      } else if (event.key === "ArrowDown" && dismissed === s.key) {
+                        event.preventDefault();
+                        setDismissed(null);
+                      }
+                    }}
+                  >
                     <Link
                       to={s.to}
                       aria-current={active ? "page" : undefined}
@@ -381,7 +416,7 @@ export function Header() {
                       <ChevronDown className="size-3 opacity-75 transition-transform duration-300 group-hover:rotate-180 group-focus-within:rotate-180" />
                       <span aria-hidden="true" className={`absolute inset-x-3 bottom-1 h-0.5 rounded-full bg-brand-light transition-transform duration-300 ease-out group-hover:scale-x-100 group-focus-within:scale-x-100 ${active ? "scale-x-100" : "origin-right scale-x-0 group-hover:origin-left"}`} />
                     </Link>
-                    <DesktopDropdown section={s} />
+                    {dismissed !== s.key && <DesktopDropdown section={s} />}
                   </li>
                 );
               })}
