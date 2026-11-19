@@ -2,8 +2,6 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "re
 import { ArrowRight, ChevronLeft, ChevronRight, Feather, Bird, Mountain, Microscope, Trees, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/i18n/I18nProvider";
-import { images } from "@/config/images";
-import { programs } from "@/config/content";
 import { Button } from "@/components/ui/button";
 import { About } from "@/components/About";
 import { Landscapes } from "@/components/Landscapes";
@@ -13,7 +11,7 @@ import { Noticias } from "./noticias";
 
 const SLIDE_DURATION = 7500;
 const SLIDE_TRANSITION = 1200;
-const SLIDE_COUNT = 3;
+const SLIDE_COUNT = 5;
 let hasShownPreloader = false;
 
 function Preloader({ exiting }: { exiting: boolean }) {
@@ -56,40 +54,60 @@ function Hero({ ready }: { ready: boolean }) {
   const progressRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const transitionTimerRef = useRef<number | null>(null);
   const icons = [Microscope, Trees, Users];
-  const barbaAzulImage = programs.find((p) => p.id === "barbaazul")?.image ?? images.landscapes.beni;
-  const andinaImage = programs.find((p) => p.id === "accionandina")?.image ?? images.landscapes.andes;
   const slides = [
     {
-      id: "anniversary", image: images.hero, icon: Feather,
-      kicker: es ? "Asociación Armonía · 30 años" : "Asociación Armonía · 30 years",
-      title: es ? ["Conservando la", "biodiversidad de Bolivia"] : ["Conserving Bolivia’s", "biodiversity"],
-      description: t<string>("hero.text"),
-      primary: { label: t<string>("hero.primary"), to: "#nosotros", internal: false },
-      secondary: { label: t<string>("hero.secondary"), to: "#paisajes", internal: false },
-      tab: es ? "30 años" : "30 years",
-      subtitle: es ? "Conservación con comunidades" : "Conservation with communities",
+      id: "beni", image: "/images/home/1.jpg", icon: Feather,
+      kicker: es ? "Paisajes de Bolivia" : "Landscapes of Bolivia",
+      title: es ? ["Pastizales del Beni"] : ["Beni Grasslands"],
+      description: t<string>("landscapes.items.beni.text"),
+      primary: { label: t<string>("quick.member"), to: "/contacto", internal: true },
+      secondary: { label: t<string>("quick.donate"), to: "/donar", internal: true },
+      tab: t<string>("landscapes.items.beni.name"),
+      subtitle: es ? "Sabanas y humedales" : "Savannas and wetlands",
       showPillars: true,
     },
     {
-      id: "species", image: barbaAzulImage, icon: Bird,
-      kicker: es ? "Programas de conservación" : "Conservation programs",
-      title: es ? ["Especies amenazadas", "que necesitan tu apoyo"] : ["Threatened species", "that need your support"],
-      description: es ? "Trabajamos para conservar la Paraba Barba Azul y la Paraba Frente Roja, protegiendo sus hábitats junto a las comunidades locales." : "We work to conserve the Blue-throated Macaw and the Red-fronted Macaw, protecting their habitats alongside local communities.",
-      primary: { label: es ? "Paraba Barba Azul" : "Blue-throated Macaw", to: "/programas/barbaazul", internal: true },
-      secondary: { label: es ? "Paraba Frente Roja" : "Red-fronted Macaw", to: "/programas/frenteroja", internal: true },
-      tab: es ? "Especies" : "Species",
-      subtitle: es ? "Barba Azul y Frente Roja" : "Blue-throated and Red-fronted Macaws",
+      id: "yungas", image: "/images/home/2.jpg", icon: Trees,
+      kicker: es ? "Paisajes de Bolivia" : "Landscapes of Bolivia",
+      title: es ? ["Yungas"] : ["Yungas"],
+      description: t<string>("landscapes.items.yungas.text"),
+      primary: { label: t<string>("quick.member"), to: "/contacto", internal: true },
+      secondary: { label: t<string>("quick.donate"), to: "/donar", internal: true },
+      tab: t<string>("landscapes.items.yungas.name"),
+      subtitle: es ? "Bosques nublados" : "Cloud forests",
       showPillars: false,
     },
     {
-      id: "andes", image: andinaImage, icon: Mountain,
-      kicker: es ? "Acción Andina · Conservación de montañas" : "Acción Andina · Mountain conservation",
-      title: es ? ["Protegemos las montañas", "y las fuentes de agua"] : ["Protecting mountains", "and water sources"],
-      description: es ? "Junto a comunidades altoandinas restauramos bosques nativos y protegemos los ecosistemas que sostienen el agua y la vida." : "Together with high Andean communities, we restore native forests and protect ecosystems that sustain water and life.",
-      primary: { label: es ? "Conoce Acción Andina" : "Discover Acción Andina", to: "/programas/accionandina", internal: true },
-      secondary: { label: es ? "Explorar paisajes" : "Explore landscapes", to: "/paisajes", internal: true },
-      tab: "Acción Andina",
+      id: "andes", image: "/images/home/3.jpg", icon: Mountain,
+      kicker: es ? "Paisajes de Bolivia" : "Landscapes of Bolivia",
+      title: es ? ["Andes Altos"] : ["High Andes"],
+      description: t<string>("landscapes.items.andes.text"),
+      primary: { label: t<string>("quick.member"), to: "/contacto", internal: true },
+      secondary: { label: t<string>("quick.donate"), to: "/donar", internal: true },
+      tab: t<string>("landscapes.items.andes.name"),
       subtitle: es ? "Montañas y fuentes de agua" : "Mountains and water sources",
+      showPillars: false,
+    },
+    {
+      id: "seco", image: "/images/home/4.jpg", icon: Bird,
+      kicker: es ? "Paisajes de Bolivia" : "Landscapes of Bolivia",
+      title: es ? ["Bosque Seco", "Interandino"] : ["Inter-Andean", "Dry Forest"],
+      description: t<string>("landscapes.items.seco.text"),
+      primary: { label: t<string>("quick.member"), to: "/contacto", internal: true },
+      secondary: { label: t<string>("quick.donate"), to: "/donar", internal: true },
+      tab: t<string>("landscapes.items.seco.name"),
+      subtitle: es ? "Valles secos y cañones" : "Dry valleys and canyons",
+      showPillars: false,
+    },
+    {
+      id: "amazonia", image: "/images/home/5.jpg", icon: Trees,
+      kicker: es ? "Paisajes de Bolivia" : "Landscapes of Bolivia",
+      title: es ? ["Amazonía"] : ["Amazon"],
+      description: t<string>("landscapes.items.amazonia.text"),
+      primary: { label: t<string>("quick.member"), to: "/contacto", internal: true },
+      secondary: { label: t<string>("quick.donate"), to: "/donar", internal: true },
+      tab: t<string>("landscapes.items.amazonia.name"),
+      subtitle: es ? "Bosques tropicales y ríos" : "Tropical forests and rivers",
       showPillars: false,
     },
   ];
@@ -231,14 +249,14 @@ function Hero({ ready }: { ready: boolean }) {
       </div>
       <div className="absolute inset-x-0 bottom-0 z-30 pb-[30px] max-[900px]:pb-6">
         <div className="container-site flex items-end gap-7">
-          <div role="group" aria-label={es ? "Seleccionar diapositiva" : "Select slide"} className="flex min-w-0 flex-1 gap-[22px] max-[900px]:gap-3.5 max-sm:gap-3">
+          <div role="group" aria-label={es ? "Seleccionar diapositiva" : "Select slide"} className="flex min-w-0 flex-1 gap-[22px] max-[900px]:gap-3.5 max-sm:gap-1.5">
             {slides.map((slide, index) => (
               <button key={slide.id} type="button" disabled={!ready} aria-pressed={active === index} aria-controls={`hero-slide-${index}`} onClick={() => goTo(index)}
                 className={`relative min-w-0 flex-1 cursor-pointer pt-4 text-left transition-colors duration-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-light max-sm:pt-3 ${active === index ? "text-white" : "text-white/55"}`}>
                 <span className="absolute inset-x-0 top-0 h-[3px] overflow-hidden rounded-full bg-white/22">
                   <span ref={(element) => { progressRefs.current[index] = element; }} className="block size-full origin-left [transform:scaleX(0)] bg-brand-light" />
                 </span>
-                <span className="block font-display text-sm font-medium sm:text-lg">{slide.tab}</span>
+                <span className="block font-display text-center text-[10px] font-medium leading-tight sm:text-left sm:text-lg">{slide.tab}</span>
                 <span className="mt-1 block text-xs opacity-80 sm:text-sm max-[900px]:hidden">{slide.subtitle}</span>
               </button>
             ))}
