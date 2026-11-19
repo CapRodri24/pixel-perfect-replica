@@ -1,47 +1,6 @@
-import { useState, useEffect, type FormEvent } from "react";
-
-export default function EquipoAdmin() {
-  const [items, setItems] = useState<any[]>([]);
-  const [name, setName] = useState("");
-  const [role, setRole] = useState("");
-  const [description, setDescription] = useState("");
-  const [image, setImage] = useState("");
-
-  useEffect(() => {
-    const saved = localStorage.getItem("admin_equipo");
-    if (saved) setItems(JSON.parse(saved));
-  }, []);
-
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    const newItem = { id: Date.now().toString(), name, role, description, image };
-    const updated = [...items, newItem];
-    setItems(updated);
-    localStorage.setItem("admin_equipo", JSON.stringify(updated));
-    setName(""); setRole(""); setDescription(""); setImage("");
-  };
-
-  return (
-    <div>
-      <h1 className="text-3xl font-display text-brand-deep mb-6">Gestión de Equipo</h1>
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-2xl border border-border mb-8 space-y-4">
-        <input required placeholder="Nombre completo" value={name} onChange={e => setName(e.target.value)} className="w-full p-3 rounded-xl border" />
-        <input required placeholder="Cargo / Rol" value={role} onChange={e => setRole(e.target.value)} className="w-full p-3 rounded-xl border" />
-        <input required placeholder="URL de Foto" value={image} onChange={e => setImage(e.target.value)} className="w-full p-3 rounded-xl border" />
-        <textarea required placeholder="Breve descripción" value={description} onChange={e => setDescription(e.target.value)} className="w-full p-3 rounded-xl border" rows={3} />
-        <button type="submit" className="bg-primary text-white px-6 py-2 rounded-xl font-semibold">Añadir Miembro</button>
-      </form>
-      <div className="space-y-4">
-        {items.map(item => (
-          <div key={item.id} className="bg-white p-4 rounded-xl border flex gap-4 items-center">
-            <img src={item.image} className="w-16 h-16 object-cover rounded-full" />
-            <div className="flex-1">
-              <h3 className="font-bold">{item.name}</h3>
-              <p className="text-sm text-primary">{item.role}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+import { useState, type FormEvent } from "react";
+import { Pencil, Trash2, UserRound, Search } from "lucide-react";
+import { type Person, keys, normalizePerson, useStore, groups, uid, safeUrl } from "./datos";
+import { PageTitle, Field, Notice, Confirm, ImageInput, Empty, field, primary, secondary, panel, CloseButton } from "./ui";
+const blank=():Person=>({id:uid(),name:"",role:"",roleEn:"",description:"",descriptionEn:"",image:"",group:"programas"});
+export default function EquipoAdmin(){const {items,save}=useStore(keys.equipo,normalizePerson);const [draft,setDraft]=useState<Person|null>(null);const [query,setQuery]=useState("");const [error,setError]=useState("");const [success,setSuccess]=useState("");const [pending,setPending]=useState<{type:"save"|"delete";person:Person}|null>(null);function patch(p:Partial<Person>){setDraft(d=>d?{...d,...p}:null);}function submit(e:FormEvent){e.preventDefault();if(!draft)return;if(!draft.name.trim()||!draft.role.trim()||!draft.description.trim()){setError("Completa nombre, cargo y descripción.");return;}if(draft.image&&!safeUrl(draft.image,true)){setError("Revisa la URL de la fotografía.");return;}setPending({type:"save",person:draft});}function commit(){if(!pending)return;const {person,type}=pending;setPending(null);const next=type==="delete"?items.filter(p=>p.id!==person.id):items.some(p=>p.id===person.id)?items.map(p=>p.id===person.id?person:p):[...items,person];const err=save(next);setError(err);if(!err){setDraft(null);setSuccess(type==="delete"?"Perfil eliminado.":"Perfil guardado localmente.");}}const filtered=items.filter(p=>`${p.name} ${p.role}`.toLowerCase().includes(query.toLowerCase()));return <div className="mx-auto max-w-7xl"><PageTitle title="Gestión de equipo" description="Administra los perfiles del personal." {...(!draft?{action:()=>{setDraft(blank());setError("");setSuccess("");},label:"Añadir integrante"}:{})}/><div className="mb-4"><Notice error={error} success={success}/></div>{draft?<form onSubmit={submit} className={`${panel} space-y-4`}><div className="flex justify-between gap-2"><h2 className="font-display text-xl">Perfil del integrante</h2><CloseButton onClick={()=>{setDraft(null);setError("");}}/></div><div className="grid gap-5 lg:grid-cols-[1fr_2fr]"><Field label="Fotografía"><ImageInput value={draft.image} onChange={image=>patch({image})}/></Field><div className="space-y-4"><Field label="Nombre completo"><input required className={field} value={draft.name} onChange={e=>patch({name:e.target.value})}/></Field><div className="grid gap-3 sm:grid-cols-2"><Field label="Cargo (ES)"><input required className={field} value={draft.role} onChange={e=>patch({role:e.target.value})}/></Field><Field label="Cargo (EN)"><input className={field} value={draft.roleEn} onChange={e=>patch({roleEn:e.target.value})}/></Field></div><Field label="Área"><select className={field} value={draft.group} onChange={e=>patch({group:e.target.value})}>{groups.map(([id,name])=><option key={id} value={id}>{name}</option>)}</select></Field><Field label="Descripción (ES)"><textarea required rows={4} className={field} value={draft.description} onChange={e=>patch({description:e.target.value})}/></Field><Field label="Descripción (EN)"><textarea rows={4} className={field} value={draft.descriptionEn} onChange={e=>patch({descriptionEn:e.target.value})}/></Field></div></div><button className={primary} type="submit">Guardar integrante</button></form>:<><div className="mb-5 flex items-center gap-2 rounded-xl border border-border bg-background px-3"><Search className="size-4 text-muted-foreground"/><input className="w-full bg-transparent py-3 text-sm outline-none" aria-label="Buscar integrantes" placeholder="Buscar por nombre o cargo…" value={query} onChange={e=>setQuery(e.target.value)}/></div>{!filtered.length?<Empty text="No hay integrantes para mostrar."/>:<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{filtered.map(p=><article key={p.id} className="overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition hover:-translate-y-0.5 hover:shadow-md motion-reduce:transition-none"><div className="grid aspect-[16/10] place-items-center overflow-hidden bg-primary/5">{safeUrl(p.image,true)?<img src={p.image} alt={p.name} className="size-full object-cover"/>:<UserRound className="size-16 text-primary/50"/>}</div><div className="space-y-2 p-4"><p className="text-xs font-semibold text-primary">{groups.find(g=>g[0]===p.group)?.[1]??p.group}</p><h2 className="font-display text-xl text-brand-deep">{p.name}</h2><p className="text-sm font-medium">{p.role}</p><p className="line-clamp-3 text-sm text-muted-foreground">{p.description}</p><div className="flex flex-wrap gap-2 pt-2"><button className={secondary} onClick={()=>{setDraft({...p});setError("");setSuccess("");}}><Pencil className="size-4"/>Editar</button><button className={`${secondary} text-red-700`} onClick={()=>setPending({type:"delete",person:p})}><Trash2 className="size-4"/>Eliminar</button></div></div></article>)}</div>}</>}{pending&&<Confirm danger={pending.type==="delete"} text={`${pending.type==="delete"?"¿Eliminar":"¿Guardar"} el perfil de ${pending.person.name}?`} onClose={()=>setPending(null)} onConfirm={commit}/>}</div>;}
