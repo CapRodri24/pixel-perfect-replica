@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { RelatedNews } from "./noticias-mock";
 import { ArrowLeft, ChevronLeft, ChevronRight, PlayCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { landscapes, programs } from "@/config/content";
@@ -145,5 +146,6 @@ export default function FormatoPrograma({ id }: { id: string }) {
     <Link to={demo ? `${demoLandscapeUrl}#${anchor ?? "programas"}` : "/programas"} className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"><ArrowLeft className="size-4" />{demo ? (es ? "Volver al paisaje" : "Back to landscape") : (es ? "Volver a programas" : "Back to programs")}</Link>
     <h1 className="mb-6 font-display text-3xl leading-tight text-brand-deep sm:text-5xl">{program.name}</h1>
     <EditorialContent key={id} blocks={blocks} />
+    <RelatedNews programId={id} />
   </div></div></article>;
 }

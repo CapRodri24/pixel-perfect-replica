@@ -114,7 +114,7 @@ const navSections: NavGroup[] = [
         hash: "multimedia",
         children: [
           { key: "news-media-yt", es: "Videos de YouTube", en: "YouTube videos", to: "/noticias", hash: "youtube" },
-          { key: "news-media-info", es: "Infogramas", en: "Infographics", to: "/noticias", hash: "infogramas" },
+          { key: "news-media-info", es: "Infografías", en: "Infographics", to: "/noticias", hash: "infogramas" },
           { key: "news-media-flickr", es: "Fotogalería / Flickr", en: "Photo gallery / Flickr", to: "/noticias", hash: "flickr" },
         ],
       },
@@ -237,7 +237,7 @@ function DesktopDropdown({ section }: { section: NavGroup }) {
               const { hash: _hash, ...parentItem } = item;
               return (
                 <div key={item.key} className="group/sub relative">
-                  <DropdownItem item={["about-partners", "land-programs"].includes(item.key) ? item : parentItem} />
+                  <DropdownItem item={["about-partners", "land-programs", "news-media"].includes(item.key) ? item : parentItem} />
                   <SubDropdown items={item.children} alignLeft={alignLeft} />
                 </div>
               );
@@ -281,7 +281,7 @@ function MobileSection({ section, onNavigate }: { section: NavGroup; onNavigate:
                   <ChevronDown className="mt-0.5 size-3.5 shrink-0 transition-transform duration-200 group-open/sub:rotate-180" />
                 </summary>
                 <div className="ml-3 border-l border-border/70 pl-2">
-                  {item.key === "land-programs" && (
+                  {["land-programs", "news-media"].includes(item.key) && (
                     <DropdownItem item={{ key: item.key, es: item.es, en: item.en, to: item.to, ...(item.hash !== undefined ? { hash: item.hash } : {}) }} onNavigate={onNavigate} />
                   )}
                   {item.key === "about-partners" && (

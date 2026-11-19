@@ -309,7 +309,7 @@ export default function Home() {
       <SectionShortcut to="/paisajes" />
       <Programs />
       <SectionShortcut to="/programas" />
-      <Noticias />
+      <Noticias home />
       <SectionShortcut to="/noticias" />
     </main>
   );
