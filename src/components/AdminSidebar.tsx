@@ -20,7 +20,7 @@ export function AdminSidebar() {
         {/* Logo */}
         <div className="p-6 pb-4 border-b border-primary-foreground/10 flex justify-center w-full">
           <img 
-            src="/images/logo-blanco.png" 
+            src="/images/logo.png" 
             alt="Asociación Armonía" 
             className="h-12 w-auto object-contain" 
           />
