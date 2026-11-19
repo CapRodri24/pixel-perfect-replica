@@ -1,897 +1,223 @@
-
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
-
-import {
-  ArrowRight,
-  ChevronLeft,
-  ChevronRight,
-  Feather,
-  Bird,
-  Mountain,
-  Microscope,
-  Trees,
-  Users,
-} from "lucide-react";
-
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { ArrowRight, ChevronLeft, ChevronRight, Feather, Bird, Mountain, Microscope, Trees, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/i18n/I18nProvider";
 import { images } from "@/config/images";
 import { programs } from "@/config/content";
 import { Button } from "@/components/ui/button";
-
 import { About } from "@/components/About";
 import { Landscapes } from "@/components/Landscapes";
 import { Programs } from "@/components/Programs";
 import { SectionShortcut } from "@/components/SectionView";
 import { Noticias } from "./noticias";
 
-// ==========================================
-// CONFIGURACIÓN
-// ==========================================
-
 const SLIDE_DURATION = 7500;
 const SLIDE_TRANSITION = 1200;
 const SLIDE_COUNT = 3;
-
 let hasShownPreloader = false;
-
-// ==========================================
-// PRELOADER
-// ==========================================
 
 function Preloader({ exiting }: { exiting: boolean }) {
   const { lang } = useI18n();
   const [started, setStarted] = useState(false);
-
   useEffect(() => {
     let secondFrame = 0;
-
     const firstFrame = window.requestAnimationFrame(() => {
-      secondFrame = window.requestAnimationFrame(() => {
-        setStarted(true);
-      });
+      secondFrame = window.requestAnimationFrame(() => setStarted(true));
     });
-
     return () => {
       window.cancelAnimationFrame(firstFrame);
       window.cancelAnimationFrame(secondFrame);
     };
   }, []);
-
   return (
-    <div
-      role="status"
-      aria-label={
-        lang === "es"
-          ? "Cargando Asociación Armonía"
-          : "Loading Asociación Armonía"
-      }
-      className={`
-        fixed inset-0 z-[99999] grid place-items-center
-        bg-brand-deep
-        transition-transform duration-1000
-        ease-[cubic-bezier(.77,0,.18,1)]
-        motion-reduce:transition-none
-        ${
-          exiting
-            ? "-translate-y-full pointer-events-none"
-            : "translate-y-0"
-        }
-      `}
-    >
-      <div
-        className={`
-          text-center
-          transition-opacity duration-400
-          motion-reduce:transition-none
-          ${exiting ? "opacity-0" : "opacity-100"}
-        `}
-      >
-        {/* Logotipo institucional */}
-
-        <img
-          src="/images/logo-blanco.png"
-          alt="Asociación Armonía"
-          className="
-            mx-auto h-auto w-[220px] max-w-[65vw]
-            object-contain
-            animate-pulse
-            motion-reduce:animate-none
-          "
-        />
-
-        {/* Barra de carga */}
-
-        <div
-          className="
-            mx-auto mt-[30px] h-0.5 w-[200px]
-            overflow-hidden bg-white/15
-          "
-        >
-          <span
-            className={`
-              block size-full origin-left
-              bg-brand-light
-              transition-transform duration-[1300ms]
-              ease-[cubic-bezier(.77,0,.18,1)]
-              motion-reduce:transition-none
-              ${
-                started
-                  ? "scale-x-100"
-                  : "scale-x-0"
-              }
-            `}
-          />
+    <div role="status" aria-label={lang === "es" ? "Cargando Asociación Armonía" : "Loading Asociación Armonía"}
+      className={`fixed inset-0 z-[99999] grid place-items-center bg-brand-deep transition-transform duration-1000 ease-[cubic-bezier(.77,0,.18,1)] motion-reduce:transition-none ${exiting ? "-translate-y-full pointer-events-none" : "translate-y-0"}`}>
+      <div className={`text-center transition-opacity duration-400 motion-reduce:transition-none ${exiting ? "opacity-0" : "opacity-100"}`}>
+        <img src="/images/logo-blanco.png" alt="Asociación Armonía" className="mx-auto h-auto w-[220px] max-w-[65vw] object-contain animate-pulse motion-reduce:animate-none" />
+        <div className="mx-auto mt-[30px] h-0.5 w-[200px] overflow-hidden bg-white/15">
+          <span className={`block size-full origin-left bg-brand-light transition-transform duration-[1300ms] ease-[cubic-bezier(.77,0,.18,1)] motion-reduce:transition-none ${started ? "scale-x-100" : "scale-x-0"}`} />
         </div>
       </div>
     </div>
   );
 }
 
-// ==========================================
-// HERO CAROUSEL
-// ==========================================
-
 function Hero({ ready }: { ready: boolean }) {
   const { t, lang } = useI18n();
   const es = lang === "es";
-
   const [active, setActive] = useState(0);
-
-  const [leaving, setLeaving] = useState<number | null>(
-    null
-  );
-
+  const [leaving, setLeaving] = useState<number | null>(null);
   const activeRef = useRef(0);
   const pausedRef = useRef(false);
   const focusPausedRef = useRef(false);
   const elapsedRef = useRef(0);
   const transitioningRef = useRef(false);
   const touchStartRef = useRef<number | null>(null);
-
-  const progressRefs = useRef<
-    (HTMLSpanElement | null)[]
-  >([]);
-
-  const transitionTimerRef = useRef<number | null>(
-    null
-  );
-
+  const progressRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const transitionTimerRef = useRef<number | null>(null);
   const icons = [Microscope, Trees, Users];
-
-  // ==========================================
-  // IMÁGENES EXISTENTES
-  // ==========================================
-
-  const barbaAzulImage =
-    programs.find((p) => p.id === "barbaazul")?.image ??
-    images.landscapes.beni;
-
-  const andinaImage =
-    programs.find((p) => p.id === "accionandina")?.image ??
-    images.landscapes.andes;
-
-  // ==========================================
-  // DATOS MOCK DEL CARRUSEL
-  // ==========================================
-
+  const barbaAzulImage = programs.find((p) => p.id === "barbaazul")?.image ?? images.landscapes.beni;
+  const andinaImage = programs.find((p) => p.id === "accionandina")?.image ?? images.landscapes.andes;
   const slides = [
     {
-      id: "anniversary",
-      image: images.hero,
-      icon: Feather,
-
-      kicker: es
-        ? "Asociación Armonía · 30 años"
-        : "Asociación Armonía · 30 years",
-
-      title: es
-        ? [
-            "Conservando la",
-            "biodiversidad de Bolivia",
-          ]
-        : [
-            "Conserving Bolivia’s",
-            "biodiversity",
-          ],
-
+      id: "anniversary", image: images.hero, icon: Feather,
+      kicker: es ? "Asociación Armonía · 30 años" : "Asociación Armonía · 30 years",
+      title: es ? ["Conservando la", "biodiversidad de Bolivia"] : ["Conserving Bolivia’s", "biodiversity"],
       description: t<string>("hero.text"),
-
-      primary: {
-        label: t<string>("hero.primary"),
-        to: "#nosotros",
-        internal: false,
-      },
-
-      secondary: {
-        label: t<string>("hero.secondary"),
-        to: "#paisajes",
-        internal: false,
-      },
-
+      primary: { label: t<string>("hero.primary"), to: "#nosotros", internal: false },
+      secondary: { label: t<string>("hero.secondary"), to: "#paisajes", internal: false },
       tab: es ? "30 años" : "30 years",
-
-      subtitle: es
-        ? "Conservación con comunidades"
-        : "Conservation with communities",
-
+      subtitle: es ? "Conservación con comunidades" : "Conservation with communities",
       showPillars: true,
     },
-
     {
-      id: "species",
-      image: barbaAzulImage,
-      icon: Bird,
-
-      kicker: es
-        ? "Programas de conservación"
-        : "Conservation programs",
-
-      title: es
-        ? [
-            "Especies amenazadas",
-            "que necesitan tu apoyo",
-          ]
-        : [
-            "Threatened species",
-            "that need your support",
-          ],
-
-      description: es
-        ? "Trabajamos para conservar la Paraba Barba Azul y la Paraba Frente Roja, protegiendo sus hábitats junto a las comunidades locales."
-        : "We work to conserve the Blue-throated Macaw and the Red-fronted Macaw, protecting their habitats alongside local communities.",
-
-      primary: {
-        label: es
-          ? "Paraba Barba Azul"
-          : "Blue-throated Macaw",
-
-        to: "/programas/barbaazul",
-        internal: true,
-      },
-
-      secondary: {
-        label: es
-          ? "Paraba Frente Roja"
-          : "Red-fronted Macaw",
-
-        to: "/programas/frenteroja",
-        internal: true,
-      },
-
+      id: "species", image: barbaAzulImage, icon: Bird,
+      kicker: es ? "Programas de conservación" : "Conservation programs",
+      title: es ? ["Especies amenazadas", "que necesitan tu apoyo"] : ["Threatened species", "that need your support"],
+      description: es ? "Trabajamos para conservar la Paraba Barba Azul y la Paraba Frente Roja, protegiendo sus hábitats junto a las comunidades locales." : "We work to conserve the Blue-throated Macaw and the Red-fronted Macaw, protecting their habitats alongside local communities.",
+      primary: { label: es ? "Paraba Barba Azul" : "Blue-throated Macaw", to: "/programas/barbaazul", internal: true },
+      secondary: { label: es ? "Paraba Frente Roja" : "Red-fronted Macaw", to: "/programas/frenteroja", internal: true },
       tab: es ? "Especies" : "Species",
-
-      subtitle: es
-        ? "Barba Azul y Frente Roja"
-        : "Blue-throated and Red-fronted Macaws",
-
+      subtitle: es ? "Barba Azul y Frente Roja" : "Blue-throated and Red-fronted Macaws",
       showPillars: false,
     },
-
     {
-      id: "andes",
-      image: andinaImage,
-      icon: Mountain,
-
-      kicker: es
-        ? "Acción Andina · Conservación de montañas"
-        : "Acción Andina · Mountain conservation",
-
-      title: es
-        ? [
-            "Protegemos las montañas",
-            "y las fuentes de agua",
-          ]
-        : [
-            "Protecting mountains",
-            "and water sources",
-          ],
-
-      description: es
-        ? "Junto a comunidades altoandinas restauramos bosques nativos y protegemos los ecosistemas que sostienen el agua y la vida."
-        : "Together with high Andean communities, we restore native forests and protect ecosystems that sustain water and life.",
-
-      primary: {
-        label: es
-          ? "Conoce Acción Andina"
-          : "Discover Acción Andina",
-
-        to: "/programas/accionandina",
-        internal: true,
-      },
-
-      secondary: {
-        label: es
-          ? "Explorar paisajes"
-          : "Explore landscapes",
-
-        to: "/paisajes",
-        internal: true,
-      },
-
+      id: "andes", image: andinaImage, icon: Mountain,
+      kicker: es ? "Acción Andina · Conservación de montañas" : "Acción Andina · Mountain conservation",
+      title: es ? ["Protegemos las montañas", "y las fuentes de agua"] : ["Protecting mountains", "and water sources"],
+      description: es ? "Junto a comunidades altoandinas restauramos bosques nativos y protegemos los ecosistemas que sostienen el agua y la vida." : "Together with high Andean communities, we restore native forests and protect ecosystems that sustain water and life.",
+      primary: { label: es ? "Conoce Acción Andina" : "Discover Acción Andina", to: "/programas/accionandina", internal: true },
+      secondary: { label: es ? "Explorar paisajes" : "Explore landscapes", to: "/paisajes", internal: true },
       tab: "Acción Andina",
-
-      subtitle: es
-        ? "Montañas y fuentes de agua"
-        : "Mountains and water sources",
-
+      subtitle: es ? "Montañas y fuentes de agua" : "Mountains and water sources",
       showPillars: false,
     },
   ];
 
-  // ==========================================
-  // RESTABLECER PROGRESO
-  // ==========================================
-
   const resetProgress = useCallback(() => {
     elapsedRef.current = 0;
-
-    progressRefs.current.forEach((bar) => {
-      if (bar) {
-        bar.style.transform = "scaleX(0)";
-      }
-    });
+    progressRefs.current.forEach((bar) => { if (bar) bar.style.transform = "scaleX(0)"; });
   }, []);
 
-  // ==========================================
-  // CAMBIAR DIAPOSITIVA
-  // ==========================================
-
-  const goTo = useCallback(
-    (index: number) => {
-      const next =
-        (index + SLIDE_COUNT) % SLIDE_COUNT;
-
-      if (
-        next === activeRef.current ||
-        transitioningRef.current
-      ) {
-        return;
-      }
-
-      transitioningRef.current = true;
-
-      const previous = activeRef.current;
-
-      setLeaving(previous);
-      setActive(next);
-
-      activeRef.current = next;
-
-      resetProgress();
-
-      if (transitionTimerRef.current !== null) {
-        window.clearTimeout(
-          transitionTimerRef.current
-        );
-      }
-
-      const reducedMotion = window.matchMedia(
-        "(prefers-reduced-motion: reduce)"
-      ).matches;
-
-      transitionTimerRef.current =
-        window.setTimeout(
-          () => {
-            setLeaving(null);
-
-            transitioningRef.current = false;
-            transitionTimerRef.current = null;
-          },
-          reducedMotion ? 0 : SLIDE_TRANSITION
-        );
-    },
-    [resetProgress]
-  );
-
-  // ==========================================
-  // REPRODUCCIÓN AUTOMÁTICA
-  // ==========================================
+  const goTo = useCallback((index: number) => {
+    const next = (index + SLIDE_COUNT) % SLIDE_COUNT;
+    if (next === activeRef.current || transitioningRef.current) return;
+    transitioningRef.current = true;
+    setLeaving(activeRef.current);
+    setActive(next);
+    activeRef.current = next;
+    resetProgress();
+    if (transitionTimerRef.current !== null) window.clearTimeout(transitionTimerRef.current);
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    transitionTimerRef.current = window.setTimeout(() => {
+      setLeaving(null);
+      transitioningRef.current = false;
+      transitionTimerRef.current = null;
+    }, reducedMotion ? 0 : SLIDE_TRANSITION);
+  }, [resetProgress]);
 
   useEffect(() => {
     if (!ready) return;
-
     let frameId = 0;
     let lastTime = performance.now();
-
-    const motionPreference = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    );
-
+    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
     const tick = (time: number) => {
       const delta = Math.min(time - lastTime, 100);
-
       lastTime = time;
-
-      if (
-        !pausedRef.current &&
-        !focusPausedRef.current &&
-        !document.hidden &&
-        !motionPreference.matches
-      ) {
+      if (!pausedRef.current && !focusPausedRef.current && !document.hidden && !motionPreference.matches) {
         elapsedRef.current += delta;
-
-        const progress = Math.min(
-          elapsedRef.current / SLIDE_DURATION,
-          1
-        );
-
-        const currentBar =
-          progressRefs.current[activeRef.current];
-
-        if (currentBar) {
-          currentBar.style.transform =
-            `scaleX(${progress})`;
-        }
-
-        if (progress >= 1) {
-          goTo(activeRef.current + 1);
-        }
+        const progress = Math.min(elapsedRef.current / SLIDE_DURATION, 1);
+        const currentBar = progressRefs.current[activeRef.current];
+        if (currentBar) currentBar.style.transform = `scaleX(${progress})`;
+        if (progress >= 1) goTo(activeRef.current + 1);
       }
-
       frameId = window.requestAnimationFrame(tick);
     };
-
-    const handleVisibility = () => {
-      lastTime = performance.now();
-    };
-
-    document.addEventListener(
-      "visibilitychange",
-      handleVisibility
-    );
-
+    const handleVisibility = () => { lastTime = performance.now(); };
+    document.addEventListener("visibilitychange", handleVisibility);
     frameId = window.requestAnimationFrame(tick);
-
     return () => {
       window.cancelAnimationFrame(frameId);
-
-      document.removeEventListener(
-        "visibilitychange",
-        handleVisibility
-      );
-
+      document.removeEventListener("visibilitychange", handleVisibility);
       if (transitionTimerRef.current !== null) {
-        window.clearTimeout(
-          transitionTimerRef.current
-        );
-
+        window.clearTimeout(transitionTimerRef.current);
         transitionTimerRef.current = null;
       }
-
       transitioningRef.current = false;
     };
   }, [ready, goTo]);
 
-  // ==========================================
-  // NAVEGACIÓN POR TECLADO
-  // ==========================================
-
-  const handleKeyDown = (
-    e: KeyboardEvent<HTMLElement>
-  ) => {
+  const handleKeyDown = (e: KeyboardEvent<HTMLElement>) => {
     if (!ready) return;
-
-    if (e.key === "ArrowRight") {
-      e.preventDefault();
-
-      goTo(activeRef.current + 1);
-    }
-
-    if (e.key === "ArrowLeft") {
-      e.preventDefault();
-
-      goTo(activeRef.current - 1);
-    }
+    if (e.key === "ArrowRight") { e.preventDefault(); goTo(activeRef.current + 1); }
+    if (e.key === "ArrowLeft") { e.preventDefault(); goTo(activeRef.current - 1); }
   };
 
-  // ==========================================
-  // RENDER DEL HERO
-  // ==========================================
-
   return (
-    <section
-      id="inicio"
-      aria-roledescription={
-        es ? "Carrusel" : "Carousel"
-      }
-      aria-label={
-        es
-          ? "Presentación de Asociación Armonía"
-          : "Introduction to Asociación Armonía"
-      }
-      className="
-        relative isolate overflow-hidden
-        bg-brand-deep text-primary-foreground
-        h-[calc(100svh-5rem)] min-h-[680px]
-        max-xl:h-[calc(100svh-4rem)]
-        max-[900px]:min-h-[650px]
-        max-sm:min-h-[640px]
-      "
-      onMouseEnter={() => {
-        pausedRef.current = true;
-      }}
-      onMouseLeave={() => {
-        pausedRef.current = false;
-      }}
-      onFocusCapture={() => {
-        focusPausedRef.current = true;
-      }}
-      onBlurCapture={(e) => {
-        if (
-          !e.currentTarget.contains(
-            e.relatedTarget as Node | null
-          )
-        ) {
-          focusPausedRef.current = false;
-        }
-      }}
+    <section id="inicio" aria-roledescription={es ? "Carrusel" : "Carousel"}
+      aria-label={es ? "Presentación de Asociación Armonía" : "Introduction to Asociación Armonía"}
+      className="relative isolate overflow-hidden bg-brand-deep text-primary-foreground h-svh min-h-[680px] max-[900px]:min-h-[650px] max-sm:min-h-[640px]"
+      onMouseEnter={() => { pausedRef.current = true; }}
+      onMouseLeave={() => { pausedRef.current = false; }}
+      onFocusCapture={() => { focusPausedRef.current = true; }}
+      onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) focusPausedRef.current = false; }}
       onKeyDown={handleKeyDown}
-      onTouchStart={(e) => {
-        touchStartRef.current =
-          e.touches[0]?.clientX ?? null;
-      }}
+      onTouchStart={(e) => { touchStartRef.current = e.touches[0]?.clientX ?? null; }}
       onTouchEnd={(e) => {
         if (touchStartRef.current === null) return;
-
-        const end =
-          e.changedTouches[0]?.clientX ??
-          touchStartRef.current;
-
-        const distance =
-          end - touchStartRef.current;
-
-        if (ready && Math.abs(distance) > 50) {
-          goTo(
-            activeRef.current +
-              (distance < 0 ? 1 : -1)
-          );
-        }
-
+        const distance = (e.changedTouches[0]?.clientX ?? touchStartRef.current) - touchStartRef.current;
+        if (ready && Math.abs(distance) > 50) goTo(activeRef.current + (distance < 0 ? 1 : -1));
         touchStartRef.current = null;
       }}
-      onTouchCancel={() => {
-        touchStartRef.current = null;
-      }}
-    >
-      {/* ====================================
-          DIAPOSITIVAS
-          ==================================== */}
-
+      onTouchCancel={() => { touchStartRef.current = null; }}>
       {slides.map((slide, index) => {
         const Icon = slide.icon;
-
-        const isActive =
-          ready && index === active;
-
+        const isActive = ready && index === active;
         const isLeaving = index === leaving;
-
-        // Animación compartida de aparición
-
-        const fadeClass = `
-          transition-[opacity,translate]
-          duration-[900ms]
-          ease-[cubic-bezier(.16,1,.3,1)]
-          motion-reduce:transition-none
-          ${
-            isActive
-              ? "translate-y-0 opacity-100"
-              : "translate-y-[26px] opacity-0"
-          }
-        `;
-
+        const fadeClass = `transition-[opacity,translate] duration-[900ms] ease-[cubic-bezier(.16,1,.3,1)] motion-reduce:transition-none ${isActive ? "translate-y-0 opacity-100" : "translate-y-[26px] opacity-0"}`;
         return (
-          <article
-            key={slide.id}
-            id={`hero-slide-${index}`}
-            aria-hidden={!isActive}
-            aria-roledescription={
-              es ? "Diapositiva" : "Slide"
-            }
-            aria-label={`${index + 1} / ${SLIDE_COUNT}`}
-            className={`
-              absolute inset-0 overflow-hidden
-              transition-[clip-path]
-              duration-[1100ms]
-              ease-[cubic-bezier(.77,0,.18,1)]
-              motion-reduce:transition-none
-              ${
-                isActive
-                  ? "visible z-20 [clip-path:inset(0)]"
-                  : isLeaving
-                    ? "visible z-10 pointer-events-none [clip-path:inset(0)]"
-                    : "invisible z-0 pointer-events-none [clip-path:inset(0_0_0_100%)]"
-              }
-            `}
-          >
-            {/* Imagen de fondo con zoom */}
-
-            <img
-              src={slide.image}
-              alt=""
-              width={1920}
-              height={1088}
-              fetchPriority={
-                index === 0 ? "high" : "auto"
-              }
-              loading="eager"
-              className={`
-                absolute -inset-[2%]
-                h-[104%] w-[104%] max-w-none
-                object-cover object-center
-                transition-transform duration-[9000ms]
-                ease-linear
-                motion-reduce:transition-none
-                ${
-                  isActive
-                    ? "scale-100"
-                    : "scale-[1.14]"
-                }
-              `}
-            />
-
-            {/* Degradado horizontal */}
-
-            <div
-              className="
-                pointer-events-none absolute inset-0 z-[1]
-                bg-[linear-gradient(90deg,rgba(5,15,25,.88)_0%,rgba(5,15,25,.60)_45%,rgba(5,15,25,.10)_100%)]
-                max-sm:bg-[linear-gradient(90deg,rgba(5,15,25,.80),rgba(5,15,25,.36))]
-              "
-            />
-
-            {/* Degradado inferior */}
-
-            <div
-              className="
-                pointer-events-none absolute inset-0 z-[1]
-                bg-[linear-gradient(0deg,rgba(5,15,25,.85)_0%,transparent_45%)]
-                max-sm:bg-[linear-gradient(0deg,rgba(5,15,25,.85)_0%,transparent_55%)]
-              "
-            />
-
-            {/* Contenido de la diapositiva */}
-
-            <div
-              className="
-                container-site relative z-10
-                flex h-full flex-col justify-center
-                pt-[30px] pb-[165px]
-                max-[900px]:pb-[130px]
-                max-sm:pt-5 max-sm:pb-[115px]
-              "
-            >
+          <article key={slide.id} id={`hero-slide-${index}`} aria-hidden={!isActive}
+            aria-roledescription={es ? "Diapositiva" : "Slide"} aria-label={`${index + 1} / ${SLIDE_COUNT}`}
+            className={`absolute inset-0 overflow-hidden transition-[clip-path] duration-[1100ms] ease-[cubic-bezier(.77,0,.18,1)] motion-reduce:transition-none ${isActive ? "visible z-20 [clip-path:inset(0)]" : isLeaving ? "visible z-10 pointer-events-none [clip-path:inset(0)]" : "invisible z-0 pointer-events-none [clip-path:inset(0_0_0_100%)]"}`}>
+            <img src={slide.image} alt="" width={1920} height={1088} fetchPriority={index === 0 ? "high" : "auto"} loading="eager"
+              className={`absolute -inset-[2%] h-[104%] w-[104%] max-w-none object-cover object-center transition-transform duration-[9000ms] ease-linear motion-reduce:transition-none ${isActive ? "scale-100" : "scale-[1.14]"}`} />
+            <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(5,15,25,.88)_0%,rgba(5,15,25,.60)_45%,rgba(5,15,25,.10)_100%)] max-sm:bg-[linear-gradient(90deg,rgba(5,15,25,.80),rgba(5,15,25,.36))]" />
+            <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(0deg,rgba(5,15,25,.85)_0%,transparent_45%)] max-sm:bg-[linear-gradient(0deg,rgba(5,15,25,.85)_0%,transparent_55%)]" />
+            {/* El header fijo se superpone a la imagen, no al contenido. */}
+            <div className="container-site relative z-10 flex h-full flex-col justify-center pt-[110px] pb-[165px] max-xl:pt-[94px] max-[900px]:pb-[130px] max-sm:pt-[84px] max-sm:pb-[115px]">
               <div className="max-w-5xl">
-
-                {/* Etiqueta superior */}
-
-                <div
-                  className={`
-                    ${fadeClass}
-                    ${isActive ? "delay-300" : "delay-0"}
-                    motion-reduce:delay-0
-                  `}
-                >
+                <div className={`${fadeClass} ${isActive ? "delay-300" : "delay-0"} motion-reduce:delay-0`}>
                   {index === 0 ? (
-                    <a
-                      href="#noticias"
-                      tabIndex={isActive ? 0 : -1}
-                      className="
-                        inline-flex items-center gap-3
-                        rounded-full border border-white/30
-                        bg-white/10 py-1.5 pl-1.5 pr-4
-                        text-sm backdrop-blur
-                        transition-colors hover:bg-white/20
-                      "
-                    >
-                      <span
-                        className="
-                          grid size-9 place-items-center
-                          rounded-full bg-white
-                          font-display text-sm font-bold
-                          text-primary
-                        "
-                      >
-                        30
-                      </span>
-
+                    <a href="#noticias" tabIndex={isActive ? 0 : -1} className="inline-flex items-center gap-3 rounded-full border border-white/30 bg-white/10 py-1.5 pl-1.5 pr-4 text-sm backdrop-blur transition-colors hover:bg-white/20">
+                      <span className="grid size-9 place-items-center rounded-full bg-white font-display text-sm font-bold text-primary">30</span>
                       {t("hero.badge")}
                     </a>
                   ) : (
-                    <div
-                      className="
-                        inline-flex items-center gap-3
-                        text-sm font-semibold
-                        text-brand-light sm:text-base
-                      "
-                    >
-                      <Icon className="size-5" />
-
-                      {slide.kicker}
-                    </div>
+                    <div className="inline-flex items-center gap-3 text-sm font-semibold text-brand-light sm:text-base"><Icon className="size-5" />{slide.kicker}</div>
                   )}
                 </div>
-
-                {/* Título con animación por líneas */}
-
-                <h1
-                  className="
-                    mt-6 max-w-5xl
-                    font-display font-medium
-                    text-[clamp(2.2rem,5.2vw,5.6rem)]
-                    leading-[1.05] tracking-tight
-                    text-white
-                  "
-                >
-                  {slide.title.map(
-                    (line, lineIndex) => (
-                      <span
-                        key={lineIndex}
-                        className="
-                          block overflow-hidden
-                          pb-[0.08em]
-                        "
-                      >
-                        <span
-                          className={`
-                            block transition-transform
-                            duration-1000
-                            ease-[cubic-bezier(.16,1,.3,1)]
-                            motion-reduce:transition-none
-                            motion-reduce:delay-0
-                            ${
-                              isActive
-                                ? "translate-y-0"
-                                : "translate-y-[115%]"
-                            }
-                            ${
-                              isActive
-                                ? lineIndex === 0
-                                  ? "delay-[400ms]"
-                                  : "delay-[550ms]"
-                                : "delay-0"
-                            }
-                          `}
-                        >
-                          {line}
-                        </span>
-                      </span>
-                    )
-                  )}
+                <h1 className="mt-6 max-w-5xl font-display font-medium text-[clamp(2.2rem,5.2vw,5.6rem)] leading-[1.05] tracking-tight text-white">
+                  {slide.title.map((line, lineIndex) => (
+                    <span key={lineIndex} className="block overflow-hidden pb-[0.08em]">
+                      <span className={`block transition-transform duration-1000 ease-[cubic-bezier(.16,1,.3,1)] motion-reduce:transition-none motion-reduce:delay-0 ${isActive ? "translate-y-0" : "translate-y-[115%]"} ${isActive ? lineIndex === 0 ? "delay-[400ms]" : "delay-[550ms]" : "delay-0"}`}>{line}</span>
+                    </span>
+                  ))}
                 </h1>
-
-                {/* Descripción */}
-
-                <p
-                  className={`
-                    mt-6 max-w-xl
-                    text-base leading-relaxed
-                    text-white/85 sm:text-lg
-                    ${fadeClass}
-                    ${
-                      isActive
-                        ? "delay-[750ms]"
-                        : "delay-0"
-                    }
-                    motion-reduce:delay-0
-                  `}
-                >
-                  {slide.description}
-                </p>
-
-                {/* Botones de acción */}
-
-                <div
-                  className={`
-                    mt-8 flex flex-col gap-3
-                    sm:flex-row sm:flex-wrap
-                    ${fadeClass}
-                    ${
-                      isActive
-                        ? "delay-[950ms]"
-                        : "delay-0"
-                    }
-                    motion-reduce:delay-0
-                  `}
-                >
-                  <Button
-                    asChild
-                    size="lg"
-                    variant="hero"
-                  >
-                    {slide.primary.internal ? (
-                      <Link
-                        to={slide.primary.to}
-                        tabIndex={isActive ? 0 : -1}
-                      >
-                        {slide.primary.label}
-
-                        <ArrowRight className="size-5" />
-                      </Link>
-                    ) : (
-                      <a
-                        href={slide.primary.to}
-                        tabIndex={isActive ? 0 : -1}
-                      >
-                        {slide.primary.label}
-
-                        <ArrowRight className="size-5" />
-                      </a>
-                    )}
+                <p className={`mt-6 max-w-xl text-base leading-relaxed text-white/85 sm:text-lg ${fadeClass} ${isActive ? "delay-[750ms]" : "delay-0"} motion-reduce:delay-0`}>{slide.description}</p>
+                <div className={`mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap ${fadeClass} ${isActive ? "delay-[950ms]" : "delay-0"} motion-reduce:delay-0`}>
+                  <Button asChild size="lg" variant="hero">
+                    {slide.primary.internal ? <Link to={slide.primary.to} tabIndex={isActive ? 0 : -1}>{slide.primary.label}<ArrowRight className="size-5" /></Link> : <a href={slide.primary.to} tabIndex={isActive ? 0 : -1}>{slide.primary.label}<ArrowRight className="size-5" /></a>}
                   </Button>
-
-                  <Button
-                    asChild
-                    size="lg"
-                    variant="glass"
-                  >
-                    {slide.secondary.internal ? (
-                      <Link
-                        to={slide.secondary.to}
-                        tabIndex={isActive ? 0 : -1}
-                      >
-                        {slide.secondary.label}
-                      </Link>
-                    ) : (
-                      <a
-                        href={slide.secondary.to}
-                        tabIndex={isActive ? 0 : -1}
-                      >
-                        {slide.secondary.label}
-                      </a>
-                    )}
+                  <Button asChild size="lg" variant="glass">
+                    {slide.secondary.internal ? <Link to={slide.secondary.to} tabIndex={isActive ? 0 : -1}>{slide.secondary.label}</Link> : <a href={slide.secondary.to} tabIndex={isActive ? 0 : -1}>{slide.secondary.label}</a>}
                   </Button>
                 </div>
-
-                {/* Pilares institucionales */}
-
                 {slide.showPillars && (
-                  <ul
-                    className={`
-                      mt-8 hidden max-w-2xl
-                      flex-wrap gap-x-8 gap-y-3
-                      border-t border-white/20 pt-5
-                      text-sm text-white/85
-                      md:flex
-                      ${fadeClass}
-                      ${
-                        isActive
-                          ? "delay-[1100ms]"
-                          : "delay-0"
-                      }
-                      motion-reduce:delay-0
-                    `}
-                  >
-                    {t<string[]>("hero.pillars").map(
-                      (pillar, i) => {
-                        const PillarIcon =
-                          icons[i % icons.length] ??
-                          Microscope;
-
-                        return (
-                          <li
-                            key={pillar}
-                            className="
-                              flex items-center gap-2
-                            "
-                          >
-                            <PillarIcon
-                              className="
-                                size-4 text-brand-light
-                              "
-                            />
-
-                            {pillar}
-                          </li>
-                        );
-                      }
-                    )}
+                  <ul className={`mt-8 hidden max-w-2xl flex-wrap gap-x-8 gap-y-3 border-t border-white/20 pt-5 text-sm text-white/85 md:flex ${fadeClass} ${isActive ? "delay-[1100ms]" : "delay-0"} motion-reduce:delay-0`}>
+                    {t<string[]>("hero.pillars").map((pillar, i) => {
+                      const PillarIcon = icons[i % icons.length] ?? Microscope;
+                      return <li key={pillar} className="flex items-center gap-2"><PillarIcon className="size-4 text-brand-light" />{pillar}</li>;
+                    })}
                   </ul>
                 )}
               </div>
@@ -899,326 +225,72 @@ function Hero({ ready }: { ready: boolean }) {
           </article>
         );
       })}
-
-      {/* ====================================
-          INDICADOR LATERAL
-          ==================================== */}
-
-      <div
-        aria-hidden="true"
-        className="
-          absolute right-[26px] top-[45%] z-30
-          flex items-center gap-3
-          text-xs tracking-widest text-white/65
-          [writing-mode:vertical-rl]
-          max-[900px]:hidden
-        "
-      >
+      <div aria-hidden="true" className="absolute right-[26px] top-[45%] z-30 flex items-center gap-3 text-xs tracking-widest text-white/65 [writing-mode:vertical-rl] max-[900px]:hidden">
         {es ? "Desliza" : "Scroll"}
-
-        <span
-          className="
-            h-[60px] w-px
-            bg-linear-to-b from-white/80 to-transparent
-            animate-pulse
-            motion-reduce:animate-none
-          "
-        />
+        <span className="h-[60px] w-px bg-linear-to-b from-white/80 to-transparent animate-pulse motion-reduce:animate-none" />
       </div>
-
-      {/* ====================================
-          NAVEGACIÓN INFERIOR
-          ==================================== */}
-
-      <div
-        className="
-          absolute inset-x-0 bottom-0 z-30
-          pb-[30px] max-[900px]:pb-6
-        "
-      >
-        <div
-          className="
-            container-site flex items-end gap-7
-          "
-        >
-          {/* Pestañas */}
-
-          <div
-            role="group"
-            aria-label={
-              es
-                ? "Seleccionar diapositiva"
-                : "Select slide"
-            }
-            className="
-              flex min-w-0 flex-1 gap-[22px]
-              max-[900px]:gap-3.5
-              max-sm:gap-3
-            "
-          >
+      <div className="absolute inset-x-0 bottom-0 z-30 pb-[30px] max-[900px]:pb-6">
+        <div className="container-site flex items-end gap-7">
+          <div role="group" aria-label={es ? "Seleccionar diapositiva" : "Select slide"} className="flex min-w-0 flex-1 gap-[22px] max-[900px]:gap-3.5 max-sm:gap-3">
             {slides.map((slide, index) => (
-              <button
-                key={slide.id}
-                type="button"
-                disabled={!ready}
-                aria-pressed={active === index}
-                aria-controls={`hero-slide-${index}`}
-                onClick={() => goTo(index)}
-                className={`
-                  relative min-w-0 flex-1
-                  cursor-pointer pt-4 text-left
-                  transition-colors duration-300
-                  hover:text-white
-                  focus-visible:outline-none
-                  focus-visible:ring-2
-                  focus-visible:ring-brand-light
-                  max-sm:pt-3
-                  ${
-                    active === index
-                      ? "text-white"
-                      : "text-white/55"
-                  }
-                `}
-              >
-                {/* Barra de progreso */}
-
-                <span
-                  className="
-                    absolute inset-x-0 top-0
-                    h-[3px] overflow-hidden
-                    rounded-full bg-white/22
-                  "
-                >
-                  <span
-                    ref={(element) => {
-                      progressRefs.current[index] =
-                        element;
-                    }}
-                    className="
-                      block size-full origin-left
-                      [transform:scaleX(0)]
-                      bg-brand-light
-                    "
-                  />
+              <button key={slide.id} type="button" disabled={!ready} aria-pressed={active === index} aria-controls={`hero-slide-${index}`} onClick={() => goTo(index)}
+                className={`relative min-w-0 flex-1 cursor-pointer pt-4 text-left transition-colors duration-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-light max-sm:pt-3 ${active === index ? "text-white" : "text-white/55"}`}>
+                <span className="absolute inset-x-0 top-0 h-[3px] overflow-hidden rounded-full bg-white/22">
+                  <span ref={(element) => { progressRefs.current[index] = element; }} className="block size-full origin-left [transform:scaleX(0)] bg-brand-light" />
                 </span>
-
-                {/* Título */}
-
-                <span
-                  className="
-                    block font-display
-                    text-sm font-medium
-                    sm:text-lg
-                  "
-                >
-                  {slide.tab}
-                </span>
-
-                {/* Subtítulo */}
-
-                <span
-                  className="
-                    mt-1 block text-xs opacity-80
-                    sm:text-sm max-[900px]:hidden
-                  "
-                >
-                  {slide.subtitle}
-                </span>
+                <span className="block font-display text-sm font-medium sm:text-lg">{slide.tab}</span>
+                <span className="mt-1 block text-xs opacity-80 sm:text-sm max-[900px]:hidden">{slide.subtitle}</span>
               </button>
             ))}
           </div>
-
-          {/* Flechas */}
-
-          <div
-            className="
-              flex gap-2.5
-              max-[900px]:hidden
-            "
-          >
-            <button
-              type="button"
-              disabled={!ready}
-              onClick={() => goTo(active - 1)}
-              aria-label={
-                es ? "Anterior" : "Previous"
-              }
-              className="
-                grid size-[50px] place-items-center
-                rounded-full border-[1.5px]
-                border-white/35 bg-white/6
-                text-white backdrop-blur-sm
-                transition-all duration-350
-                ease-[cubic-bezier(.16,1,.3,1)]
-                hover:scale-[1.08]
-                hover:border-white hover:bg-white/20
-                focus-visible:outline-none
-                focus-visible:ring-2
-                focus-visible:ring-brand-light
-                motion-reduce:transition-none
-              "
-            >
-              <ChevronLeft className="size-5" />
-            </button>
-
-            <button
-              type="button"
-              disabled={!ready}
-              onClick={() => goTo(active + 1)}
-              aria-label={
-                es ? "Siguiente" : "Next"
-              }
-              className="
-                grid size-[50px] place-items-center
-                rounded-full border-[1.5px]
-                border-white/35 bg-white/6
-                text-white backdrop-blur-sm
-                transition-all duration-350
-                ease-[cubic-bezier(.16,1,.3,1)]
-                hover:scale-[1.08]
-                hover:border-white hover:bg-white/20
-                focus-visible:outline-none
-                focus-visible:ring-2
-                focus-visible:ring-brand-light
-                motion-reduce:transition-none
-              "
-            >
-              <ChevronRight className="size-5" />
-            </button>
+          <div className="flex gap-2.5 max-[900px]:hidden">
+            <button type="button" disabled={!ready} onClick={() => goTo(active - 1)} aria-label={es ? "Anterior" : "Previous"} className="grid size-[50px] place-items-center rounded-full border-[1.5px] border-white/35 bg-white/6 text-white backdrop-blur-sm transition-all duration-350 ease-[cubic-bezier(.16,1,.3,1)] hover:scale-[1.08] hover:border-white hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-light motion-reduce:transition-none"><ChevronLeft className="size-5" /></button>
+            <button type="button" disabled={!ready} onClick={() => goTo(active + 1)} aria-label={es ? "Siguiente" : "Next"} className="grid size-[50px] place-items-center rounded-full border-[1.5px] border-white/35 bg-white/6 text-white backdrop-blur-sm transition-all duration-350 ease-[cubic-bezier(.16,1,.3,1)] hover:scale-[1.08] hover:border-white hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-light motion-reduce:transition-none"><ChevronRight className="size-5" /></button>
           </div>
         </div>
       </div>
-
-      {/* Crédito fotográfico provisional */}
-
-      <span
-        className="
-          absolute bottom-2 right-4 z-30
-          text-[0.6rem] uppercase
-          tracking-widest text-white/40
-        "
-      >
-        {t("hero.photo")}
-      </span>
+      <span className="absolute bottom-2 right-4 z-30 text-[0.6rem] uppercase tracking-widest text-white/40">{t("hero.photo")}</span>
     </section>
   );
 }
 
-// ==========================================
-// PÁGINA PRINCIPAL
-// ==========================================
-
 export default function Home() {
-  const [showPreloader, setShowPreloader] =
-    useState(() => !hasShownPreloader);
-
+  const [showPreloader, setShowPreloader] = useState(() => !hasShownPreloader);
   const [exiting, setExiting] = useState(false);
-
-  const [heroReady, setHeroReady] = useState(
-    () => hasShownPreloader
-  );
-
+  const [heroReady, setHeroReady] = useState(() => hasShownPreloader);
   useEffect(() => {
     if (!showPreloader) return;
-
-    const previousOverflow =
-      document.body.style.overflow;
-
+    const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-
     let disposed = false;
-
     const timers: number[] = [];
-
-    const schedule = (
-      callback: () => void,
-      delay: number
-    ) => {
-      const timer = window.setTimeout(() => {
-        if (!disposed) {
-          callback();
-        }
-      }, delay);
-
-      timers.push(timer);
+    const schedule = (callback: () => void, delay: number) => {
+      timers.push(window.setTimeout(() => { if (!disposed) callback(); }, delay));
     };
-
-    const reducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)"
-    ).matches;
-
-    // Inicia la salida del preloader.
-
-    schedule(
-      () => {
-        setExiting(true);
-      },
-      reducedMotion ? 100 : 1500
-    );
-
-    // Activa el carrusel durante la transición.
-
-    schedule(
-      () => {
-        setHeroReady(true);
-      },
-      reducedMotion ? 110 : 2050
-    );
-
-    // Elimina el preloader.
-
-    schedule(
-      () => {
-        hasShownPreloader = true;
-        setShowPreloader(false);
-
-        document.body.style.overflow =
-          previousOverflow;
-      },
-      reducedMotion ? 150 : 2550
-    );
-
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    schedule(() => setExiting(true), reducedMotion ? 100 : 1500);
+    schedule(() => setHeroReady(true), reducedMotion ? 110 : 2050);
+    schedule(() => {
+      hasShownPreloader = true;
+      setShowPreloader(false);
+      document.body.style.overflow = previousOverflow;
+    }, reducedMotion ? 150 : 2550);
     return () => {
       disposed = true;
-
-      timers.forEach((timer) => {
-        window.clearTimeout(timer);
-      });
-
-      document.body.style.overflow =
-        previousOverflow;
+      timers.forEach((timer) => window.clearTimeout(timer));
+      document.body.style.overflow = previousOverflow;
     };
   }, [showPreloader]);
-
   return (
     <main>
-      {/* Pantalla de carga inicial */}
-
-      {showPreloader && (
-        <Preloader exiting={exiting} />
-      )}
-
-      {/* Portada principal */}
-
+      {showPreloader && <Preloader exiting={exiting} />}
       <Hero ready={heroReady} />
-
-      {/* Nosotros */}
-
       <About />
       <SectionShortcut to="/nosotros" />
-
-      {/* Paisajes */}
-
       <Landscapes />
       <SectionShortcut to="/paisajes" />
-
-      {/* Programas */}
-
       <Programs />
       <SectionShortcut to="/programas" />
-
-      {/* Noticias */}
-
       <Noticias />
       <SectionShortcut to="/noticias" />
     </main>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, ChevronRight, Menu, X, Heart } from "lucide-react";
+import { ChevronDown, ChevronRight, Menu, X } from "lucide-react";
 import { useI18n, type Lang } from "@/i18n/I18nProvider";
 import { Logo } from "./Logo";
 import { Button } from "@/components/ui/button";
@@ -139,8 +139,8 @@ const pick = (lang: Lang, es: string, en: string) => (lang === "es" ? es : en);
 
 function LangSwitch() {
   const { lang, setLang, t } = useI18n();
-  return <div role="group" aria-label={t("nav.language")} className="inline-flex rounded-full border border-border p-0.5">
-    {(["es", "en"] as Lang[]).map((l) => <Button key={l} size="sm" variant={lang === l ? "default" : "ghost"} onClick={() => setLang(l)} aria-pressed={lang === l} className="px-2 uppercase">{l}</Button>)}
+  return <div role="group" aria-label={t("nav.language")} className="inline-flex rounded-full border border-white/35 p-0.5">
+    {(["es", "en"] as Lang[]).map((l) => <Button key={l} size="sm" variant={lang === l ? "default" : "ghost"} onClick={() => setLang(l)} aria-pressed={lang === l} className={`px-2 uppercase ${lang === l ? "bg-white text-brand-deep hover:bg-white/90" : "text-white hover:bg-white/10 hover:text-white"}`}>{l}</Button>)}
   </div>;
 }
 
@@ -197,13 +197,15 @@ function DropdownItem({
 function SubDropdown({
   items,
   onNavigate,
+  alignLeft = false,
 }: {
   items: NavItem[];
+  alignLeft?: boolean;
   onNavigate?: (() => void) | undefined;
 }) {
   return (
-    <div className="invisible absolute left-full top-0 z-50 ml-2 w-72 translate-x-1 opacity-0 transition-all duration-200 group-hover/sub:visible group-hover/sub:translate-x-0 group-hover/sub:opacity-100 group-focus-within/sub:visible group-focus-within/sub:translate-x-0 group-focus-within/sub:opacity-100">
-      <span className="absolute -left-2 top-4 size-2 rotate-45 border-l border-b border-border bg-popover" />
+    <div className={`invisible absolute top-0 z-50 w-72 opacity-0 transition-all duration-200 group-hover/sub:visible group-hover/sub:translate-x-0 group-hover/sub:opacity-100 group-focus-within/sub:visible group-focus-within/sub:translate-x-0 group-focus-within/sub:opacity-100 ${alignLeft ? "right-full pr-2 -translate-x-1" : "left-full pl-2 translate-x-1"}`}>
+      <span className={`absolute top-4 size-2 rotate-45 border-border bg-popover ${alignLeft ? "right-1 border-r border-t" : "left-1 border-l border-b"}`} />
       <div className="relative rounded-xl border border-border bg-popover p-2 shadow-xl ring-1 ring-black/5">
         <div className="flex flex-col gap-0.5">
           {items.map((sub) => (
@@ -218,10 +220,11 @@ function SubDropdown({
 /* Panel de escritorio: subsecciones + sub-subsecciones (sin overflow-hidden) */
 function DesktopDropdown({ section }: { section: NavGroup }) {
   const { lang } = useI18n();
+  const alignLeft = section.key === "news" || section.key === "contact";
   return (
-    <div className="invisible absolute left-0 top-full z-50 w-80 pt-3 opacity-0 transition-all duration-200 group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
-      <span className="absolute left-6 top-2 size-2.5 rotate-45 border-l border-t border-border bg-popover" />
-      <div className="relative rounded-xl border border-border bg-gradient-to-b from-popover to-popover/95 p-2 shadow-xl ring-1 ring-black/5">
+    <div className={`invisible absolute top-full z-50 w-80 pt-3 translate-y-2 opacity-0 transition-all duration-300 ease-out group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 ${alignLeft ? "right-0" : "left-0"}`}>
+      <span className={`absolute top-2 size-2.5 rotate-45 border-l border-t border-border bg-popover ${alignLeft ? "right-6" : "left-6"}`} />
+      <div className="relative rounded-xl border border-border bg-popover p-2 shadow-xl ring-1 ring-black/5">
         <div className="px-3 pb-1 pt-1.5 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {pick(lang, section.es, section.en)}
         </div>
@@ -233,7 +236,7 @@ function DesktopDropdown({ section }: { section: NavGroup }) {
               return (
                 <div key={item.key} className="group/sub relative">
                   <DropdownItem item={parentItem} />
-                  <SubDropdown items={item.children} />
+                  <SubDropdown items={item.children} alignLeft={alignLeft} />
                 </div>
               );
             }
@@ -310,58 +313,108 @@ function MobileSection({ section, onNavigate }: { section: NavGroup; onNavigate:
 export function Header() {
   const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
-
-  const location = useLocation();
-  const pathname = location.pathname;
+  const [scrolled, setScrolled] = useState(() => window.scrollY > 40);
+  const { pathname } = useLocation();
+  const isHome = pathname === "/";
+  const solid = !isHome || scrolled || open;
 
   useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
+    const update = () => setScrolled(window.scrollY > 40);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!open) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", closeOnEscape);
+    };
   }, [open]);
 
   useEffect(() => { setOpen(false); }, [pathname]);
 
-  return <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
-    <div className="mx-auto max-w-[1600px] flex h-16 items-center justify-between gap-6 px-4 sm:px-8 xl:h-20">
-      <Logo />
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 1280px)");
+    const closeOnDesktop = () => { if (desktop.matches) setOpen(false); };
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
+  }, []);
 
-      <nav aria-label="Principal" className="hidden xl:block">
-        <ul className="flex gap-1">
-          {navSections.map((s) => (
-            <li key={s.key} className="group relative">
-              <Button asChild variant="ghost" className={pathname.startsWith(s.to) ? "bg-secondary text-primary" : "text-brand-deep"}>
-                <Link to={s.to}>
-                  {pick(lang, s.es, s.en)}
-                  <ChevronDown className="size-3 transition-transform duration-200 group-hover:rotate-180" />
-                </Link>
-              </Button>
-              <DesktopDropdown section={s} />
-            </li>
-          ))}
-        </ul>
-      </nav>
+  return (
+    <>
+      {/* Reserva espacio solo en las páginas interiores. */}
+      {!isHome && <div aria-hidden="true" className="h-16 xl:h-20" />}
 
-      <div className="flex shrink-0 items-center gap-4">
-        <div className="hidden sm:block"><LangSwitch /></div>
-        <AnniversaryBadge />
-        <Button variant="ghost" size="icon" className="xl:hidden" aria-label={t("nav.menu")} aria-expanded={open} onClick={() => setOpen(true)}><Menu /></Button>
-      </div>
-    </div>
+      <header
+        className={`fixed inset-x-0 top-0 z-50 text-white transition-[background-color,box-shadow] duration-400 motion-reduce:transition-none ${
+          solid
+            ? "bg-brand-deep/95 shadow-md"
+            : "bg-transparent"
+        }`}
+      >
+        {/* El desenfoque vive en una capa separada para no afectar al menú móvil fijo. */}
+        <div aria-hidden="true" className={`pointer-events-none absolute inset-0 -z-10 ${solid ? "backdrop-blur-xl" : "bg-linear-to-b from-black/45 to-transparent"}`} />
 
-    {open && <div className="fixed inset-0 z-[100] flex h-dvh flex-col bg-background xl:hidden">
-      <div className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4">
-        <Logo />
-        <div className="flex items-center gap-2">
-          <LangSwitch />
-          <Button variant="ghost" size="icon" aria-label={t("nav.close")} onClick={() => setOpen(false)}><X /></Button>
+        <div className={`relative mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-8 transition-[height] duration-400 motion-reduce:transition-none ${scrolled ? "h-16 xl:h-[68px]" : "h-16 xl:h-20"}`}>
+          <Logo light />
+
+          <nav aria-label={pick(lang, "Principal", "Main navigation")} className="hidden xl:block">
+            <ul className="flex items-center gap-1">
+              {navSections.map((s) => {
+                const active = pathname === s.to || pathname.startsWith(`${s.to}/`);
+                return (
+                  <li key={s.key} className="group relative">
+                    <Link
+                      to={s.to}
+                      aria-current={active ? "page" : undefined}
+                      className={`relative inline-flex items-center gap-1.5 rounded-md px-3 py-3 text-sm font-medium transition-colors duration-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-light ${active ? "text-white" : "text-white/85"}`}
+                    >
+                      {pick(lang, s.es, s.en)}
+                      <ChevronDown className="size-3 opacity-75 transition-transform duration-300 group-hover:rotate-180 group-focus-within:rotate-180" />
+                      <span aria-hidden="true" className={`absolute inset-x-3 bottom-1 h-0.5 rounded-full bg-brand-light transition-transform duration-300 ease-out group-hover:scale-x-100 group-focus-within:scale-x-100 ${active ? "scale-x-100" : "origin-right scale-x-0 group-hover:origin-left"}`} />
+                    </Link>
+                    <DesktopDropdown section={s} />
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+
+          <div className="flex shrink-0 items-center gap-3 sm:gap-4">
+            <div className="hidden sm:block"><LangSwitch /></div>
+            <AnniversaryBadge />
+            <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white xl:hidden" aria-label={t("nav.menu")} aria-expanded={open} onClick={() => setOpen(true)}>
+              <Menu />
+            </Button>
+          </div>
         </div>
-      </div>
-      <nav aria-label="Menú móvil" className="flex-1 overflow-y-auto px-4 py-3">
-        {navSections.map((s) => <MobileSection key={s.key} section={s} onNavigate={() => setOpen(false)} />)}
-        <div className="mt-6 flex items-center justify-center gap-3">
-          <AnniversaryBadge onClick={() => setOpen(false)} />
-        </div>
-      </nav>
-    </div>}
-  </header>;
+
+        {open && (
+          <div className="fixed inset-0 z-[100] flex h-dvh flex-col bg-background text-foreground xl:hidden">
+            <div className="flex h-16 shrink-0 items-center justify-between gap-2 bg-brand-deep px-4 text-white">
+              <Logo light />
+              <div className="flex items-center gap-2">
+                <LangSwitch />
+                <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white" aria-label={t("nav.close")} onClick={() => setOpen(false)}><X /></Button>
+              </div>
+            </div>
+            <nav aria-label={pick(lang, "Menú móvil", "Mobile menu")} className="flex-1 overflow-y-auto px-4 py-3">
+              {navSections.map((s) => <MobileSection key={s.key} section={s} onNavigate={() => setOpen(false)} />)}
+              <div className="mt-6 flex items-center justify-center gap-3">
+                <AnniversaryBadge onClick={() => setOpen(false)} />
+              </div>
+            </nav>
+          </div>
+        )}
+      </header>
+    </>
+  );
 }
