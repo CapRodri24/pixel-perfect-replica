@@ -344,7 +344,6 @@ export function Header() {
       <div className="flex shrink-0 items-center gap-4">
         <div className="hidden sm:block"><LangSwitch /></div>
         <AnniversaryBadge />
-        <Button asChild variant="hero"><Link to="/donar"><Heart />{lang === "es" ? "Donar" : "Donate"}</Link></Button>
         <Button variant="ghost" size="icon" className="xl:hidden" aria-label={t("nav.menu")} aria-expanded={open} onClick={() => setOpen(true)}><Menu /></Button>
       </div>
     </div>
@@ -361,7 +360,6 @@ export function Header() {
         {navSections.map((s) => <MobileSection key={s.key} section={s} onNavigate={() => setOpen(false)} />)}
         <div className="mt-6 flex items-center justify-center gap-3">
           <AnniversaryBadge onClick={() => setOpen(false)} />
-          <Button asChild variant="hero" size="lg" className="flex-1"><Link to="/donar" onClick={() => setOpen(false)}><Heart />{lang === "es" ? "Donar" : "Donate"}</Link></Button>
         </div>
       </nav>
     </div>}
