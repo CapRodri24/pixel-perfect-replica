@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { ChevronDown, ChevronRight, Menu, X } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { ArrowLeft, ChevronDown, ChevronRight, Home, Menu, X } from "lucide-react";
 import { useI18n, type Lang } from "@/i18n/I18nProvider";
 import { Logo } from "./Logo";
 import { landscapes } from "@/config/content";
@@ -147,7 +147,7 @@ function LangSwitch() {
   </div>;
 }
 
-/** Botón redondo conmemorativo "30 años" — blanco, resplandor azul solo al hover */
+/** Botón conmemorativo de los 30 años */
 function AnniversaryBadge({ onClick }: { onClick?: (() => void) | undefined }) {
   const { lang } = useI18n();
   return (
@@ -155,14 +155,19 @@ function AnniversaryBadge({ onClick }: { onClick?: (() => void) | undefined }) {
       to="/noticias"
       onClick={onClick}
       aria-label={lang === "es" ? "30 aniversario" : "30th anniversary"}
-      className="group relative inline-flex size-12 shrink-0 items-center justify-center rounded-full bg-white text-blue-700 shadow-md shadow-blue-500/20 ring-2 ring-blue-400/40 transition-shadow duration-300 hover:shadow-xl hover:shadow-blue-500/60 hover:ring-blue-400/70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/60"
+      className="group relative inline-flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#e6d3a2] bg-[#fdfbf5] text-brand-deep shadow-sm transition-[transform,box-shadow,background-color] duration-300 hover:bg-white hover:shadow-lg hover:shadow-black/15 motion-safe:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-light focus-visible:ring-offset-2 sm:size-[52px]"
     >
+      <span aria-hidden="true" className="pointer-events-none absolute inset-[3px] rounded-full border border-[#c7a45c]/65" />
+      <span aria-hidden="true" className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/80 to-transparent transition-transform duration-700 motion-safe:group-hover:translate-x-full" />
       <span className="relative flex flex-col items-center leading-none">
-        <span className="text-base font-extrabold tracking-tight text-blue-700 drop-shadow-sm">30</span>
-        <span className="text-[9px] font-semibold uppercase tracking-wider text-blue-600 drop-shadow-sm">
-          {lang === "es" ? "años" : "yrs"}
+        <span className="font-display text-[23px] font-bold leading-none tracking-[-0.07em] sm:text-[25px]">30</span>
+        <span className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.18em] text-[#826024]">
+          {lang === "es" ? "años" : "years"}
         </span>
       </span>
+      <svg aria-hidden="true" viewBox="0 0 24 12" fill="none" className="pointer-events-none absolute right-[5px] top-[5px] h-[7px] w-[13px] text-brand-deep">
+        <path d="M1 3C6 2 9 5 12 9C15 5 18 2 23 3C18 4 16 7 12 11C8 7 6 4 1 3Z" fill="currentColor" />
+      </svg>
     </Link>
   );
 }
@@ -327,6 +332,14 @@ export function Header() {
   const [dismissed, setDismissed] = useState<string | null>(null);
   const [scrolled, setScrolled] = useState(() => window.scrollY > 40);
   const { pathname, key: locationKey } = useLocation();
+  const navigate = useNavigate();
+  const goBack = () => {
+    if (typeof window.history.state?.idx === "number" && window.history.state.idx > 0) {
+      navigate(-1);
+    } else if (pathname !== "/") {
+      navigate("/", { replace: true });
+    }
+  };
   const isHome = pathname === "/";
   const solid = !isHome || scrolled || open;
 
@@ -378,11 +391,21 @@ export function Header() {
         {/* El desenfoque vive en una capa separada para no afectar al menú móvil fijo. */}
         <div aria-hidden="true" className={`pointer-events-none absolute inset-0 -z-10 ${solid ? "backdrop-blur-xl" : "bg-linear-to-b from-black/45 to-transparent"}`} />
 
-        <div className={`relative mx-auto flex max-w-[1600px] items-center justify-between gap-4 px-4 sm:px-8 transition-[height] duration-400 motion-reduce:transition-none ${scrolled ? "h-16 xl:h-[68px]" : "h-16 xl:h-20"}`}>
-          <Logo light />
+        <div className={`relative mx-auto flex max-w-[1600px] items-center justify-between gap-1 px-3 sm:gap-4 sm:px-8 transition-[height] duration-400 motion-reduce:transition-none ${scrolled ? "h-16 xl:h-[68px]" : "h-16 xl:h-20"}`}>
+          <div className="flex min-w-0 items-center gap-1 sm:gap-2">
+            {!isHome && <Button variant="ghost" size="icon" className="size-8 shrink-0 text-white hover:bg-white/10 hover:text-white xl:hidden" aria-label={pick(lang, "Volver atrás", "Go back")} onClick={goBack}><ArrowLeft className="size-5" /></Button>}
+            <Logo light />
+          </div>
 
           <nav aria-label={pick(lang, "Principal", "Main navigation")} className="hidden xl:block">
             <ul className="flex items-center gap-1">
+              <li>
+                <Link to="/" aria-current={isHome ? "page" : undefined} onClick={() => { if (isHome) window.scrollTo({ top: 0, behavior: "auto" }); }} className={`relative inline-flex items-center gap-1.5 rounded-md px-3 py-3 text-sm font-medium transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-light ${isHome ? "text-white" : "text-white/85"}`}>
+                  <Home className="size-4" />
+                  {pick(lang, "Inicio", "Home")}
+                  {isHome && <span aria-hidden="true" className="absolute inset-x-3 bottom-1 h-0.5 rounded-full bg-brand-light" />}
+                </Link>
+              </li>
               {navSections.map((s) => {
                 const active = pathname === s.to || pathname.startsWith(`${s.to}/`);
                 return (
@@ -426,7 +449,8 @@ export function Header() {
             </ul>
           </nav>
 
-          <div className="flex shrink-0 items-center gap-3 sm:gap-4">
+          <div className="flex shrink-0 items-center gap-1 sm:gap-4">
+            <Link to="/" aria-label={pick(lang, "Inicio", "Home")} aria-current={isHome ? "page" : undefined} onClick={() => { if (isHome) window.scrollTo({ top: 0, behavior: "auto" }); }} className="grid size-8 shrink-0 place-items-center rounded-md text-white hover:bg-white/10 xl:hidden"><Home className="size-5" /></Link>
             <div className="hidden sm:block"><LangSwitch /></div>
             <AnniversaryBadge />
             <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 hover:text-white xl:hidden" aria-label={t("nav.menu")} aria-expanded={open} onClick={() => setOpen(true)}>
@@ -445,6 +469,11 @@ export function Header() {
               </div>
             </div>
             <nav aria-label={pick(lang, "Menú móvil", "Mobile menu")} className="flex-1 overflow-y-auto px-4 py-3">
+              <div className="border-b border-border/70 py-2">
+                <Button asChild variant="ghost" className="w-full justify-start gap-2 text-base">
+                  <Link to="/" aria-current={isHome ? "page" : undefined} onClick={() => { setOpen(false); if (isHome) window.scrollTo({ top: 0, behavior: "auto" }); }}><Home className="size-5" />{pick(lang, "Inicio", "Home")}</Link>
+                </Button>
+              </div>
               {navSections.map((s) => <MobileSection key={s.key} section={s} onNavigate={() => setOpen(false)} />)}
               <div className="mt-6 flex items-center justify-center gap-3">
                 <AnniversaryBadge onClick={() => setOpen(false)} />
