@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { ArrowRight, ChevronLeft, ChevronRight, Feather, Bird, Mountain, Microscope, Trees, Users } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Feather, Bird, Mountain, Trees } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
@@ -53,7 +53,6 @@ function Hero({ ready }: { ready: boolean }) {
   const touchStartRef = useRef<number | null>(null);
   const progressRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const transitionTimerRef = useRef<number | null>(null);
-  const icons = [Microscope, Trees, Users];
   const slides = [
     {
       id: "beni", image: "/images/home/1.jpg", icon: Feather,
@@ -64,7 +63,7 @@ function Hero({ ready }: { ready: boolean }) {
       secondary: { label: t<string>("quick.donate"), to: "/donar", internal: true },
       tab: t<string>("landscapes.items.beni.name"),
       subtitle: es ? "Sabanas y humedales" : "Savannas and wetlands",
-      showPillars: true,
+
     },
     {
       id: "yungas", image: "/images/home/2.jpg", icon: Trees,
@@ -75,7 +74,7 @@ function Hero({ ready }: { ready: boolean }) {
       secondary: { label: t<string>("quick.donate"), to: "/donar", internal: true },
       tab: t<string>("landscapes.items.yungas.name"),
       subtitle: es ? "Bosques nublados" : "Cloud forests",
-      showPillars: false,
+
     },
     {
       id: "andes", image: "/images/home/3.jpg", icon: Mountain,
@@ -86,7 +85,7 @@ function Hero({ ready }: { ready: boolean }) {
       secondary: { label: t<string>("quick.donate"), to: "/donar", internal: true },
       tab: t<string>("landscapes.items.andes.name"),
       subtitle: es ? "Montañas y fuentes de agua" : "Mountains and water sources",
-      showPillars: false,
+
     },
     {
       id: "seco", image: "/images/home/4.jpg", icon: Bird,
@@ -97,7 +96,7 @@ function Hero({ ready }: { ready: boolean }) {
       secondary: { label: t<string>("quick.donate"), to: "/donar", internal: true },
       tab: t<string>("landscapes.items.seco.name"),
       subtitle: es ? "Valles secos y cañones" : "Dry valleys and canyons",
-      showPillars: false,
+
     },
     {
       id: "amazonia", image: "/images/home/5.jpg", icon: Trees,
@@ -108,7 +107,7 @@ function Hero({ ready }: { ready: boolean }) {
       secondary: { label: t<string>("quick.donate"), to: "/donar", internal: true },
       tab: t<string>("landscapes.items.amazonia.name"),
       subtitle: es ? "Bosques tropicales y ríos" : "Tropical forests and rivers",
-      showPillars: false,
+
     },
   ];
 
@@ -230,20 +229,12 @@ function Hero({ ready }: { ready: boolean }) {
                     {slide.secondary.internal ? <Link to={slide.secondary.to} tabIndex={isActive ? 0 : -1}>{slide.secondary.label}</Link> : <a href={slide.secondary.to} tabIndex={isActive ? 0 : -1}>{slide.secondary.label}</a>}
                   </Button>
                 </div>
-                {slide.showPillars && (
-                  <ul className={`mt-8 hidden max-w-2xl flex-wrap gap-x-8 gap-y-3 border-t border-white/20 pt-5 text-sm text-white/85 md:flex ${fadeClass} ${isActive ? "delay-[1100ms]" : "delay-0"} motion-reduce:delay-0`}>
-                    {t<string[]>("hero.pillars").map((pillar, i) => {
-                      const PillarIcon = icons[i % icons.length] ?? Microscope;
-                      return <li key={pillar} className="flex items-center gap-2"><PillarIcon className="size-4 text-brand-light" />{pillar}</li>;
-                    })}
-                  </ul>
-                )}
               </div>
             </div>
           </article>
         );
       })}
-      <div aria-hidden="true" className="absolute right-[26px] top-[45%] z-30 flex items-center gap-3 text-xs tracking-widest text-white/65 [writing-mode:vertical-rl] max-[900px]:hidden">
+      <div aria-hidden="true" className="absolute right-[80px] top-[45%] z-30 flex items-center gap-3 text-xs tracking-widest text-white/65 [writing-mode:vertical-rl] max-[900px]:hidden">
         {es ? "Desliza" : "Scroll"}
         <span className="h-[60px] w-px bg-linear-to-b from-white/80 to-transparent animate-pulse motion-reduce:animate-none" />
       </div>
@@ -267,7 +258,6 @@ function Hero({ ready }: { ready: boolean }) {
           </div>
         </div>
       </div>
-      <span className="absolute bottom-2 right-4 z-30 text-[0.6rem] uppercase tracking-widest text-white/40">{t("hero.photo")}</span>
     </section>
   );
 }
