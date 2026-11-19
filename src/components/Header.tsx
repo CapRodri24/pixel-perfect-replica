@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 
 export const quickLinks = [
   { key: "donate", href: "/donar" },
-  { key: "member", href: "/contacto" },
-  { key: "reserves", href: "/paisajes" },
+  { key: "member", href: "/contacto/haztemiembro" },
+  { key: "reserves", href: "/contacto/visitanuestrasreservas" },
   { key: "anniversary", href: "/noticias" },
 ] as const;
 
@@ -127,11 +127,12 @@ const navSections: NavGroup[] = [
     to: "/contacto",
     hash: "contacto",
     children: [
-      { key: "contact-donate", es: "Donaciones y membresía", en: "Donations & membership", to: "/contacto", hash: "donaciones" },
-      { key: "contact-tourism", es: "Turismo y reservas", en: "Tourism & reserves", to: "/contacto", hash: "turismo" },
-      { key: "contact-press", es: "Contacto prensa", en: "Press contact", to: "/contacto", hash: "prensa" },
-      { key: "contact-souvenirs", es: "Souvenirs", en: "Souvenirs", to: "/contacto", hash: "souvenirs" },
-      { key: "contact-offices", es: "Oficinas", en: "Offices", to: "/contacto", hash: "oficinas" },
+      { key: "contact-donate", es: "Donaciones y membresía", en: "Donations & membership", to: "/contacto", hash: "donaciones", children: [{ key: "member-page", es: "Hazte miembro", en: "Become a member", to: "/contacto/haztemiembro" }, { key: "donate-page", es: "Donar", en: "Donate", to: "/donar" }] },
+      { key: "contact-tourism", es: "Turismo y reservas", en: "Tourism & reserves", to: "/contacto/visitanuestrasreservas" },
+      { key: "contact-press", es: "Contacto prensa", en: "Press contact", to: "/contacto/prensa" },
+      { key: "contact-souvenirs", es: "Souvenirs", en: "Souvenirs", to: "/contacto/souvenirs" },
+      { key: "contact-offices", es: "Oficinas", en: "Offices", to: "/contacto/oficinas" },
+      { key: "contact-guide", es: "Guía de campo Aves de Bolivia", en: "Birds of Bolivia field guide", to: "/contacto/guiadecampoaves" },
       { key: "contact-queries", es: "Consultas", en: "General queries", to: "/contacto", hash: "consultas" },
     ],
   },
@@ -175,12 +176,14 @@ function DropdownItem({
   onNavigate?: (() => void) | undefined;
 }) {
   const { lang, t } = useI18n();
+  const { pathname, hash } = useLocation();
   const label = item.es.startsWith("landscapes.items.") ? t(item.es) : pick(lang, item.es, item.en);
   const hasChildren = !!item.children?.length;
   const href = `${item.to}${item.hash ? `#${item.hash}` : ""}`;
   return (
     <Link
       to={href}
+      aria-current={item.to === pathname && item.hash && hash === `#${item.hash}` ? "location" : undefined}
       onClick={onNavigate}
       className="group/item relative flex items-start gap-2 rounded-lg px-3 py-2 text-sm text-foreground/80 transition-all duration-200 hover:bg-primary/5 hover:pl-4 hover:text-primary"
     >
@@ -237,7 +240,7 @@ function DesktopDropdown({ section }: { section: NavGroup }) {
               const { hash: _hash, ...parentItem } = item;
               return (
                 <div key={item.key} className="group/sub relative">
-                  <DropdownItem item={["about-partners", "land-programs", "news-media"].includes(item.key) ? item : parentItem} />
+                  <DropdownItem item={["about-partners", "land-programs", "news-media", "contact-donate"].includes(item.key) ? item : parentItem} />
                   <SubDropdown items={item.children} alignLeft={alignLeft} />
                 </div>
               );
@@ -281,7 +284,7 @@ function MobileSection({ section, onNavigate }: { section: NavGroup; onNavigate:
                   <ChevronDown className="mt-0.5 size-3.5 shrink-0 transition-transform duration-200 group-open/sub:rotate-180" />
                 </summary>
                 <div className="ml-3 border-l border-border/70 pl-2">
-                  {["land-programs", "news-media"].includes(item.key) && (
+                  {["land-programs", "news-media", "contact-donate"].includes(item.key) && (
                     <DropdownItem item={{ key: item.key, es: item.es, en: item.en, to: item.to, ...(item.hash !== undefined ? { hash: item.hash } : {}) }} onNavigate={onNavigate} />
                   )}
                   {item.key === "about-partners" && (
@@ -295,7 +298,7 @@ function MobileSection({ section, onNavigate }: { section: NavGroup; onNavigate:
                       size="sm"
                       className="h-auto w-full justify-start whitespace-normal rounded-md py-2 text-left text-sm font-normal leading-snug text-foreground/80 hover:bg-primary/5 hover:text-primary"
                     >
-                      <Link to={`${sub.to}#${sub.hash}`} onClick={onNavigate}>{pick(lang, sub.es, sub.en)}</Link>
+                      <Link to={`${sub.to}${sub.hash ? `#${sub.hash}` : ""}`} onClick={onNavigate}>{pick(lang, sub.es, sub.en)}</Link>
                     </Button>
                   ))}
                 </div>

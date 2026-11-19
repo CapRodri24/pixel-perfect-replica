@@ -1,0 +1,5 @@
+import { MapPin } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useI18n } from "@/i18n/I18nProvider";
+import { ContactPage } from "./comun";
+export default function Oficinas(){const {lang,t}=useI18n();const es=lang==="es";return <ContactPage title={es?"Oficinas":"Offices"} description={es?"Conoce nuestros canales de atención institucional.":"Find our institutional contact channels."}><div className="rounded-3xl border border-border bg-background p-8 shadow-card"><MapPin className="size-10 text-primary"/><h2 className="mt-4 font-display text-3xl text-brand-deep">{t("contact.office")}</h2><p className="mt-4 whitespace-pre-line text-muted-foreground">{t("contact.officeText")}</p><p className="mt-4 text-sm text-muted-foreground">{es?"Consulta previamente los horarios y la disponibilidad de atención.":"Please enquire about opening hours and availability in advance."}</p><Link to="/contacto#consultas" className="mt-6 inline-flex rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground">{es?"Realizar una consulta":"Make an enquiry"}</Link></div></ContactPage>;}
