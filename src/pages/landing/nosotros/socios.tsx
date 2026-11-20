@@ -1,5 +1,5 @@
-import { Handshake, Building2, Globe2, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Handshake, Building2, Globe2, ArrowRight, ArrowDown } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SectionHeading } from "@/components/SectionHeading";
 import { Button } from "@/components/ui/button";
@@ -13,11 +13,12 @@ const categories = [
 export default function Socios() {
   const { lang } = useI18n();
   const es = lang === "es";
+  const { hash } = useLocation();
   return (
     <section id="socios" className="section bg-muted">
       <div className="container-site">
         <SectionHeading eyebrow={es ? "Colaboración" : "Collaboration"} title={es ? "Socios y aliados" : "Partners and allies"} text={es ? "La conservación es un esfuerzo compartido. Trabajamos con organizaciones e instituciones que contribuyen a una misión común." : "Conservation is a shared effort. We work with organizations and institutions contributing to a common mission."} />
-        <nav aria-label={es ? "Tipos de aliados" : "Partner categories"} className="mt-7 flex flex-wrap gap-2">{categories.map((category) => <Link key={category.id} to={`/nosotros#${category.id}`} className="rounded-full border border-border bg-background px-4 py-2 text-sm font-semibold text-brand-deep transition-colors hover:border-primary hover:bg-secondary">{es ? category.es : category.en}</Link>)}</nav>
+        <nav aria-label={es ? "Tipos de aliados" : "Partner categories"} className="mt-7 flex flex-wrap gap-2">{categories.map((category) => <Link key={category.id} to={`/nosotros#${category.id}`} aria-current={hash === `#${category.id}` ? "location" : undefined} className="armonia-subindice rounded-full border border-border bg-background px-4 py-2 text-sm font-semibold text-brand-deep transition-colors hover:border-primary hover:bg-secondary"><category.icon className="size-5 shrink-0"/><span>{es ? category.es : category.en}</span><ArrowDown className="ml-auto size-3 shrink-0"/></Link>)}</nav>
         <div className="mt-9 grid gap-6">
           {categories.map(({ id, icon: Icon, es: labelEs, en, textEs, textEn, names }) => <section key={id} id={id} className="rounded-3xl border border-border bg-card p-5 shadow-card sm:p-8"><div className="flex items-start gap-4"><span className="grid size-12 shrink-0 place-items-center rounded-xl bg-secondary text-primary"><Icon className="size-6" /></span><div><h3 className="text-2xl text-brand-deep sm:text-3xl">{es ? labelEs : en}</h3><p className="mt-2 text-sm leading-relaxed text-muted-foreground">{es ? textEs : textEn}</p></div></div><div className="mt-6 grid gap-3 sm:grid-cols-3">{names.map((name, i) => <article key={name} className="flex min-h-32 flex-col items-center justify-center rounded-2xl border border-border bg-muted/40 p-4 text-center"><div aria-hidden="true" className="grid size-12 place-items-center rounded-full border border-primary/20 bg-secondary text-lg font-bold text-primary">{String.fromCharCode(65 + i)}</div><p className="mt-3 text-sm font-semibold text-brand-deep">{es ? name : `Example organization ${String.fromCharCode(65 + i)}`}</p><span className="mt-1 text-[10px] text-muted-foreground">{es ? "Logotipo provisional" : "Placeholder logo"}</span></article>)}</div></section>)}
         </div>

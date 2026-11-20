@@ -132,7 +132,7 @@ export function Landscapes({ initialSelected = null }: { initialSelected?: strin
           type="button"
           onClick={() => setActiveFilter(null)}
           aria-pressed={activeFilter === null}
-          className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+          className={`armonia-subindice flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
             activeFilter === null
               ? "border-lp bg-lp text-primary-foreground"
               : "border-border bg-background hover:bg-lp-soft"
@@ -155,7 +155,7 @@ export function Landscapes({ initialSelected = null }: { initialSelected?: strin
               type="button"
               onClick={() => setActiveFilter((prev) => (prev === l.id ? null : l.id))}
               aria-pressed={isActive}
-              className={`theme-${l.id} flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
+              className={`armonia-subindice theme-${l.id} flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
                 isActive
                   ? "border-lp bg-lp text-primary-foreground"
                   : "border-border bg-background hover:bg-lp-soft"

@@ -91,3 +91,70 @@ body :is(h1, h2, h3, h4, h5, h6, .font-display):not(.font-thin, .font-extralight
 body .font-condensed {
   font-family: "Armonia Avenir Condensed", "Avenir Next Condensed", var(--armonia-texto);
 }
+
+
+/* Tamaños del sitio público. Reglas fuera de las capas de Tailwind para
+   prevalecer sobre las utilidades de tamaño, sin alterar el administrador. */
+body:not(:has(.armonia-admin)) main,
+body:not(:has(.armonia-admin)) footer {
+  font-size: 19px;
+  line-height: 1.6;
+}
+body:not(:has(.armonia-admin)) :is(main, footer) .text-xs:not(#inicio *) { font-size: 15px; }
+body:not(:has(.armonia-admin)) :is(main, footer) .text-sm:not(#inicio *) { font-size: 17px; }
+body:not(:has(.armonia-admin)) :is(main, footer) .text-base:not(#inicio *) { font-size: 19px; }
+body:not(:has(.armonia-admin)) :is(main, footer) .text-lg:not(#inicio *) { font-size: 21px; }
+body:not(:has(.armonia-admin)) main .text-xl:not(#inicio *) { font-size: 24px; }
+body:not(:has(.armonia-admin)) main .text-2xl:not(#inicio *) { font-size: 30px; }
+/* Aumenta también los enlaces del menú sin cambiar el sello de aniversario. */
+body:not(:has(.armonia-admin)) header :is(a, button, summary).text-sm { font-size: 16px; }
+body:not(:has(.armonia-admin)) header :is(a, button, summary).text-base { font-size: 18px; }
+
+/* Quiénes somos: refuerzo específico de la jerarquía del Home. */
+body:not(:has(.armonia-admin)) #quienes-somos-inicio #intro-home-title {
+  font-size: clamp(2.35rem, 4.2vw, 4rem);
+  line-height: 1.12;
+}
+body:not(:has(.armonia-admin)) #quienes-somos-inicio p.text-lg {
+  font-size: clamp(21px, 1.7vw, 25px);
+  line-height: 1.6;
+}
+body:not(:has(.armonia-admin)) #quienes-somos-inicio p.text-base { font-size: 21px; }
+body:not(:has(.armonia-admin)) #quienes-somos-inicio a.text-base { font-size: 19px; }
+
+/* Sistema compartido de filtros y subíndices de navegación.
+   Las dos últimas variantes cubren los filtros de Programs sin tocar sus tarjetas. */
+body:not(:has(.armonia-admin)) main :is(.armonia-subindice, button[aria-pressed].rounded-full.border:not(#inicio *), #programas button.rounded-full.border) {
+  display: inline-flex;
+  align-items: center;
+  gap: .625rem;
+  min-height: 50px;
+  padding: .625rem .875rem;
+  border: 1px solid #d7e0ea;
+  border-radius: 1.25rem;
+  background: #fff;
+  color: #1674b8;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+  white-space: normal;
+  text-align: left;
+  transition: background-color .2s, border-color .2s, color .2s;
+}
+body:not(:has(.armonia-admin)) main :is(.armonia-subindice, button[aria-pressed].rounded-full.border:not(#inicio *), #programas button.rounded-full.border):is([aria-pressed="true"], [aria-current="true"], [aria-current="location"], [aria-current="page"], .bg-primary, .bg-lp, :hover) {
+  border-color: #79b5e8;
+  background: #eff6fc;
+  color: #1268aa;
+}
+body:not(:has(.armonia-admin)) main :is(.armonia-subindice, button[aria-pressed].rounded-full.border:not(#inicio *), #programas button.rounded-full.border):focus-visible {
+  outline: 2px solid #2381c4;
+  outline-offset: 2px;
+}
+body:not(:has(.armonia-admin)) main .armonia-subindice svg { flex-shrink: 0; }
+body:not(:has(.armonia-admin)) main .armonia-subindice > span.bg-primary-foreground { background-color: #2381c4; }
+@media (prefers-reduced-motion: reduce) {
+  body:not(:has(.armonia-admin)) main :is(.armonia-subindice, button[aria-pressed].rounded-full.border, #programas button.rounded-full.border) { transition: none; }
+}
+
+/* Conserva el tamaño base original del banner aprobado. */
+body:not(:has(.armonia-admin)) #inicio { font-size: 16px; }

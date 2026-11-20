@@ -48,8 +48,8 @@ export default function Nosotros() {
       <nav aria-label={es ? "Secciones de Nosotros" : "About us sections"} className="border-b border-border bg-background">
         <div className="container-site grid grid-cols-2 gap-2 py-5 sm:grid-cols-3 lg:grid-cols-5">
           {sections.map(({ id, es: labelEs, en, icon: Icon }) => {
-            const active = location.hash === `#${id}` || (id === "socios" && ["#socios-financieros", "#aliados-estrategicos", "#miembros-corporativos"].includes(location.hash));
-            return <Link key={id} to={`/nosotros#${id}`} className={`group flex items-center gap-2 rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-brand-deep hover:border-primary hover:bg-secondary"}`}><Icon className="size-5 shrink-0" /><span className="flex-1">{es ? labelEs : en}</span><ArrowDown className="hidden size-3 shrink-0 lg:block" /></Link>;
+            const active = (!location.hash && id === "quienes-somos") || location.hash === `#${id}` || (id === "socios" && ["#socios-financieros", "#aliados-estrategicos", "#miembros-corporativos"].includes(location.hash));
+            return <Link key={id} to={`/nosotros#${id}`} aria-current={active ? "location" : undefined} className={`armonia-subindice group flex items-center gap-2 rounded-xl border px-3 py-3 text-sm font-semibold transition-colors ${active ? "border-primary bg-primary text-primary-foreground" : "border-border bg-background text-brand-deep hover:border-primary hover:bg-secondary"}`}><Icon className="size-5 shrink-0" /><span className="flex-1">{es ? labelEs : en}</span><ArrowDown className="hidden size-3 shrink-0 lg:block" /></Link>;
           })}
         </div>
       </nav>

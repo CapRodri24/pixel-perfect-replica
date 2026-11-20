@@ -3,9 +3,6 @@ import { ArrowRight, ChevronLeft, ChevronRight, Feather, Bird, Mountain, Trees }
 import { Link } from "react-router-dom";
 import { useI18n } from "@/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
-import { About } from "@/components/About";
-import { Landscapes } from "@/components/Landscapes";
-import { Programs } from "@/components/Programs";
 import { SectionShortcut } from "@/components/SectionView";
 import { Noticias } from "./noticias";
 
@@ -262,6 +259,87 @@ function Hero({ ready }: { ready: boolean }) {
   );
 }
 
+function ImpactNumber({ value, active }: { value: number; active: boolean }) {
+  const [number, setNumber] = useState(value);
+  useEffect(() => {
+    if (!active || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let frame = 0;
+    const start = performance.now();
+    const tick = (time: number) => {
+      const progress = Math.min((time - start) / 1300, 1);
+      setNumber(Math.round(value * (1 - Math.pow(1 - progress, 3))));
+      if (progress < 1) frame = window.requestAnimationFrame(tick);
+    };
+    frame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frame);
+  }, [active, value]);
+  return <span aria-hidden="true">{number}</span>;
+}
+
+function IntroHome() {
+  const { t, lang } = useI18n();
+  const es = lang === "es";
+  const sectionRef = useRef<HTMLElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const element = sectionRef.current;
+    if (!element || !("IntersectionObserver" in window)) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting) {
+        setVisible(true);
+        observer.disconnect();
+      }
+    }, { threshold: 0.15 });
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  const figures = [
+    { number: 30, icon: Bird, label: es ? "Años de conservación" : "Years of conservation" },
+    { number: 5, icon: Mountain, label: es ? "Paisajes de Bolivia" : "Landscapes of Bolivia" },
+    { number: 3, icon: Trees, label: es ? "Reservas naturales" : "Nature reserves" },
+  ];
+  const reveal = visible ? "motion-safe:animate-[armonia-intro-reveal_850ms_cubic-bezier(.16,1,.3,1)_both]" : "";
+  return (
+    <section ref={sectionRef} id="quienes-somos-inicio" aria-labelledby="intro-home-title" className="relative isolate overflow-hidden bg-background py-16 sm:py-24 lg:py-28">
+      <style>{`@keyframes armonia-intro-reveal { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }`}</style>
+      <div aria-hidden="true" className="pointer-events-none absolute -right-44 -top-44 size-[520px] rounded-full bg-primary/5" />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-36 -left-36 size-[380px] rounded-full border border-primary/10" />
+      <div className="container-site relative">
+        <div className="grid items-center gap-10 lg:grid-cols-[1fr_1fr] lg:gap-16">
+          <div className={`relative ${reveal}`}>
+            <div className="group relative isolate aspect-[5/4] overflow-hidden rounded-[2rem] bg-brand-deep shadow-card sm:aspect-[6/5]">
+              <img src="/images/home/2.jpg" alt={es ? "Paisaje natural de los Yungas de Bolivia" : "Natural landscape in Bolivia’s Yungas"} loading="lazy" decoding="async" className="absolute inset-0 size-full object-cover motion-safe:transition-transform motion-safe:duration-1000 motion-safe:group-hover:scale-105" />
+              <div aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-black/65 via-transparent to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 p-6 text-white sm:p-9">
+                <div className="mb-3 h-0.5 w-12 bg-brand-light" />
+                <p className="text-xs font-bold uppercase tracking-[.2em] text-white/85">{es ? "Bolivia · Desde 1996" : "Bolivia · Since 1996"}</p>
+                <p className="mt-2 font-display text-2xl font-bold sm:text-3xl">{es ? "Por las aves. Por Bolivia." : "For birds. For Bolivia."}</p>
+              </div>
+            </div>
+            <div aria-hidden="true" className="absolute -right-3 -top-3 -z-10 h-2/3 w-2/3 rounded-[2rem] border-2 border-primary/25 sm:-right-5 sm:-top-5" />
+          </div>
+          <div className={reveal} style={visible ? { animationDelay: "120ms" } : undefined}>
+            <div className="flex items-center gap-3 text-primary"><span aria-hidden="true" className="h-px w-10 bg-primary"/><p className="text-sm font-bold uppercase tracking-[.18em]">{es ? "Quiénes somos" : "Who we are"}</p></div>
+            <h2 id="intro-home-title" className="mt-5 font-display text-[clamp(2rem,3.5vw,3.5rem)] font-black leading-[1.12] tracking-tight text-brand-deep">{es ? "Conservamos las aves" : "We conserve Bolivia’s birds"}<span className="block text-[#34734e]">{es ? "y sus hábitats en Bolivia." : "and their habitats."}</span></h2>
+            <p className="mt-6 text-lg leading-relaxed text-muted-foreground">{t("about.text")}</p>
+            <Link to="/nosotros" className="group mt-7 inline-flex min-h-12 items-center gap-4 rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-brand-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">{es ? "Conoce Armonía" : "Discover Armonía"}<ArrowRight className="size-5 motion-safe:transition-transform motion-safe:group-hover:translate-x-1" /></Link>
+          </div>
+        </div>
+        <div className={`relative mt-10 grid overflow-hidden rounded-[2rem] bg-brand-deep text-white shadow-card sm:mt-16 sm:grid-cols-3 ${reveal}`} style={visible ? { animationDelay: "240ms" } : undefined}>
+          <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-linear-to-br from-white/10 via-transparent to-black/10"/>
+          {figures.map((figure, index) => {
+            const Icon = figure.icon;
+            return <div key={figure.number} className={`group relative flex items-center gap-5 px-6 py-7 sm:flex-col sm:gap-3 sm:px-4 sm:py-9 sm:text-center ${index > 0 ? "border-t border-white/20 sm:border-l sm:border-t-0" : ""}`}>
+              <span className="grid size-12 shrink-0 place-items-center rounded-full border border-white/25 bg-white/10 text-brand-light motion-safe:transition-transform motion-safe:group-hover:-translate-y-1"><Icon aria-hidden="true" className="size-6" /></span>
+              <div><p className="font-display text-5xl font-black leading-none tabular-nums text-white sm:text-6xl"><span className="sr-only">{figure.number}</span><ImpactNumber value={figure.number} active={visible} /></p><p className="mt-2 text-base font-medium text-white/95 sm:text-lg">{figure.label}</p></div>
+            </div>;
+          })}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function Home() {
   const [showPreloader, setShowPreloader] = useState(() => !hasShownPreloader);
   const [exiting, setExiting] = useState(false);
@@ -293,12 +371,7 @@ export default function Home() {
     <main>
       {showPreloader && <Preloader exiting={exiting} />}
       <Hero ready={heroReady} />
-      <About />
-      <SectionShortcut to="/nosotros" />
-      <Landscapes />
-      <SectionShortcut to="/paisajes" />
-      <Programs />
-      <SectionShortcut to="/programas" />
+      <IntroHome />
       <Noticias home />
       <SectionShortcut to="/noticias" />
     </main>
