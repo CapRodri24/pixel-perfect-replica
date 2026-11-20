@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { ArrowRight, Search, X } from "lucide-react";
+import { ArrowRight, Search, X, LayoutGrid, Mountain, Trees, Waves, Leaf, Sun } from "lucide-react";
 import { landscapes, type LandscapeId } from "@/config/content";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SectionHeading } from "./SectionHeading";
@@ -126,47 +126,29 @@ export function Landscapes({ initialSelected = null }: { initialSelected?: strin
         )}
       </form>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        {/* Chip "Todo" */}
+      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 xl:grid-cols-6">
         <button
           type="button"
           onClick={() => setActiveFilter(null)}
           aria-pressed={activeFilter === null}
-          className={`armonia-subindice flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-            activeFilter === null
-              ? "border-lp bg-lp text-primary-foreground"
-              : "border-border bg-background hover:bg-lp-soft"
-          }`}
+          className="armonia-subindice flex w-full items-center gap-2 rounded-[20px] border px-3 py-3 text-base font-semibold transition-colors"
         >
-          <span
-            className={`size-2.5 rounded-full ${
-              activeFilter === null ? "bg-primary-foreground" : "bg-lp"
-            }`}
-          />
-          {allLabel}
+          <LayoutGrid className="size-5 shrink-0" aria-hidden="true" />
+          <span className="flex-1">{allLabel}</span>
         </button>
-
-        {/* Chips de paisajes */}
         {relatedButtons.map((l) => {
           const isActive = activeFilter === l.id;
+          const Icon = l.id === "beni" ? Waves : l.id === "yungas" ? Leaf : l.id === "andes" ? Mountain : l.id === "seco" ? Sun : Trees;
           return (
             <button
               key={l.id}
               type="button"
               onClick={() => setActiveFilter((prev) => (prev === l.id ? null : l.id))}
               aria-pressed={isActive}
-              className={`armonia-subindice theme-${l.id} flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${
-                isActive
-                  ? "border-lp bg-lp text-primary-foreground"
-                  : "border-border bg-background hover:bg-lp-soft"
-              }`}
+              className="armonia-subindice flex w-full items-center gap-2 rounded-[20px] border px-3 py-3 text-base font-semibold transition-colors"
             >
-              <span
-                className={`size-2.5 rounded-full ${
-                  isActive ? "bg-primary-foreground" : "bg-lp"
-                }`}
-              />
-              {t(`landscapes.items.${l.id}.name`)}
+              <Icon className="size-5 shrink-0" aria-hidden="true" />
+              <span className="flex-1">{t(`landscapes.items.${l.id}.name`)}</span>
             </button>
           );
         })}
