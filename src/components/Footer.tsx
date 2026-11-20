@@ -1,9 +1,8 @@
 import { Link } from "react-router-dom";
-import { Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin, MessageCircle } from "lucide-react";
 import type { SVGProps } from "react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { Logo } from "./Logo";
-import { quickLinks } from "./Header";
 
 const FacebookIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -26,59 +25,44 @@ const YoutubeIcon = (props: SVGProps<SVGSVGElement>) => (
 export function Footer() {
   const { t, lang } = useI18n();
   const es = lang === "es";
+  const link = "inline-flex items-center gap-2 text-sm text-primary-foreground/85 transition-colors hover:text-primary-foreground focus-visible:underline";
+  const socials = [
+    { Icon: FacebookIcon, name: "Facebook", href: "https://www.facebook.com/armoniabolivia" },
+    { Icon: InstagramIcon, name: "Instagram", href: "https://www.instagram.com/armonia.bolivia/" },
+    { Icon: YoutubeIcon, name: "YouTube", href: "https://www.youtube.com/channel/UCIIFPr0yTWSeuJ3NPNz-8MQ" },
+  ];
   const nav = [
-    { key: "about", href: "/nosotros", label: t<string>("nav.about") },
-    { key: "landscapes", href: "/paisajes", label: t<string>("nav.landscapes") },
-    { key: "programs", href: "/programas", label: es ? "Programas" : "Programs" },
-    { key: "resources", href: "/recursos", label: es ? "Recursos" : "Resources" },
-    { key: "news", href: "/noticias", label: t<string>("nav.news") },
-    { key: "contact", href: "/contacto", label: t<string>("nav.contact") },
+    {href:"/nosotros",label:t<string>("nav.about")},
+    {href:"/paisajes",label:t<string>("nav.landscapes")},
+    {href:"/recursos",label:es?"Recursos":"Resources"},
+    {href:"/noticias",label:t<string>("nav.news")},
+    {href:"/contacto",label:t<string>("nav.contact")},
   ];
   const access = [
-    ...quickLinks.map(q => ({ key: String(q.key), href: q.href, label: t<string>(`quick.${q.key}`) })),
-    { key: "guide", href: "/contacto/guiadecampoaves", label: es ? "Guía de campo Aves de Bolivia" : "Birds of Bolivia field guide" },
+    {href:"/donar",label:es?"Donar":"Donate"},
+    {href:"/contacto/haztemiembro",label:es?"Hazte miembro":"Become a member"},
+    {href:"/contacto/visitanuestrasreservas",label:es?"Visita nuestras reservas":"Visit our reserves"},
+    {href:"/contacto/guiadecampoaves",label:es?"Guía de campo Aves de Bolivia":"Birds of Bolivia field guide"},
   ];
-  const contactLinks = [
-    { href: "/contacto/prensa", label: es ? "Contacto prensa" : "Press contact" },
-    { href: "/contacto/souvenirs", label: es ? "Souvenirs" : "Souvenirs" },
-    { href: "/contacto/oficinas", label: es ? "Oficinas" : "Offices" },
-    { href: "/contacto#consultas", label: es ? "Consultas" : "Enquiries" },
-  ];
-  const head = "text-xs font-bold uppercase tracking-[0.2em] text-brand-light";
-  const link = "text-sm text-primary-foreground/75 transition-colors hover:text-primary-foreground focus-visible:outline-none focus-visible:underline";
+  const heading = "text-sm font-bold uppercase tracking-wider text-primary-foreground";
   return (
     <footer className="bg-brand-deep text-primary-foreground">
-      <div className="container-site grid gap-10 py-16 sm:grid-cols-2 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
-        <div>
-          <Logo light />
-          <p className="mt-5 max-w-sm text-sm leading-relaxed text-primary-foreground/75">{t("footer.text")}</p>
-          <div className="mt-6 flex gap-2">
-            {[{ Icon: FacebookIcon, name: "Facebook" }, { Icon: InstagramIcon, name: "Instagram" }, { Icon: YoutubeIcon, name: "YouTube" }].map(({ Icon, name }) => (
-              <span key={name} title={`${name} — ${es ? "enlace pendiente" : "link pending"}`} className="grid size-10 place-items-center rounded-full bg-primary-foreground/10" aria-label={`${name} — ${es ? "enlace pendiente" : "link pending"}`}><Icon className="size-4" /></span>
-            ))}
-          </div>
+      <div className="container-site grid gap-7 py-9 sm:grid-cols-2 lg:grid-cols-[1.25fr_0.8fr_1.15fr_1.3fr] lg:gap-8 lg:py-10">
+        <div className="min-w-0">
+          <Logo light/>
+          <p className="mt-3 max-w-xs text-sm leading-relaxed text-primary-foreground/85">{t("footer.text")}</p>
+          <div className="mt-4 flex gap-2">{socials.map(({Icon,name,href}) => <a key={name} href={href} target="_blank" rel="noopener noreferrer" aria-label={name} className="grid size-9 place-items-center rounded-full bg-primary-foreground/10 transition-colors hover:bg-primary-foreground/20"><Icon className="size-4"/></a>)}</div>
         </div>
-        <nav aria-label={t("footer.explore")}>
-          <h3 className={head}>{t("footer.explore")}</h3>
-          <ul className="mt-4 space-y-2.5">{nav.map(item => <li key={item.key}><Link to={item.href} className={link}>{item.label}</Link></li>)}</ul>
-        </nav>
-        <nav aria-label={t("footer.access")}>
-          <h3 className={head}>{t("footer.access")}</h3>
-          <ul className="mt-4 space-y-2.5">{access.map(item => <li key={item.key}><Link to={item.href} className={link}>{item.label}</Link></li>)}</ul>
-        </nav>
-        <div>
-          <h3 className={head}>{t("footer.contact")}</h3>
-          <ul className="mt-4 space-y-2.5">{contactLinks.map(item => <li key={item.href}><Link to={item.href} className={link}>{item.label}</Link></li>)}</ul>
-          <ul className="mt-5 space-y-3 text-sm text-primary-foreground/75">
-            <li><Link to="/contacto/oficinas" className={`flex gap-2 ${link}`}><MapPin className="size-4 shrink-0" />{t("contact.officeText")}</Link></li>
-            <li className="flex gap-2"><Mail className="size-4 shrink-0" />info@armonia-bo.org</li>
-            <li className="flex gap-2"><Phone className="size-4 shrink-0" />+591 3 000 0000</li>
-          </ul>
-        </div>
+        <nav aria-label={t("footer.explore")}><h3 className={heading}>{t("footer.explore")}</h3><ul className="mt-3 space-y-2">{nav.map(item=><li key={item.href}><Link to={item.href} className={link}>{item.label}</Link></li>)}</ul></nav>
+        <nav aria-label={t("footer.access")}><h3 className={heading}>{t("footer.access")}</h3><ul className="mt-3 space-y-2">{access.map(item=><li key={item.href}><Link to={item.href} className={link}>{item.label}</Link></li>)}</ul></nav>
+        <div className="min-w-0"><h3 className={heading}>{t("footer.contact")}</h3><div className="mt-3 flex flex-col items-start gap-2.5">
+          <a href="mailto:armonia@armonia-bo.org" className={`${link} break-all`}><Mail className="size-4 shrink-0"/>armonia@armonia-bo.org</a>
+          <a href="tel:+59172149863" className={link}><Phone className="size-4 shrink-0"/>+591 72149863</a>
+          <a href="https://wa.me/59172149863" target="_blank" rel="noopener noreferrer" className={link}><MessageCircle className="size-4 shrink-0"/>WhatsApp</a>
+          <Link to="/contacto/oficinas" className={link}><MapPin className="size-4 shrink-0"/>{es ? "Nuestras oficinas" : "Our offices"}</Link>
+        </div></div>
       </div>
-      <div className="border-t border-primary-foreground/10">
-        <p className="container-site py-6 text-xs text-primary-foreground/60">© {new Date().getFullYear()} Asociación Armonía. {t("footer.rights")}</p>
-      </div>
+      <div className="border-t border-primary-foreground/10"><p className="container-site py-4 text-center text-xs text-primary-foreground/70">© {new Date().getFullYear()} Asociación Armonía. {t("footer.rights")}</p></div>
     </footer>
   );
 }
