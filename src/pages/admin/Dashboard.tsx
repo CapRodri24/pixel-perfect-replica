@@ -1,5 +1,250 @@
+
 import { Link } from "react-router-dom";
-import { ArrowUpRight, Map, Briefcase, Newspaper, Users, BookOpen, HardDrive } from "lucide-react";
-import { readLandscapes, readPrograms, readNews, readList, keys, normalizePerson, normalizeResource, titleOf } from "./datos";
+import {
+  ArrowUpRight,
+  ArrowRight,
+  Map,
+  Briefcase,
+  Newspaper,
+  Users,
+  BookOpen,
+  HardDrive,
+} from "lucide-react";
+import {
+  readLandscapes,
+  readPrograms,
+  readNews,
+  readList,
+  keys,
+  normalizePerson,
+  normalizeResource,
+  titleOf,
+} from "./datos";
 import { PageTitle, panel } from "./ui";
-export default function Dashboard(){const landscapes=readLandscapes(),programs=readPrograms(),news=readNews(),people=readList(keys.equipo,normalizePerson),resources=readList(keys.recursos,normalizeResource,[],"admin_biblioteca");const stats=[{label:"Paisajes",count:landscapes.length,to:"/admin/paisajes",icon:Map,color:"text-primary bg-[#eaf4fc]"},{label:"Programas",count:programs.length,to:"/admin/programas",icon:Briefcase,color:"text-primary bg-[#eaf4fc]"},{label:"Noticias",count:news.length,to:"/admin/noticias",icon:Newspaper,color:"text-primary bg-[#eaf4fc]"},{label:"Nosotros",count:people.length,to:"/admin/equipo",icon:Users,color:"text-primary bg-[#eaf4fc]"},{label:"Recursos",count:resources.length,to:"/admin/recursos",icon:BookOpen,color:"text-primary bg-[#eaf4fc]"}];return <div className="mx-auto max-w-7xl"><PageTitle title="Panel de administración" description="Gestiona el contenido del sitio web de Asociación Armonía."/><section className="relative isolate overflow-hidden rounded-3xl bg-brand-deep p-6 text-white sm:p-9"><img src="/images/home/1.jpg" alt="" className="absolute inset-0 -z-20 size-full object-cover"/><div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#123c60]/95 via-[#123c60]/80 to-[#123c60]/35"/><p className="text-xs font-semibold uppercase tracking-[.2em] text-white/80">Asociación Armonía</p><h2 className="mt-3 font-display text-3xl text-white">Bienvenido al gestor de contenidos</h2><p className="mt-3 max-w-xl text-sm leading-relaxed text-white/90">Crea y organiza paisajes, programas, noticias, perfiles y recursos desde un mismo espacio.</p></section><div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">{stats.map(s=>{const Icon=s.icon;return <Link to={s.to} key={s.to} className="group rounded-2xl border border-border bg-background p-4 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md motion-reduce:transition-none"><div className="flex items-center justify-between gap-2"><span className={`grid size-10 place-items-center rounded-xl ${s.color}`}><Icon className="size-5"/></span><ArrowUpRight className="size-4 text-muted-foreground group-hover:text-primary"/></div><p className="mt-4 text-sm text-muted-foreground">{s.label}</p><p className="mt-1 text-3xl font-bold tabular-nums text-brand-deep">{s.count}</p></Link>;})}</div><div className="mt-6 grid gap-5 lg:grid-cols-2"><section className={panel}><h2 className="font-display text-xl text-brand-deep">Paisajes y programas</h2><p className="mt-2 text-sm text-muted-foreground">Relaciones registradas en este navegador.</p><div className="mt-4 divide-y divide-border">{landscapes.map(l=><div key={l.id} className="flex items-center justify-between gap-3 py-3 text-sm"><span>{titleOf(l)}</span><span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">{programs.filter(p=>p.landscapeId===l.id).length} programas</span></div>)}{!landscapes.length&&<p className="py-3 text-sm text-muted-foreground">No hay paisajes registrados.</p>}</div></section><section className={panel}><h2 className="font-display text-xl text-brand-deep">Noticias</h2><div className="mt-4 space-y-3"><div className="flex justify-between rounded-xl bg-muted/40 p-3 text-sm"><span>Asociadas a un programa</span><strong>{news.filter(n=>programs.some(p=>p.id===n.programId)).length}</strong></div><div className="flex justify-between rounded-xl bg-muted/40 p-3 text-sm"><span>Publicaciones</span><strong>{news.filter(n=>!n.programId).length}</strong></div><div className="flex justify-between rounded-xl bg-muted/40 p-3 text-sm"><span>Asociación pendiente</span><strong>{news.filter(n=>n.programId&&!programs.some(p=>p.id===n.programId)).length}</strong></div></div><Link to="/admin/noticias" className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary">Gestionar noticias <ArrowUpRight className="size-4"/></Link></section></div><div className="mt-5 flex items-start gap-3 rounded-xl border border-border bg-background p-4 text-sm text-muted-foreground"><HardDrive className="mt-0.5 size-5 shrink-0 text-primary"/><p><strong className="text-foreground">Entorno de demostración.</strong> Los cambios se guardan en el almacenamiento local del navegador. El sitio público conserva sus datos mock actuales, sin conexión a una base de datos ni autenticación real en este panel.</p></div></div>;}
+
+export default function Dashboard() {
+  const landscapes = readLandscapes();
+  const programs = readPrograms();
+  const news = readNews();
+  const people = readList(keys.equipo, normalizePerson);
+  const resources = readList(
+    keys.recursos,
+    normalizeResource,
+    [],
+    "admin_biblioteca"
+  );
+
+  const stats = [
+    {
+      label: "Paisajes",
+      count: landscapes.length,
+      to: "/admin/paisajes",
+      icon: Map,
+      color: "text-primary bg-[#eaf4fc]",
+    },
+    {
+      label: "Programas",
+      count: programs.length,
+      to: "/admin/programas",
+      icon: Briefcase,
+      color: "text-primary bg-[#eaf4fc]",
+    },
+    {
+      label: "Noticias",
+      count: news.length,
+      to: "/admin/noticias",
+      icon: Newspaper,
+      color: "text-primary bg-[#eaf4fc]",
+    },
+    {
+      label: "Nosotros",
+      count: people.length,
+      to: "/admin/equipo",
+      icon: Users,
+      color: "text-primary bg-[#eaf4fc]",
+    },
+    {
+      label: "Recursos",
+      count: resources.length,
+      to: "/admin/recursos",
+      icon: BookOpen,
+      color: "text-primary bg-[#eaf4fc]",
+    },
+  ];
+
+  return (
+    <div className="mx-auto max-w-7xl min-w-0">
+      <PageTitle
+        title="Panel de administración"
+        description="Gestiona el contenido del sitio web de Asociación Armonía."
+      />
+
+      <section className="relative isolate overflow-hidden rounded-3xl bg-brand-deep p-6 text-white sm:p-9">
+        <img
+          src="/images/home/1.jpg"
+          alt=""
+          className="absolute inset-0 -z-20 size-full object-cover"
+        />
+
+        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#123c60]/95 via-[#123c60]/80 to-[#123c60]/35" />
+
+        <p className="text-xs font-semibold uppercase tracking-[.2em] text-white/80">
+          Asociación Armonía
+        </p>
+
+        <h2 className="mt-3 font-display text-3xl text-white">
+          Bienvenido al gestor de contenidos
+        </h2>
+
+        <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/90">
+          Crea y organiza paisajes, programas, noticias, perfiles y recursos
+          desde un mismo espacio.
+        </p>
+      </section>
+
+      {/* Tarjetas: carrusel en celular, cuadrícula en escritorio */}
+      <div
+        aria-label="Secciones del panel de administración"
+        className="mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-5 [scrollbar-width:none] sm:grid sm:grid-cols-2 sm:overflow-visible xl:grid-cols-5"
+      >
+        {stats.map((s) => {
+          const Icon = s.icon;
+
+          return (
+            <Link
+              to={s.to}
+              key={s.to}
+              className="group flex w-[72%] max-w-[270px] shrink-0 snap-start flex-col rounded-2xl border border-border bg-background p-4 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-md motion-reduce:transition-none sm:w-auto sm:max-w-none"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span
+                  className={`grid size-10 place-items-center rounded-xl ${s.color}`}
+                >
+                  <Icon className="size-5" />
+                </span>
+
+                <ArrowUpRight className="size-4 text-muted-foreground group-hover:text-primary" />
+              </div>
+
+              <p className="mt-4 text-sm text-muted-foreground">
+                {s.label}
+              </p>
+
+              <p className="mt-1 text-3xl font-bold tabular-nums text-brand-deep">
+                {s.count}
+              </p>
+            </Link>
+          );
+        })}
+      </div>
+
+      {/* Indicador de navegación móvil */}
+      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground sm:hidden">
+        <span>Desliza para ver más secciones</span>
+        <ArrowRight className="size-4" />
+      </div>
+
+      {/* Paisajes y programas / Noticias */}
+      <div className="mt-6 grid gap-5 lg:grid-cols-2">
+        <section className={panel}>
+          <h2 className="font-display text-xl text-brand-deep">
+            Paisajes y programas
+          </h2>
+
+          <p className="mt-2 text-sm text-muted-foreground">
+            Relaciones registradas en este navegador.
+          </p>
+
+          <div className="mt-4 divide-y divide-border">
+            {landscapes.map((l) => (
+              <div
+                key={l.id}
+                className="flex items-center justify-between gap-3 py-3 text-sm"
+              >
+                <span>{titleOf(l)}</span>
+
+                <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                  {programs.filter(
+                    (p) => p.landscapeId === l.id
+                  ).length}{" "}
+                  programas
+                </span>
+              </div>
+            ))}
+
+            {!landscapes.length && (
+              <p className="py-3 text-sm text-muted-foreground">
+                No hay paisajes registrados.
+              </p>
+            )}
+          </div>
+        </section>
+
+        <section className={panel}>
+          <h2 className="font-display text-xl text-brand-deep">
+            Noticias
+          </h2>
+
+          <div className="mt-4 space-y-3">
+            <div className="flex justify-between rounded-xl bg-muted/40 p-3 text-sm">
+              <span>Asociadas a un programa</span>
+              <strong>
+                {
+                  news.filter((n) =>
+                    programs.some((p) => p.id === n.programId)
+                  ).length
+                }
+              </strong>
+            </div>
+
+            <div className="flex justify-between rounded-xl bg-muted/40 p-3 text-sm">
+              <span>Publicaciones</span>
+              <strong>
+                {
+                  news.filter((n) => !n.programId).length
+                }
+              </strong>
+            </div>
+
+            <div className="flex justify-between rounded-xl bg-muted/40 p-3 text-sm">
+              <span>Asociación pendiente</span>
+              <strong>
+                {
+                  news.filter(
+                    (n) =>
+                      n.programId &&
+                      !programs.some(
+                        (p) => p.id === n.programId
+                      )
+                  ).length
+                }
+              </strong>
+            </div>
+          </div>
+
+          <Link
+            to="/admin/noticias"
+            className="mt-4 inline-flex items-center gap-2 text-sm font-semibold text-primary"
+          >
+            Gestionar noticias
+            <ArrowUpRight className="size-4" />
+          </Link>
+        </section>
+      </div>
+
+      {/* Aviso del entorno de demostración */}
+      <div className="mt-5 flex items-start gap-3 rounded-xl border border-border bg-background p-4 text-sm text-muted-foreground">
+        <HardDrive className="mt-0.5 size-5 shrink-0 text-primary" />
+
+        <p>
+          <strong className="text-foreground">
+            Entorno de demostración.
+          </strong>{" "}
+          Los cambios se guardan en el almacenamiento local del navegador.
+          El sitio público conserva sus datos mock actuales, sin conexión
+          a una base de datos ni autenticación real en este panel.
+        </p>
+      </div>
+    </div>
+  );
+}

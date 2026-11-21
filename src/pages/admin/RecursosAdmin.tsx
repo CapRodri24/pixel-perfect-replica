@@ -1,25 +1,223 @@
-import { useState, type FormEvent } from "react";
-import { FileText, Pencil, Trash2, Search, Plus, BookOpen, Map, Handshake, Scale, ImagePlus, Download } from "lucide-react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+
+import { FileText, Pencil, Trash2, Search, Plus, BookOpen, Map, Handshake, Scale, ImagePlus, Download, Check, ChevronDown } from "lucide-react";
+
 import { type Resource, type ResourceAttachment, keys, normalizeResource, useStore, resourceTypes, uid, safeUrl, imageFile } from "./datos";
-import { AdminHeading, CategoryCards, Field, Notice, Confirm, Empty, field, primary, secondary, panel, CloseButton } from "./ui";
+
+import { AdminHeading, Field, Notice, Confirm, Empty, field, primary, secondary, panel, CloseButton } from "./ui";
+
 import { withTranslator, translationNotice } from "./traduccion";
-const icons=[FileText,BookOpen,Map,Handshake,Scale] as const;
-const blank=(type:string):Resource=>({id:uid(),type,title:"",titleEn:"",description:"",descriptionEn:"",year:String(new Date().getFullYear()),format:"",url:"",files:[]});
-async function readAttachment(file:File):Promise<ResourceAttachment>{
- if(file.type.startsWith("image/")){const data=await imageFile(file);return {id:uid(),name:file.name,mime:data.startsWith("data:image/webp")?"image/webp":"image/png",data};}
- if(file.type!=="application/pdf"&&!file.name.toLowerCase().endsWith(".pdf"))throw new Error("Selecciona una fotografía o un PDF.");
- if(file.size>2*1024*1024)throw new Error("En este entorno local, cada PDF puede pesar hasta 2 MB.");
- const signature=new TextDecoder().decode(await file.slice(0,5).arrayBuffer());if(signature!=="%PDF-")throw new Error("El archivo no es un PDF válido.");
- const data=await new Promise<string>((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=()=>reject(new Error("No se pudo leer el PDF."));r.readAsDataURL(new Blob([file],{type:"application/pdf"}));});return {id:uid(),name:file.name,mime:"application/pdf",data};
+
+
+type Option = { id: string; label: string; count?: number };
+
+function AdminDropdown({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder = "Seleccionar opción",
+  disabled = false,
+  required = false,
+}: {
+  label: string;
+  value: string;
+  options: Option[];
+  onChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  required?: boolean;
+}) {
+  const id = useId();
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [open, setOpen] = useState(false);
+  const [focusIndex, setFocusIndex] = useState(0);
+  const selected = options.find((option) => option.id === value);
+  const selectedIndex = Math.max(0, options.findIndex((option) => option.id === value));
+
+  useEffect(() => {
+    if (!open) return;
+    const outside = (event: PointerEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        trigger.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
+  useEffect(() => {
+    if (open) optionRefs.current[focusIndex]?.focus();
+  }, [open, focusIndex]);
+
+  function show() {
+    if (disabled) return;
+    if (!open) setFocusIndex(selectedIndex);
+    setOpen((previous) => !previous);
+  }
+
+  function choose(option: Option) {
+    onChange(option.id);
+    setOpen(false);
+    trigger.current?.focus();
+  }
+
+  return (
+    <div ref={root} className="relative min-w-0">
+      <span id={`${id}-label`} className="mb-2 block text-sm font-semibold text-brand-deep">
+        {label}
+      </span>
+      <button
+        ref={trigger}
+        type="button"
+        disabled={disabled}
+        aria-labelledby={`${id}-label ${id}-value`}
+        aria-required={required || undefined}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open ? `${id}-listbox` : undefined}
+        onClick={show}
+        onKeyDown={(event) => {
+          if (!open && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+            event.preventDefault();
+            setFocusIndex(selectedIndex);
+            setOpen(true);
+          }
+        }}
+        className={`flex min-h-[68px] w-full items-center gap-3 rounded-2xl border bg-white px-4 text-left shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2381C4]/30 disabled:cursor-not-allowed disabled:opacity-50 ${open ? "border-[#2381C4] ring-2 ring-[#2381C4]/15" : "border-[#dbe6ef] hover:border-[#2381C4]/60"}`}
+      >
+        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#eaf4fc] text-[#2381C4]">
+          <Map className="size-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span id={`${id}-value`} className="block truncate text-sm font-semibold text-brand-deep sm:text-base">
+            {selected?.label ?? placeholder}
+          </span>
+          {selected?.count !== undefined && (
+            <span className="block text-xs text-muted-foreground">
+              {selected.count} {selected.count === 1 ? "registro" : "registros"}
+            </span>
+          )}
+        </span>
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#eaf4fc] text-[#2381C4]">
+          <ChevronDown className={`size-5 transition-transform ${open ? "rotate-180" : ""}`} />
+        </span>
+      </button>
+      {open && (
+        <div
+          id={`${id}-listbox`}
+          role="listbox"
+          aria-labelledby={`${id}-label`}
+          className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-[#dbe6ef] bg-white p-2 shadow-[0_16px_50px_rgba(18,60,96,0.18)]"
+        >
+          <div className="border-b border-border px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-[#2381C4]">
+            Selecciona una opción
+          </div>
+          <div className="max-h-72 space-y-1 overflow-y-auto overscroll-contain py-2">
+            {options.map((option, index) => {
+              const active = option.id === value;
+              return (
+                <button
+                  key={option.id}
+                  ref={(node) => { optionRefs.current[index] = node; }}
+                  role="option"
+                  aria-selected={active}
+                  type="button"
+                  onClick={() => choose(option)}
+                  onKeyDown={(event) => {
+                    if (event.key === "ArrowDown") {
+                      event.preventDefault();
+                      setFocusIndex((index + 1) % options.length);
+                    } else if (event.key === "ArrowUp") {
+                      event.preventDefault();
+                      setFocusIndex((index - 1 + options.length) % options.length);
+                    } else if (event.key === "Home") {
+                      event.preventDefault();
+                      setFocusIndex(0);
+                    } else if (event.key === "End") {
+                      event.preventDefault();
+                      setFocusIndex(options.length - 1);
+                    }
+                  }}
+                  className={`flex min-h-14 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#2381C4]/40 ${active ? "bg-[#eaf4fc] text-[#185e91]" : "text-brand-deep hover:bg-[#f2f7fb] focus:bg-[#f2f7fb]"}`}
+                >
+                  <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${active ? "bg-[#2381C4] text-white" : "bg-[#eef3f7] text-[#5980b9]"}`}>
+                    <Map className="size-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block break-words text-sm font-semibold leading-snug">{option.label}</span>
+                    {option.count !== undefined && (
+                      <span className="mt-1 block text-xs text-muted-foreground">
+                        {option.count} {option.count === 1 ? "registro" : "registros"}
+                      </span>
+                    )}
+                  </span>
+                  {active && (
+                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#2381C4] text-white">
+                      <Check className="size-4" />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
+
+
+const icons=[FileText,BookOpen,Map,Handshake,Scale] as const;
+
+const blank=(type:string):Resource=>({id:uid(),type,title:"",titleEn:"",description:"",descriptionEn:"",year:String(new Date().getFullYear()),format:"",url:"",files:[]});
+
+async function readAttachment(file:File):Promise<ResourceAttachment>{
+
+ if(file.type.startsWith("image/")){const data=await imageFile(file);return {id:uid(),name:file.name,mime:data.startsWith("data:image/webp")?"image/webp":"image/png",data};}
+
+ if(file.type!=="application/pdf"&&!file.name.toLowerCase().endsWith(".pdf"))throw new Error("Selecciona una fotografía o un PDF.");
+
+ if(file.size>2*1024*1024)throw new Error("En este entorno local, cada PDF puede pesar hasta 2 MB.");
+
+ const signature=new TextDecoder().decode(await file.slice(0,5).arrayBuffer());if(signature!=="%PDF-")throw new Error("El archivo no es un PDF válido.");
+
+ const data=await new Promise<string>((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=()=>reject(new Error("No se pudo leer el PDF."));r.readAsDataURL(new Blob([file],{type:"application/pdf"}));});return {id:uid(),name:file.name,mime:"application/pdf",data};
+
+}
+
 function download(f:ResourceAttachment){if(!/^data:(application\/pdf|image\/(png|jpeg|webp|gif));base64,/i.test(f.data))return;const [header,body]=f.data.split(",",2);if(!header||!body)return;const bytes=Uint8Array.from(atob(body),c=>c.charCodeAt(0));const url=URL.createObjectURL(new Blob([bytes],{type:f.mime}));const a=document.createElement("a");a.href=url;a.download=f.name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+
 export default function RecursosAdmin(){
+
  const {items,save}=useStore(keys.recursos,normalizeResource,[],"admin_biblioteca");const [draft,setDraft]=useState<Resource|null>(null);const [query,setQuery]=useState("");const [category,setCategory]=useState("informes");const [error,setError]=useState("");const [success,setSuccess]=useState("");const [busy,setBusy]=useState(false);const [pending,setPending]=useState<{type:"save"|"delete";resource:Resource}|null>(null);
+
  const patch=(p:Partial<Resource>)=>setDraft(d=>d?{...d,...p}:null);
+
  function open(r?:Resource){setDraft(r?{...r,files:[...r.files]}:blank(category));setError("");setSuccess("");}
+
  async function upload(files:FileList|null){if(!files||!draft||busy)return;const id=draft.id;setBusy(true);setError("");try{const next:ResourceAttachment[]=[];for(const f of Array.from(files))next.push(await readAttachment(f));setDraft(d=>d?.id===id?{...d,files:[...d.files,...next]}:d);}catch(e){setError(e instanceof Error?e.message:"No se pudo cargar el archivo.");}finally{setBusy(false);}}
+
  async function submit(e:FormEvent){e.preventDefault();if(!draft||busy)return;setError("");if(!draft.title.trim()||!draft.description.trim()){setError("Completa el título y la descripción.");return;}if(!draft.files.length&&!safeUrl(draft.url)){setError("Adjunta al menos una fotografía o un PDF.");return;}let translated={...draft};if(!draft.titleEn.trim()||!draft.descriptionEn.trim()){setBusy(true);try{translated=await withTranslator(async t=>({...draft,titleEn:draft.titleEn.trim()||await t(draft.title),descriptionEn:draft.descriptionEn.trim()||await t(draft.description)}));}catch(e){setError(e instanceof Error?e.message:"No se pudo traducir.");return;}finally{setBusy(false);}}const formats=[...new Set(draft.files.map(f=>f.mime==="application/pdf"?"PDF":"Imagen"))];translated={...translated,format:formats.join(" + ")||draft.format};setDraft(translated);setPending({type:"save",resource:translated});}
+
  function commit(){if(!pending)return;const {resource,type}=pending;setPending(null);const next=type==="delete"?items.filter(x=>x.id!==resource.id):items.some(x=>x.id===resource.id)?items.map(x=>x.id===resource.id?resource:x):[...items,resource];const err=save(next);setError(err);if(!err){setCategory(resource.type);setDraft(null);setSuccess(type==="delete"?"Recurso eliminado.":"Recurso guardado localmente.");}}
+
  const cards=resourceTypes.map(([id,label],i)=>({id,label,description:"Fotografías y documentos PDF",count:items.filter(r=>r.type===id).length,icon:icons[i]??FileText}));const filtered=items.filter(r=>r.type===category&&`${r.title} ${r.description}`.toLowerCase().includes(query.toLowerCase()));
- return <div className="mx-auto max-w-7xl space-y-6"><AdminHeading title="Recursos" description="Organiza los archivos institucionales por tipo de recurso." count={items.length}/><CategoryCards categories={cards} active={category} disabled={!!draft||busy} onChange={id=>{setCategory(id);setQuery("");setError("");setSuccess("");}}/><section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-white p-4"><h2 className="font-display text-xl text-brand-deep">{cards.find(x=>x.id===category)?.label}</h2>{!draft&&<button className={primary} onClick={()=>open()}><Plus className="size-5"/>Añadir recurso</button>}</section><Notice error={error} success={success}/>{draft?<form onSubmit={submit} className={`${panel} border-t-4 border-t-[#2381C4]`}><fieldset disabled={busy} className="space-y-5"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-display text-xl text-brand-deep">{items.some(x=>x.id===draft.id)?"Editar recurso":"Nuevo recurso"}</h3><CloseButton onClick={()=>setDraft(null)}/></div><div className="grid gap-5 lg:grid-cols-2"><div className="space-y-4"><Field label="Título (ES)"><input required className={`${field} !text-[#2381C4] font-semibold`} value={draft.title} onChange={e=>patch({title:e.target.value,titleEn:""})}/></Field><Field label="Descripción (ES)"><textarea required rows={5} className={field} value={draft.description} onChange={e=>patch({description:e.target.value,descriptionEn:""})}/></Field><Field label="Título (EN)"><input className={`${field} !text-[#2381C4] font-semibold`} value={draft.titleEn} onChange={e=>patch({titleEn:e.target.value})}/></Field><Field label="Descripción (EN)"><textarea rows={5} className={field} value={draft.descriptionEn} onChange={e=>patch({descriptionEn:e.target.value})}/></Field><p className="text-sm text-black">{translationNotice}</p></div><div className="space-y-3 rounded-2xl bg-[#edf6fc] p-4"><h3 className="font-bold text-brand-deep">Archivos adjuntos</h3><label onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();void upload(e.dataTransfer.files);}} className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-[#99CCFF] bg-white p-6 text-center hover:border-primary"><ImagePlus className="size-9 text-primary"/><span className="font-semibold text-primary">Seleccionar o arrastrar archivos</span><span className="text-sm text-black">Fotografías, PDF o ambos. PDF hasta 2 MB por archivo.</span><input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf" className="sr-only" onChange={e=>{void upload(e.target.files);e.target.value="";}}/></label>{draft.files.map(f=><div key={f.id} className="flex items-center gap-3 rounded-xl border border-border bg-white p-3">{f.mime.startsWith("image/")&&safeUrl(f.data,true)?<img src={f.data} alt="" className="size-12 object-contain"/>:<FileText className="size-8 shrink-0 text-primary"/>}<span className="min-w-0 flex-1 break-all text-sm text-black">{f.name}</span><button type="button" aria-label="Quitar archivo" className={secondary} onClick={()=>patch({files:draft.files.filter(x=>x.id!==f.id)})}><Trash2 className="size-4"/></button></div>)}{draft.url&&<div className="rounded-xl bg-white p-3 text-sm text-black">Documento anterior conservado. <button type="button" className="text-primary underline" onClick={()=>patch({url:""})}>Quitar enlace anterior</button></div>}</div></div><div className="flex justify-end gap-2 border-t border-border pt-4"><CloseButton onClick={()=>setDraft(null)}/><button type="submit" className={primary}>{busy?"Procesando…":"Guardar recurso"}</button></div></fieldset></form>:<><div className="flex items-center gap-3 rounded-xl border border-border bg-white px-4"><Search className="size-5 text-primary"/><input className="w-full bg-transparent py-3 text-black outline-none" placeholder="Buscar por título o descripción…" value={query} onChange={e=>setQuery(e.target.value)}/></div>{!filtered.length?<Empty text="No hay recursos en esta categoría."/>:<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{filtered.map(r=><article key={r.id} className="group overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none"><div className="grid aspect-[16/10] place-items-center overflow-hidden bg-[#edf6fc]">{r.files.find(f=>f.mime.startsWith("image/")&&safeUrl(f.data,true))?<img src={r.files.find(f=>f.mime.startsWith("image/")&&safeUrl(f.data,true))?.data} alt="" className="size-full object-cover"/>:<FileText className="size-14 text-primary"/>}</div><div className="space-y-3 p-4"><h3 className="font-display text-xl text-brand-deep">{r.title}</h3><p className="line-clamp-3 text-sm text-black">{r.description}</p><p className="text-sm text-primary">{r.files.length} archivos · {r.format}</p>{r.files.map(f=><button key={f.id} type="button" className="flex w-full items-center gap-2 text-left text-sm text-primary" onClick={()=>download(f)}><Download className="size-4 shrink-0"/><span className="break-all">{f.name}</span></button>)}{safeUrl(r.url)&&<a href={r.url} target="_blank" rel="noreferrer" className="text-sm text-primary underline">Documento anterior</a>}<div className="flex gap-2 border-t border-border pt-3"><button className={secondary} onClick={()=>open(r)}><Pencil className="size-4"/>Editar</button><button className={secondary} onClick={()=>setPending({type:"delete",resource:r})}><Trash2 className="size-4"/>Eliminar</button></div></div></article>)}</div>}</>}{pending&&<Confirm danger={pending.type==="delete"} text={`${pending.type==="delete"?"¿Eliminar":"¿Guardar"} «${pending.resource.title}»?`} onClose={()=>setPending(null)} onConfirm={commit}/>}</div>;
+
+ return <div className="mx-auto max-w-7xl space-y-6"><AdminHeading title="Recursos" description="Organiza los archivos institucionales por tipo de recurso." count={items.length}/><AdminDropdown label="Filtrar recursos por categoría" value={category} options={cards.map(c=>({id:c.id,label:c.label,count:c.count}))} disabled={!!draft||busy} onChange={id=>{setCategory(id);setQuery("");setError("");setSuccess("");}}/><section className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-white p-4"><h2 className="font-display text-xl text-brand-deep">{cards.find(x=>x.id===category)?.label}</h2>{!draft&&<button className={primary} onClick={()=>open()}><Plus className="size-5"/>Añadir recurso</button>}</section><Notice error={error} success={success}/>{draft?<form onSubmit={submit} className={`${panel} border-t-4 border-t-[#2381C4]`}><fieldset disabled={busy} className="space-y-5"><div className="flex flex-wrap items-center justify-between gap-2"><h3 className="font-display text-xl text-brand-deep">{items.some(x=>x.id===draft.id)?"Editar recurso":"Nuevo recurso"}</h3><CloseButton onClick={()=>setDraft(null)}/></div><div className="grid gap-5 lg:grid-cols-2"><div className="space-y-4"><Field label="Título (ES)"><input required className={`${field} !text-[#2381C4] font-semibold`} value={draft.title} onChange={e=>patch({title:e.target.value,titleEn:""})}/></Field><Field label="Descripción (ES)"><textarea required rows={5} className={field} value={draft.description} onChange={e=>patch({description:e.target.value,descriptionEn:""})}/></Field><Field label="Título (EN)"><input className={`${field} !text-[#2381C4] font-semibold`} value={draft.titleEn} onChange={e=>patch({titleEn:e.target.value})}/></Field><Field label="Descripción (EN)"><textarea rows={5} className={field} value={draft.descriptionEn} onChange={e=>patch({descriptionEn:e.target.value})}/></Field><p className="text-sm text-black">{translationNotice}</p></div><div className="space-y-3 rounded-2xl bg-[#edf6fc] p-4"><h3 className="font-bold text-brand-deep">Archivos adjuntos</h3><label onDragOver={e=>e.preventDefault()} onDrop={e=>{e.preventDefault();void upload(e.dataTransfer.files);}} className="flex cursor-pointer flex-col items-center gap-3 rounded-xl border-2 border-dashed border-[#99CCFF] bg-white p-6 text-center hover:border-primary"><ImagePlus className="size-9 text-primary"/><span className="font-semibold text-primary">Seleccionar o arrastrar archivos</span><span className="text-sm text-black">Fotografías, PDF o ambos. PDF hasta 2 MB por archivo.</span><input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf" className="sr-only" onChange={e=>{void upload(e.target.files);e.target.value="";}}/></label>{draft.files.map(f=><div key={f.id} className="flex items-center gap-3 rounded-xl border border-border bg-white p-3">{f.mime.startsWith("image/")&&safeUrl(f.data,true)?<img src={f.data} alt="" className="size-12 object-contain"/>:<FileText className="size-8 shrink-0 text-primary"/>}<span className="min-w-0 flex-1 break-all text-sm text-black">{f.name}</span><button type="button" aria-label="Quitar archivo" className={secondary} onClick={()=>patch({files:draft.files.filter(x=>x.id!==f.id)})}><Trash2 className="size-4"/></button></div>)}{draft.url&&<div className="rounded-xl bg-white p-3 text-sm text-black">Documento anterior conservado. <button type="button" className="text-primary underline" onClick={()=>patch({url:""})}>Quitar enlace anterior</button></div>}</div></div><div className="flex justify-end gap-2 border-t border-border pt-4"><CloseButton onClick={()=>setDraft(null)}/><button type="submit" className={primary}>{busy?"Procesando…":"Guardar recurso"}</button></div></fieldset></form>:<><div className="flex items-center gap-3 rounded-xl border border-border bg-white px-4"><Search className="size-5 text-primary"/><input className="w-full bg-transparent py-3 text-black outline-none" placeholder="Buscar por título o descripción…" value={query} onChange={e=>setQuery(e.target.value)}/></div>{!filtered.length?<Empty text="No hay recursos en esta categoría."/>:<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{filtered.map(r=><article key={r.id} className="group overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-md motion-reduce:transform-none motion-reduce:transition-none"><div className="grid aspect-[16/10] place-items-center overflow-hidden bg-[#edf6fc]">{r.files.find(f=>f.mime.startsWith("image/")&&safeUrl(f.data,true))?<img src={r.files.find(f=>f.mime.startsWith("image/")&&safeUrl(f.data,true))?.data} alt="" className="size-full object-cover"/>:<FileText className="size-14 text-primary"/>}</div><div className="space-y-3 p-4"><h3 className="font-display text-xl text-brand-deep">{r.title}</h3><p className="line-clamp-3 text-sm text-black">{r.description}</p><p className="text-sm text-primary">{r.files.length} archivos · {r.format}</p>{r.files.map(f=><button key={f.id} type="button" className="flex w-full items-center gap-2 text-left text-sm text-primary" onClick={()=>download(f)}><Download className="size-4 shrink-0"/><span className="break-all">{f.name}</span></button>)}{safeUrl(r.url)&&<a href={r.url} target="_blank" rel="noreferrer" className="text-sm text-primary underline">Documento anterior</a>}<div className="flex gap-2 border-t border-border pt-3"><button className={secondary} onClick={()=>open(r)}><Pencil className="size-4"/>Editar</button><button className={secondary} onClick={()=>setPending({type:"delete",resource:r})}><Trash2 className="size-4"/>Eliminar</button></div></div></article>)}</div>}</>}{pending&&<Confirm danger={pending.type==="delete"} text={`${pending.type==="delete"?"¿Eliminar":"¿Guardar"} «${pending.resource.title}»?`} onClose={()=>setPending(null)} onConfirm={commit}/>}</div>;
+
 }

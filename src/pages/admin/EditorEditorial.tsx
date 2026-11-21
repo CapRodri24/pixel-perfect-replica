@@ -1,50 +1,273 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import { ArrowDown, ArrowUp, Pencil, Trash2, Plus, Search, Image as ImageIcon, Eye, FileText, Link2, Map, Briefcase, Newspaper } from "lucide-react";
+import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+
+import { ArrowDown, ArrowUp, Pencil, Trash2, Plus, Search, Image as ImageIcon, Eye, FileText, Link2, Map, Briefcase, Newspaper, Check, ChevronDown } from "lucide-react";
+
 import { type Block, type BlockType, type Editorial, keys, newBlock, newEditorial, normalizeEditorial, demoLandscapes, demoPrograms, demoNews, useStore, readLandscapes, readPrograms, readNews, titleOf, textOf, imageOf, plain, sanitize, safeUrl, youtubeId, newsTypes } from "./datos";
-import { AdminHeading, CategoryCards, Field, Notice, Confirm, ImageInput, Gallery, Video, Empty, CloseButton, field, primary, secondary, panel } from "./ui";
+
+import { AdminHeading, Field, Notice, Confirm, ImageInput, Gallery, Video, Empty, CloseButton, field, primary, secondary, panel } from "./ui";
+
+
 
 import { withTranslator, translationNotice } from "./traduccion";
 
+
+
+
+type Option = { id: string; label: string; count?: number };
+
+function AdminDropdown({
+  label,
+  value,
+  options,
+  onChange,
+  placeholder = "Seleccionar opción",
+  disabled = false,
+  required = false,
+}: {
+  label: string;
+  value: string;
+  options: Option[];
+  onChange: (value: string) => void;
+  placeholder?: string;
+  disabled?: boolean;
+  required?: boolean;
+}) {
+  const id = useId();
+  const root = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const [open, setOpen] = useState(false);
+  const [focusIndex, setFocusIndex] = useState(0);
+  const selected = options.find((option) => option.id === value);
+  const selectedIndex = Math.max(0, options.findIndex((option) => option.id === value));
+
+  useEffect(() => {
+    if (!open) return;
+    const outside = (event: PointerEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        trigger.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", outside);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", outside);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (disabled) setOpen(false);
+  }, [disabled]);
+
+  useEffect(() => {
+    if (open) optionRefs.current[focusIndex]?.focus();
+  }, [open, focusIndex]);
+
+  function show() {
+    if (disabled) return;
+    if (!open) setFocusIndex(selectedIndex);
+    setOpen((previous) => !previous);
+  }
+
+  function choose(option: Option) {
+    onChange(option.id);
+    setOpen(false);
+    trigger.current?.focus();
+  }
+
+  return (
+    <div ref={root} className="relative min-w-0">
+      <span id={`${id}-label`} className="mb-2 block text-sm font-semibold text-brand-deep">
+        {label}
+      </span>
+      <button
+        ref={trigger}
+        type="button"
+        disabled={disabled}
+        aria-labelledby={`${id}-label ${id}-value`}
+        aria-required={required || undefined}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open ? `${id}-listbox` : undefined}
+        onClick={show}
+        onKeyDown={(event) => {
+          if (!open && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+            event.preventDefault();
+            setFocusIndex(selectedIndex);
+            setOpen(true);
+          }
+        }}
+        className={`flex min-h-[68px] w-full items-center gap-3 rounded-2xl border bg-white px-4 text-left shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2381C4]/30 disabled:cursor-not-allowed disabled:opacity-50 ${open ? "border-[#2381C4] ring-2 ring-[#2381C4]/15" : "border-[#dbe6ef] hover:border-[#2381C4]/60"}`}
+      >
+        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#eaf4fc] text-[#2381C4]">
+          <Map className="size-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span id={`${id}-value`} className="block truncate text-sm font-semibold text-brand-deep sm:text-base">
+            {selected?.label ?? placeholder}
+          </span>
+          {selected?.count !== undefined && (
+            <span className="block text-xs text-muted-foreground">
+              {selected.count} {selected.count === 1 ? "registro" : "registros"}
+            </span>
+          )}
+        </span>
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-[#eaf4fc] text-[#2381C4]">
+          <ChevronDown className={`size-5 transition-transform ${open ? "rotate-180" : ""}`} />
+        </span>
+      </button>
+      {open && (
+        <div
+          id={`${id}-listbox`}
+          role="listbox"
+          aria-labelledby={`${id}-label`}
+          className="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-2xl border border-[#dbe6ef] bg-white p-2 shadow-[0_16px_50px_rgba(18,60,96,0.18)]"
+        >
+          <div className="border-b border-border px-3 py-2 text-[11px] font-bold uppercase tracking-wider text-[#2381C4]">
+            Selecciona una opción
+          </div>
+          <div className="max-h-72 space-y-1 overflow-y-auto overscroll-contain py-2">
+            {options.map((option, index) => {
+              const active = option.id === value;
+              return (
+                <button
+                  key={option.id}
+                  ref={(node) => { optionRefs.current[index] = node; }}
+                  role="option"
+                  aria-selected={active}
+                  type="button"
+                  onClick={() => choose(option)}
+                  onKeyDown={(event) => {
+                    if (event.key === "ArrowDown") {
+                      event.preventDefault();
+                      setFocusIndex((index + 1) % options.length);
+                    } else if (event.key === "ArrowUp") {
+                      event.preventDefault();
+                      setFocusIndex((index - 1 + options.length) % options.length);
+                    } else if (event.key === "Home") {
+                      event.preventDefault();
+                      setFocusIndex(0);
+                    } else if (event.key === "End") {
+                      event.preventDefault();
+                      setFocusIndex(options.length - 1);
+                    }
+                  }}
+                  className={`flex min-h-14 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#2381C4]/40 ${active ? "bg-[#eaf4fc] text-[#185e91]" : "text-brand-deep hover:bg-[#f2f7fb] focus:bg-[#f2f7fb]"}`}
+                >
+                  <span className={`grid size-9 shrink-0 place-items-center rounded-xl ${active ? "bg-[#2381C4] text-white" : "bg-[#eef3f7] text-[#5980b9]"}`}>
+                    <Map className="size-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block break-words text-sm font-semibold leading-snug">{option.label}</span>
+                    {option.count !== undefined && (
+                      <span className="mt-1 block text-xs text-muted-foreground">
+                        {option.count} {option.count === 1 ? "registro" : "registros"}
+                      </span>
+                    )}
+                  </span>
+                  {active && (
+                    <span className="grid size-6 shrink-0 place-items-center rounded-full bg-[#2381C4] text-white">
+                      <Check className="size-4" />
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 type Kind = "paisajes" | "programas" | "noticias";
+
 const config = {paisajes:{title:"Paisajes",single:"paisaje",description:"Gestiona los paisajes y su contenido editorial.",seed:demoLandscapes},programas:{title:"Programas",single:"programa",description:"Crea programas vinculados a un paisaje.",seed:demoPrograms},noticias:{title:"Noticias",single:"noticia",description:"Publica historias independientes o relacionadas con programas.",seed:demoNews}};
+
 const labels:Record<BlockType,string>={title:"Título",subtitle:"Subtítulo",text:"Párrafo",image:"Imagen",gallery:"Carrusel de imágenes",video:"Video de YouTube"};
+
 const addTypes:BlockType[]=["subtitle","text","image","gallery","video"];
+
 function RichText({value,onChange,label}:{value:string;onChange:(v:string)=>void;label:string}){
+
  const ref=useRef<HTMLDivElement>(null);
+
  useEffect(()=>{if(ref.current&&ref.current.innerHTML!==value)ref.current.innerHTML=sanitize(value);},[value]);
+
  function commit(){if(ref.current)onChange(sanitize(ref.current.innerHTML));}
+
  const commands=[["B","bold","Negrita"],["I","italic","Cursiva"],["U","underline","Subrayado"],["S","strikeThrough","Tachado"],["←","justifyLeft","Izquierda"],["↔","justifyCenter","Centrar"],["→","justifyRight","Derecha"],["↺","removeFormat","Quitar formato"]] as const;
+
  return <div className="overflow-hidden rounded-xl border border-border bg-background"><div className="flex flex-wrap gap-1 border-b border-border bg-muted/30 p-1.5">{commands.map(([text,cmd,title])=><button key={cmd} type="button" title={title} aria-label={title} className="rounded px-2 py-1 text-xs font-bold hover:bg-muted" onMouseDown={e=>e.preventDefault()} onClick={()=>{ref.current?.focus();document.execCommand(cmd,false);commit();}}>{text}</button>)}</div><div ref={ref} role="textbox" aria-label={label} aria-multiline="true" contentEditable suppressContentEditableWarning onInput={commit} onBlur={commit} onPaste={e=>{e.preventDefault();document.execCommand("insertText",false,e.clipboardData.getData("text/plain"));commit();}} className="min-h-24 whitespace-pre-wrap p-3 text-sm text-black outline-none"/></div>;
+
 }
+
 export function EditorialPreview({blocks,english=false}:{blocks:Block[];english?:boolean}){return <article className="space-y-5 break-words">{blocks.map(b=>{const text=english?(b.valueEn||b.value):b.value;const caption=english?(b.captionEn||b.caption):b.caption;switch(b.type){case "title":return <h2 key={b.id} className="font-display text-3xl text-brand-deep">{plain(text)||"Título"}</h2>;case "subtitle":return <h3 key={b.id} className="font-display text-xl text-brand-deep">{plain(text)}</h3>;case "text":return <div key={b.id} className="whitespace-pre-wrap text-base leading-relaxed text-black" dangerouslySetInnerHTML={{__html:sanitize(text)}}/>;case "image":return safeUrl(b.value,true)?<figure key={b.id}><img src={b.value} alt={caption} className="w-full rounded-xl object-cover"/>{caption&&<figcaption className="mt-2 text-center text-xs text-muted-foreground">{caption}</figcaption>}</figure>:null;case "gallery":return <figure key={b.id}><Gallery images={b.images}/>{caption&&<figcaption className="mt-2 text-center text-xs text-muted-foreground">{caption}</figcaption>}</figure>;case "video":return <Video key={b.id} url={b.value}/>;}})}</article>;}
+
 function BlockEditor({block,onChange,onRemove,onMove,first,last,english}:{block:Block;onChange:(patch:Partial<Block>)=>void;onRemove:()=>void;onMove:(dir:number)=>void;first:boolean;last:boolean;english:boolean}){
+
  const value=english?block.valueEn:block.value;const updateText=(v:string)=>{if(v!==value)onChange(english?{valueEn:v}:{value:v,valueEn:""});};
+
  return <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-3 transition hover:border-primary/30"><div className="flex flex-wrap items-center justify-between gap-2"><span className="text-xs font-bold uppercase tracking-wide text-primary">{labels[block.type]} {first&&" · obligatorio"}</span>{!first&&<div className="flex gap-1"><button type="button" title="Mover arriba" aria-label="Mover arriba" className={secondary} onClick={()=>onMove(-1)}><ArrowUp className="size-3.5"/></button><button type="button" title="Mover abajo" aria-label="Mover abajo" disabled={last} className={secondary} onClick={()=>onMove(1)}><ArrowDown className="size-3.5"/></button><button type="button" title="Quitar bloque" aria-label="Quitar bloque" className={`${secondary} text-red-700`} onClick={onRemove}><Trash2 className="size-3.5"/></button></div>}</div>
+
  {block.type==="title"||block.type==="subtitle"?<input aria-label={labels[block.type]} className={`${field} !text-[#2381C4] font-semibold`} value={value} onChange={e=>updateText(e.target.value)} placeholder={labels[block.type]}/>:block.type==="text"?<RichText value={value} onChange={updateText} label="Párrafo"/>:block.type==="image"?<ImageInput value={block.value} onChange={v=>onChange({value:v})}/>:block.type==="gallery"?<div className="space-y-2">{block.images.map((img,i)=><div key={i} className="rounded-lg border border-border p-2"><div className="mb-2 flex justify-between text-xs"><span>Fotografía {i+1}</span><button type="button" className="text-red-700" onClick={()=>onChange({images:block.images.filter((_,j)=>i!==j)})}>Quitar</button></div><ImageInput value={img} onChange={v=>onChange({images:block.images.map((x,j)=>i===j?v:x)})}/></div>)}<button type="button" className={secondary} onClick={()=>onChange({images:[...block.images,""]})}><Plus className="size-4"/>Añadir fotografía</button></div>:<><input className={field} aria-label="URL de YouTube" placeholder="https://www.youtube.com/watch?v=…" value={block.value} onChange={e=>onChange({value:e.target.value})}/>{block.value&&!youtubeId(block.value)&&<p className="text-xs text-red-700">Enlace de YouTube no válido.</p>}<Video url={block.value}/></>}
+
  {(block.type==="image"||block.type==="gallery")&&<input className={field} aria-label="Pie de fotografía" placeholder="Pie de fotografía (opcional)" value={english?block.captionEn:block.caption} onChange={e=>onChange(english?{captionEn:e.target.value}:{caption:e.target.value,captionEn:""})}/>}
+
  </div>;
+
 }
+
 export default function EditorEditorial({kind}:{kind:Kind}){
+
  const cfg=config[kind];const {items,save}=useStore(keys[kind],normalizeEditorial,cfg.seed);
+
  const [busy,setBusy]=useState(false);const [filter,setFilter]=useState("");
+
  const [draft,setDraft]=useState<Editorial|null>(null);const [editing,setEditing]=useState(false);const [english,setEnglish]=useState(false);const [query,setQuery]=useState("");const [error,setError]=useState("");const [success,setSuccess]=useState("");const [pending,setPending]=useState<{type:"save";item:Editorial}|{type:"delete";item:Editorial}|null>(null);
+
  const landscapes=readLandscapes();const programs=readPrograms();
+
  function open(item?:Editorial){setDraft(item?{...item,blocks:item.blocks.map(b=>({...b,images:[...b.images]}))}:{...newEditorial(),...(kind==="programas"?{landscapeId:filter}:kind==="noticias"?{programId:filter==="publicacion"?"":filter}:{})});setEditing(Boolean(item));setEnglish(false);setError("");setSuccess("");}
+
  function patch(next:Partial<Editorial>){setDraft(d=>d?{...d,...next}:null);}
+
  function patchBlock(id:string,next:Partial<Block>){setDraft(d=>d?{...d,blocks:d.blocks.map(b=>b.id===id?{...b,...next}:b)}:null);}
+
  function move(id:string,dir:number){setDraft(d=>{if(!d)return d;const i=d.blocks.findIndex(b=>b.id===id), j=i+dir;if(i<1||j<1||j>=d.blocks.length)return d;const blocks=[...d.blocks];const a=blocks[i],b=blocks[j];if(!a||!b)return d;blocks[i]=b;blocks[j]=a;return {...d,blocks};});}
+
  async function submit(e:FormEvent){e.preventDefault();if(!draft||busy)return;setError("");if(!plain(draft.blocks.find(b=>b.type==="title")?.value??"")){setError("El título en español es obligatorio.");return;}if(kind==="programas"&&!landscapes.some(p=>p.id===draft.landscapeId)){setError("Selecciona un paisaje existente.");return;}if(kind==="noticias"&&draft.programId&&!programs.some(p=>p.id===draft.programId)){setError("Selecciona un programa existente o deja la noticia independiente.");return;}
+
  const clean=draft.blocks.map(b=>({...b,value:b.type==="text"?sanitize(b.value):b.value.trim(),valueEn:b.type==="text"?sanitize(b.valueEn):b.valueEn.trim(),images:b.images.filter(v=>v.trim())})).filter(b=>b.type==="title"||(b.type==="gallery"?b.images.length>0:b.type==="text"?Boolean(plain(b.value)||plain(b.valueEn)):Boolean(b.value||b.valueEn)));
+
  if(clean.length<2){setError("Añade al menos un bloque adicional con contenido.");return;}if(clean.some(b=>b.type==="image"&&!safeUrl(b.value,true)||b.type==="gallery"&&b.images.some(v=>!safeUrl(v,true))||b.type==="video"&&!youtubeId(b.value))){setError("Revisa las imágenes y los enlaces de YouTube.");return;}let translated=clean;const missing=clean.some(b=>((["title","subtitle","text"].includes(b.type)&&plain(b.value)&&!plain(b.valueEn))||(b.caption.trim()&&!b.captionEn.trim())));if(missing){setBusy(true);try{translated=await withTranslator(async t=>{const out:Block[]=[];for(const b of clean){out.push({...b,valueEn:["title","subtitle","text"].includes(b.type)&&plain(b.value)&&!plain(b.valueEn)?await t(b.value,b.type==="text"):b.valueEn,captionEn:b.caption.trim()&&!b.captionEn.trim()?await t(b.caption):b.captionEn});}return out;});}catch(e){setError(e instanceof Error?e.message:"No se pudo traducir.");setEnglish(true);return;}finally{setBusy(false);}}setDraft({...draft,blocks:translated});setPending({type:"save",item:{...draft,blocks:translated}});}
+
  function commit(){if(!pending)return;const {item,type}=pending;setPending(null);let next:Editorial[];if(type==="delete"){if(kind==="paisajes"&&readPrograms().some(p=>p.landscapeId===item.id)){setError("No puedes eliminar este paisaje mientras tenga programas asociados. Reasigna o elimina sus programas primero.");return;}if(kind==="programas"&&readNews().some(n=>n.programId===item.id)){setError("Este programa tiene noticias asociadas. Desvincúlalas o reasígnalas antes de eliminarlo.");return;}next=items.filter(x=>x.id!==item.id);}else{next=items.some(x=>x.id===item.id)?items.map(x=>x.id===item.id?item:x):[...items,item];}const err=save(next);setError(err);if(!err){setDraft(null);setSuccess(type==="delete"?"Registro eliminado.":"Contenido guardado localmente.");}}
+
  const matches=(x:Editorial,id:string)=>!id||(kind==="programas"?x.landscapeId===id:kind==="noticias"?(id==="publicacion"?!x.programId:x.programId===id):true);
+
  const filtered=items.filter(x=>matches(x,filter)&&`${titleOf(x)} ${textOf(x)}`.toLowerCase().includes(query.toLowerCase()));
+
  const cards=kind==="paisajes"?[{id:"",label:"Todos los paisajes",description:"Contenido del menú Paisajes",count:items.length,icon:Map}]:[{id:"",label:kind==="programas"?"Todos los programas":"Todas las noticias",description:"Todos los registros",count:items.length,icon:kind==="programas"?Briefcase:Newspaper},...(kind==="programas"?landscapes:programs).map(x=>({id:x.id,label:titleOf(x),description:kind==="programas"?"Paisaje asociado":"Programa asociado",count:items.filter(y=>matches(y,x.id)).length,icon:kind==="programas"?Map:Briefcase})),...(kind==="noticias"?[{id:"publicacion",label:"Publicación",description:"Sin programa asociado",count:items.filter(x=>!x.programId).length,icon:Newspaper}]:[])];
- return <div className="mx-auto max-w-7xl space-y-6"><AdminHeading title={cfg.title} description={cfg.description} count={items.length}/><CategoryCards categories={cards} active={filter} onChange={id=>{setFilter(id);setQuery("");}} disabled={!!draft||busy}/><div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-white p-4"><h2 className="font-display text-xl text-brand-deep">{cards.find(c=>c.id===filter)?.label??cfg.title}</h2>{!draft&&<button type="button" className={primary} onClick={()=>open()}><Plus className="size-5"/>Añadir {cfg.single}</button>}</div><Notice error={error} success={success}/>{draft?<div className="grid items-start gap-5 xl:grid-cols-2"><form onSubmit={submit} className={`${panel} space-y-4`}><fieldset disabled={busy} className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-display text-xl text-brand-deep">{editing?"Editar":"Nuevo registro"}</h2><CloseButton onClick={()=>{setDraft(null);setError("");}}/></div>
+
+ return <div className="mx-auto max-w-7xl space-y-6"><AdminHeading title={cfg.title} description={cfg.description} count={items.length}/><AdminDropdown label={kind === "programas" ? "Filtrar programas por paisaje" : "Filtrar noticias por programa"} value={filter} options={cards.map(c=>({id:c.id,label:c.label,count:c.count}))} onChange={id=>{setFilter(id);setQuery("");}} disabled={!!draft||busy}/><div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-white p-4"><h2 className="font-display text-xl text-brand-deep">{cards.find(c=>c.id===filter)?.label??cfg.title}</h2>{!draft&&<button type="button" className={primary} onClick={()=>open()}><Plus className="size-5"/>Añadir {cfg.single}</button>}</div><Notice error={error} success={success}/>{draft?<div className="grid items-start gap-5 xl:grid-cols-2"><form onSubmit={submit} className={`${panel} space-y-4`}><fieldset disabled={busy} className="space-y-4"><div className="flex flex-wrap items-center justify-between gap-2"><h2 className="font-display text-xl text-brand-deep">{editing?"Editar":"Nuevo registro"}</h2><CloseButton onClick={()=>{setDraft(null);setError("");}}/></div>
+
  {kind==="paisajes"&&<Field label="Color del paisaje"><input type="color" className="h-10 w-20 rounded-lg border border-border" value={draft.color} onChange={e=>patch({color:e.target.value})}/></Field>}
- {kind==="programas"&&<div className="space-y-2"><h3 className="font-bold text-brand-deep">Paisaje asociado (obligatorio)</h3><CategoryCards categories={landscapes.map(p=>({id:p.id,label:titleOf(p),description:"Seleccionar paisaje",count:readPrograms().filter(x=>x.landscapeId===p.id).length,icon:Map}))} active={draft.landscapeId} onChange={id=>patch({landscapeId:id})}/>{!landscapes.length&&<p className="text-sm text-black">Crea un paisaje primero.</p>}</div>}
- {kind==="noticias"&&<><div className="space-y-2"><h3 className="font-bold text-brand-deep">Vinculación de la noticia</h3><CategoryCards categories={[{id:"",label:"Publicación",description:"Sin programa asociado",count:items.filter(x=>!x.programId).length,icon:Newspaper},...programs.map(p=>({id:p.id,label:titleOf(p),description:"Noticia de programa",count:items.filter(x=>x.programId===p.id).length,icon:Briefcase}))]} active={draft.programId} onChange={id=>patch({programId:id})}/></div><div className="grid gap-3 sm:grid-cols-2"><Field label="Categoría editorial"><select className={field} value={draft.category} onChange={e=>patch({category:e.target.value})}>{newsTypes.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></Field><Field label="Fecha"><input required type="date" className={field} value={draft.date} onChange={e=>patch({date:e.target.value})}/></Field></div></>}
+
+ {kind==="programas"&&<div className="space-y-2"><h3 className="font-bold text-brand-deep">Paisaje asociado (obligatorio)</h3><AdminDropdown label="Seleccionar paisaje" required value={draft.landscapeId} options={landscapes.map(p=>({id:p.id,label:titleOf(p),count:readPrograms().filter(x=>x.landscapeId===p.id).length}))} onChange={id=>patch({landscapeId:id})}/>{!landscapes.length&&<p className="text-sm text-black">Crea un paisaje primero.</p>}</div>}
+
+ {kind==="noticias"&&<><div className="space-y-2"><h3 className="font-bold text-brand-deep">Vinculación de la noticia</h3><AdminDropdown label="Seleccionar vinculación" value={draft.programId} options={[{id:"",label:"Publicación",count:items.filter(x=>!x.programId).length},...programs.map(p=>({id:p.id,label:titleOf(p),count:items.filter(x=>x.programId===p.id).length}))]} onChange={id=>patch({programId:id})}/></div><div className="grid gap-3 sm:grid-cols-2"><Field label="Categoría editorial"><select className={field} value={draft.category} onChange={e=>patch({category:e.target.value})}>{newsTypes.map(([id,label])=><option key={id} value={id}>{label}</option>)}</select></Field><Field label="Fecha"><input required type="date" className={field} value={draft.date} onChange={e=>patch({date:e.target.value})}/></Field></div></>}
+
  <div className="flex gap-2 rounded-xl bg-muted/40 p-1">{[false,true].map(en=><button key={String(en)} type="button" className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition ${english===en?"bg-primary text-primary-foreground":"text-muted-foreground hover:bg-muted"}`} onClick={()=>setEnglish(en)}>{en?"English":"Español"}</button>)}</div><p className="text-xs text-muted-foreground">{translationNotice} Los bloques multimedia se comparten entre idiomas.</p>
+
  {draft.blocks.map((b,i)=><BlockEditor key={`${b.id}-${english}`} block={b} first={i===0} last={i===draft.blocks.length-1} english={english} onChange={p=>patchBlock(b.id,p)} onRemove={()=>patch({blocks:draft.blocks.filter(x=>x.id!==b.id)})} onMove={dir=>move(b.id,dir)}/>)}
+
  <div className="flex flex-wrap gap-2 border-t border-border pt-4">{addTypes.map(type=><button key={type} type="button" className={secondary} onClick={()=>patch({blocks:[...draft.blocks,newBlock(type)]})}><Plus className="size-3.5"/>{labels[type]}</button>)}</div><button type="submit" className={`${primary} w-full`}>{busy?"Traduciendo…":`Guardar ${cfg.single}`}</button></fieldset></form><div className={`${panel} xl:sticky xl:top-20`}><div className="mb-5 flex items-center gap-2 border-b border-border pb-3 text-xs font-semibold uppercase tracking-wider text-primary"><Eye className="size-4"/>Vista previa · {english?"EN":"ES"}</div><EditorialPreview blocks={draft.blocks} english={english}/></div></div>:<><div className="mb-5 flex items-center gap-2 rounded-xl border border-border bg-background px-3"><Search className="size-4 text-muted-foreground"/><input aria-label="Buscar registros" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar por título o descripción…" className="w-full bg-transparent py-3 text-sm outline-none"/><span className="text-xs text-muted-foreground">{filtered.length}</span></div>{!filtered.length?<Empty text="No hay registros para mostrar."/>:<div className="grid gap-4 lg:grid-cols-2">{filtered.map(item=>{const image=imageOf(item);const relation=kind==="programas"?landscapes.find(p=>p.id===item.landscapeId):kind==="noticias"?programs.find(p=>p.id===item.programId):undefined;return <article key={item.id} className="group overflow-hidden rounded-2xl border border-border bg-background shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md motion-reduce:transition-none"><div className="flex gap-4 p-4"><div className="grid size-24 shrink-0 place-items-center overflow-hidden rounded-xl bg-muted text-muted-foreground">{safeUrl(image,true)?<img src={image} alt="" className="size-full object-cover"/>:<ImageIcon className="size-7"/>}</div><div className="min-w-0 flex-1"><h2 className="font-display text-xl text-brand-deep">{titleOf(item)}</h2><p className="mt-1 line-clamp-2 text-sm text-black">{textOf(item)}</p><p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground"><FileText className="size-3.5"/>{item.blocks.length} bloques</p>{kind!=="paisajes"&&<p className="mt-1 flex items-center gap-1 text-xs text-primary"><Link2 className="size-3.5"/>{relation?titleOf(relation):kind==="noticias"&&!item.programId?"Publicación":"Sin asociación válida"}</p>}</div></div><div className="flex justify-end gap-2 border-t border-border px-4 py-3"><button className={secondary} onClick={()=>open(item)}><Pencil className="size-4"/>Editar</button><button className={`${secondary} text-red-700`} onClick={()=>{setError("");setPending({type:"delete",item});}}><Trash2 className="size-4"/>Eliminar</button></div></article>;})}</div>}</>}{pending&&<Confirm danger={pending.type==="delete"} text={pending.type==="delete"?`¿Eliminar «${titleOf(pending.item)}»? Esta acción no se puede deshacer.`:`¿Guardar «${titleOf(pending.item)}» en este navegador?`} onClose={()=>setPending(null)} onConfirm={commit}/>}</div>;
+
 }
