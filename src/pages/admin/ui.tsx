@@ -17,4 +17,29 @@ export function CloseButton({onClick}:{onClick:()=>void}){return <button type="b
 
 export type AdminCategory = {id:string;label:string;description:string;count:number;icon:typeof ImagePlus};
 export function AdminHeading({title,description,count}:{title:string;description:string;count:number}){return <header className="relative overflow-hidden rounded-3xl border border-[#dce7ef] bg-gradient-to-br from-white via-white to-[#eaf4fc] p-6 sm:p-8"><div aria-hidden="true" className="pointer-events-none absolute -right-12 -top-24 size-72 rounded-full border-[35px] border-[#2381C4]/5"/><div className="relative flex flex-wrap items-center justify-between gap-5"><div><p className="text-xs font-bold uppercase tracking-[.18em] text-primary">Gestión de contenidos</p><h1 className="mt-2 font-display text-4xl font-bold text-brand-deep sm:text-5xl">{title}</h1><p className="mt-3 max-w-xl text-base text-black">{description}</p></div><div className="rounded-2xl border border-[#dce7ef] bg-white px-6 py-4 shadow-sm"><span className="block text-sm text-black">Registros totales</span><span className="mt-1 block text-4xl font-bold tabular-nums text-primary">{count}</span></div></div></header>;}
-export function CategoryCards({categories,active,onChange,disabled=false}:{categories:AdminCategory[];active:string;onChange:(id:string)=>void;disabled?:boolean}){return <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Categorías">{categories.map(c=><button key={c.id} type="button" disabled={disabled} aria-pressed={active===c.id} onClick={()=>onChange(c.id)} className={`group min-w-0 rounded-2xl border p-5 text-left shadow-sm transition hover:-translate-y-1 hover:shadow-md disabled:opacity-60 disabled:hover:translate-y-0 motion-reduce:transform-none motion-reduce:transition-none ${active===c.id?"border-[#2381C4] bg-[#edf6fc]":"border-[#dce7ef] bg-white"}`}><div className="flex items-center justify-between"><span className="grid size-12 place-items-center rounded-2xl bg-[#e3f0fa] text-primary"><c.icon className="size-6"/></span><span className="text-3xl font-bold tabular-nums text-primary">{c.count}</span></div><h2 className="mt-4 text-lg font-bold text-brand-deep">{c.label}</h2><p className="mt-1 text-sm leading-relaxed text-black">{c.description}</p><div className="mt-4 flex items-center justify-between border-t border-[#dce7ef] pt-3 text-sm font-semibold text-primary">{active===c.id?"Sección activa":"Seleccionar"}{active===c.id?<CheckCircle2 className="size-5"/>:<ChevronRight className="size-5"/>}</div></button>)}</div>;}
+export function CategoryCards({categories,active,onChange,disabled=false}:{categories:AdminCategory[];active:string;onChange:(id:string)=>void;disabled?:boolean}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Categorías">
+      {categories.map(c => {
+        const selected = active === c.id;
+        return (
+          <button
+            key={c.id}
+            type="button"
+            disabled={disabled}
+            aria-pressed={selected}
+            aria-label={`${c.label}: ${c.count} registros. ${c.description}`}
+            title={c.description}
+            onClick={() => onChange(c.id)}
+            className={`inline-flex min-h-11 max-w-full items-center gap-2 rounded-xl border px-3 py-2 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2381C4] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 motion-reduce:transition-none ${selected ? "border-[#2381C4] bg-[#edf6fc]" : "border-[#dce7ef] bg-white hover:border-[#99CCFF] hover:bg-[#f5faff]"}`}
+          >
+            <c.icon aria-hidden="true" className="size-[18px] shrink-0 text-[#2381C4]" />
+            <span className="min-w-0 text-sm font-semibold leading-tight text-[#2381C4]">{c.label}</span>
+            <span className={`inline-flex min-w-6 shrink-0 items-center justify-center rounded-full px-1.5 py-0.5 text-xs font-bold tabular-nums ${selected ? "bg-[#2381C4] text-white" : "bg-[#eaf4fc] text-[#2381C4]"}`}>{c.count}</span>
+            {selected && <CheckCircle2 aria-hidden="true" className="size-4 shrink-0 text-[#2381C4]" />}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
