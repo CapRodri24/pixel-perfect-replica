@@ -1,548 +1,387 @@
--- ============================================================
--- ASOCIACIÓN ARMONÍA - PROPUESTA DE BASE DE DATOS POSTGRESQL
--- Ejecutar una sola vez en una base de datos vacía (PostgreSQL 12+).
--- No elimina tablas ni crea credenciales de acceso.
--- ============================================================
+-- =============================================================
+-- ASOCIACIÓN CIVIL ARMONÍA - BASE DE DATOS (POSTGRESQL)
+-- Esquema normalizado para el CMS bilingüe ES/EN.
+-- Imágenes y PDF almacenados como BYTEA; fechas en hora local de La Paz.
+-- Ejecutar sobre una base de datos vacía ya creada.
+-- =============================================================
 BEGIN;
-SET LOCAL TIME ZONE 'America/La_Paz';
 
--- ============================================================
--- 1. SEGURIDAD
--- ============================================================
-CREATE TABLE rol (
-    id_rol SERIAL PRIMARY KEY,
-    nombre VARCHAR(50) NOT NULL UNIQUE
-);
-CREATE TABLE permiso (
-    id_permiso SERIAL PRIMARY KEY,
-    nombre VARCHAR(80) NOT NULL UNIQUE
-);
+-- 1. USUARIOS. Guardar hashes seguros, NUNCA contraseñas en texto plano.
 CREATE TABLE usuario (
-    id_usuario SERIAL PRIMARY KEY,
-    id_rol INTEGER NOT NULL REFERENCES rol(id_rol),
-    nombre VARCHAR(150) NOT NULL,
+    id_usuario BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     usuario VARCHAR(80) NOT NULL UNIQUE,
-    correo VARCHAR(254) NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    estado VARCHAR(20) NOT NULL DEFAULT 'activo' CHECK (estado IN ('activo','inactivo','eliminado')),
-    fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    fecha_actualizacion TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE UNIQUE INDEX idx_usuario_correo ON usuario (LOWER(correo));
-CREATE TABLE rol_permiso (
-    id_rol_permiso SERIAL PRIMARY KEY,
-    id_rol INTEGER NOT NULL REFERENCES rol(id_rol) ON DELETE CASCADE,
-    id_permiso INTEGER NOT NULL REFERENCES permiso(id_permiso) ON DELETE CASCADE,
-    UNIQUE(id_rol,id_permiso)
-);
-CREATE TABLE usuario_permiso (
-    id_usuario_permiso SERIAL PRIMARY KEY,
-    id_usuario INTEGER NOT NULL REFERENCES usuario(id_usuario) ON DELETE CASCADE,
-    id_permiso INTEGER NOT NULL REFERENCES permiso(id_permiso) ON DELETE CASCADE,
-    tipo VARCHAR(10) NOT NULL CHECK (tipo IN ('concedido','revocado')),
-    UNIQUE(id_usuario,id_permiso)
+    contrasena_hash TEXT NOT NULL,
+    CONSTRAINT usuario_nombre_no_vacio CHECK (btrim(usuario) <> ''),
+    CONSTRAINT usuario_hash_no_vacio CHECK (btrim(contrasena_hash) <> '')
 );
 
--- ============================================================
--- 2. ARCHIVOS Y CONTENIDO EDITORIAL
--- ============================================================
--- Los binarios se guardan fuera de PostgreSQL; URL/ruta y metadatos aquí.
-CREATE TABLE archivo (
-    id_archivo SERIAL PRIMARY KEY,
-    url TEXT NOT NULL CHECK (BTRIM(url) <> ''),
+-- 2. IMÁGENES: se guarda el archivo binario directamente en PostgreSQL (BYTEA).
+-- alt_es / alt_en: texto alternativo para accesibilidad, lectores de pantalla
+-- y cuando una imagen no puede visualizarse. No es la descripción editorial.
+-- descripcion_es / descripcion_en: explicación o descripción de la fotografía.
+-- credito: autoría o crédito fotográfico.
+CREATE TABLE imagen (
+    id_imagen BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    archivo BYTEA NOT NULL,
     nombre_archivo VARCHAR(255),
-    mime_type VARCHAR(100),
-    tamanio_bytes BIGINT CHECK (tamanio_bytes >= 0),
-    credito_fotografico VARCHAR(200),
+    mime VARCHAR(30) NOT NULL CHECK (mime IN ('image/jpeg', 'image/png', 'image/webp', 'image/gif')),
     alt_es TEXT,
     alt_en TEXT,
-    fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    descripcion_es TEXT,
+    descripcion_en TEXT,
+    credito TEXT,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
+    CONSTRAINT imagen_archivo_no_vacio CHECK (octet_length(archivo) > 0)
 );
-CREATE TABLE contenido (
-    id_contenido SERIAL PRIMARY KEY,
-    tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('paisaje','programa','noticia')),
-    estado VARCHAR(20) NOT NULL DEFAULT 'borrador' CHECK (estado IN ('borrador','publicado','inactivo','eliminado')),
-    id_usuario_creacion INTEGER REFERENCES usuario(id_usuario),
-    fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    fecha_actualizacion TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    fecha_publicacion TIMESTAMPTZ,
-    UNIQUE(id_contenido,tipo),
-    CHECK (estado <> 'publicado' OR fecha_publicacion IS NOT NULL)
+
+-- 3. CONTENIDO EDITORIAL: datos comunes de paisaje, programa y noticia.
+-- El título es fijo; los bloques ordenables empiezan DESPUÉS del título.
+CREATE TABLE contenido_editorial (
+    id_contenido BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    tipo VARCHAR(12) NOT NULL CHECK (tipo IN ('paisaje', 'programa', 'noticia')),
+    titulo_es TEXT NOT NULL,
+    titulo_en TEXT NOT NULL,
+    fecha_publicacion TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
+    CONSTRAINT contenido_titulo_es_no_vacio CHECK (btrim(titulo_es) <> ''),
+    CONSTRAINT contenido_titulo_en_no_vacio CHECK (btrim(titulo_en) <> '')
 );
-CREATE TABLE bloque_contenido (
-    id_bloque_contenido SERIAL PRIMARY KEY,
-    id_contenido INTEGER NOT NULL REFERENCES contenido(id_contenido) ON DELETE CASCADE,
-    tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('title','subtitle','text','image','gallery','video')),
-    orden INTEGER NOT NULL CHECK (orden >= 0),
-    valor_es TEXT NOT NULL DEFAULT '',
-    valor_en TEXT NOT NULL DEFAULT '',
-    pie_es TEXT NOT NULL DEFAULT '',
-    pie_en TEXT NOT NULL DEFAULT '',
-    id_archivo INTEGER REFERENCES archivo(id_archivo),
-    youtube_id VARCHAR(11),
-    UNIQUE(id_bloque_contenido,tipo),
-    CONSTRAINT uq_bloque_orden UNIQUE(id_contenido,orden) DEFERRABLE INITIALLY DEFERRED,
-    CHECK ((tipo = 'title' AND orden = 0) OR (tipo <> 'title' AND orden > 0)),
-    CHECK (tipo <> 'title' OR BTRIM(valor_es) <> ''),
-    CHECK ((tipo = 'image' AND id_archivo IS NOT NULL) OR (tipo <> 'image' AND id_archivo IS NULL)),
-    CHECK ((tipo = 'video' AND youtube_id IS NOT NULL AND youtube_id ~ '^[A-Za-z0-9_-]{11}$') OR (tipo <> 'video' AND youtube_id IS NULL))
+
+-- 4. PAISAJES: un paisaje puede tener muchos programas.
+CREATE TABLE paisaje (
+    id_paisaje BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_contenido BIGINT NOT NULL UNIQUE REFERENCES contenido_editorial(id_contenido) ON DELETE CASCADE,
+    color CHAR(7) NOT NULL DEFAULT '#2381C4',
+    CONSTRAINT paisaje_color_hex CHECK (color ~ '^#[0-9A-Fa-f]{6}$')
 );
-CREATE UNIQUE INDEX idx_bloque_titulo_unico ON bloque_contenido(id_contenido) WHERE tipo = 'title';
-CREATE TABLE bloque_imagen (
-    id_bloque_imagen SERIAL PRIMARY KEY,
-    id_bloque_contenido INTEGER NOT NULL,
-    tipo VARCHAR(20) NOT NULL DEFAULT 'gallery' CHECK (tipo = 'gallery'),
-    id_archivo INTEGER NOT NULL REFERENCES archivo(id_archivo),
-    orden INTEGER NOT NULL CHECK (orden >= 0),
+
+-- 5. PROGRAMAS: cada programa pertenece obligatoriamente a un paisaje.
+CREATE TABLE programa (
+    id_programa BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_contenido BIGINT NOT NULL UNIQUE REFERENCES contenido_editorial(id_contenido) ON DELETE CASCADE,
+    id_paisaje BIGINT NOT NULL REFERENCES paisaje(id_paisaje) ON DELETE RESTRICT
+);
+
+-- 6. CATEGORÍAS DE NOTICIAS.
+CREATE TABLE categoria_noticia (
+    id_categoria_noticia VARCHAR(30) PRIMARY KEY,
+    nombre_es VARCHAR(100) NOT NULL,
+    nombre_en VARCHAR(100) NOT NULL
+);
+
+INSERT INTO categoria_noticia (id_categoria_noticia, nombre_es, nombre_en) VALUES
+('institutional', 'Noticias institucionales', 'Institutional news'),
+('stories', 'Historias de conservación', 'Conservation stories'),
+('events', 'Agenda y eventos', 'Events calendar'),
+('social', 'Redes sociales', 'Social media'),
+('videos', 'Videos de YouTube', 'YouTube videos'),
+('infographics', 'Infografías', 'Infographics'),
+('gallery', 'Fotogalería', 'Photo gallery');
+
+-- 7. NOTICIAS: pueden estar vinculadas a un programa o ser independientes.
+CREATE TABLE noticia (
+    id_noticia BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_contenido BIGINT NOT NULL UNIQUE REFERENCES contenido_editorial(id_contenido) ON DELETE CASCADE,
+    id_programa BIGINT REFERENCES programa(id_programa) ON DELETE SET NULL,
+    id_categoria_noticia VARCHAR(30) NOT NULL REFERENCES categoria_noticia(id_categoria_noticia)
+);
+
+-- 8. BLOQUES EDITORIALES CON ORDEN LIBRE.
+-- Tipos: párrafo, subtítulo, imagen, carrusel, enlace y video.
+-- 'orden' puede reorganizarse sin cambiar el contenido del bloque.
+CREATE TABLE bloque_editorial (
+    id_bloque BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_contenido BIGINT NOT NULL REFERENCES contenido_editorial(id_contenido) ON DELETE CASCADE,
+    tipo VARCHAR(12) NOT NULL CHECK (tipo IN ('parrafo', 'subtitulo', 'imagen', 'carrusel', 'enlace', 'video')),
+    orden INTEGER NOT NULL CHECK (orden > 0),
+    texto_es TEXT,
+    texto_en TEXT,
+    id_imagen BIGINT REFERENCES imagen(id_imagen) ON DELETE RESTRICT,
     pie_es TEXT,
     pie_en TEXT,
-    FOREIGN KEY(id_bloque_contenido,tipo) REFERENCES bloque_contenido(id_bloque_contenido,tipo) ON DELETE CASCADE,
-    CONSTRAINT uq_bloque_imagen_orden UNIQUE(id_bloque_contenido,orden) DEFERRABLE INITIALLY DEFERRED
+    url TEXT,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
+    CONSTRAINT bloque_orden_unico UNIQUE (id_contenido, orden) DEFERRABLE INITIALLY DEFERRED,
+    CONSTRAINT bloque_campos_segun_tipo CHECK (
+        (tipo IN ('parrafo', 'subtitulo')
+            AND NULLIF(btrim(texto_es), '') IS NOT NULL
+            AND NULLIF(btrim(texto_en), '') IS NOT NULL
+            AND id_imagen IS NULL AND url IS NULL)
+        OR (tipo = 'imagen' AND id_imagen IS NOT NULL AND url IS NULL)
+        OR (tipo = 'carrusel' AND id_imagen IS NULL AND url IS NULL)
+        OR (tipo IN ('enlace', 'video') AND NULLIF(btrim(url), '') IS NOT NULL AND id_imagen IS NULL)
+    )
 );
 
--- ============================================================
--- 3. PAISAJES, PROGRAMAS Y NOTICIAS
--- ============================================================
--- El título se guarda en el bloque title; la descripción en los bloques text.
--- slug identifica la URL y facilita importar los identificadores mock.
-CREATE TABLE paisaje (
-    id_paisaje SERIAL PRIMARY KEY,
-    id_contenido INTEGER NOT NULL UNIQUE,
-    tipo VARCHAR(20) NOT NULL DEFAULT 'paisaje' CHECK (tipo = 'paisaje'),
-    slug VARCHAR(150) NOT NULL UNIQUE CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
-    color VARCHAR(7) NOT NULL DEFAULT '#2381C4' CHECK (color ~ '^#[A-Fa-f0-9]{6}$'),
-    id_imagen_portada INTEGER REFERENCES archivo(id_archivo),
-    orden INTEGER NOT NULL DEFAULT 0 CHECK (orden >= 0),
-    FOREIGN KEY(id_contenido,tipo) REFERENCES contenido(id_contenido,tipo) ON DELETE RESTRICT
-);
-CREATE TABLE programa (
-    id_programa SERIAL PRIMARY KEY,
-    id_contenido INTEGER NOT NULL UNIQUE,
-    tipo VARCHAR(20) NOT NULL DEFAULT 'programa' CHECK (tipo = 'programa'),
-    id_paisaje INTEGER NOT NULL REFERENCES paisaje(id_paisaje) ON DELETE RESTRICT,
-    slug VARCHAR(150) NOT NULL UNIQUE CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
-    id_imagen_portada INTEGER REFERENCES archivo(id_archivo),
-    orden INTEGER NOT NULL DEFAULT 0 CHECK (orden >= 0),
-    FOREIGN KEY(id_contenido,tipo) REFERENCES contenido(id_contenido,tipo) ON DELETE RESTRICT
-);
-CREATE TABLE tipo_noticia (
-    id_tipo_noticia SERIAL PRIMARY KEY,
-    codigo VARCHAR(30) NOT NULL UNIQUE,
-    nombre VARCHAR(100) NOT NULL,
-    nombre_en VARCHAR(100) NOT NULL
-);
-CREATE TABLE noticia (
-    id_noticia SERIAL PRIMARY KEY,
-    id_contenido INTEGER NOT NULL UNIQUE,
-    tipo VARCHAR(20) NOT NULL DEFAULT 'noticia' CHECK (tipo = 'noticia'),
-    id_programa INTEGER REFERENCES programa(id_programa) ON DELETE RESTRICT,
-    id_tipo_noticia INTEGER NOT NULL REFERENCES tipo_noticia(id_tipo_noticia),
-    slug VARCHAR(150) NOT NULL UNIQUE CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
-    id_imagen_portada INTEGER REFERENCES archivo(id_archivo),
-    fecha_noticia DATE NOT NULL DEFAULT (NOW() AT TIME ZONE 'America/La_Paz')::DATE,
-    FOREIGN KEY(id_contenido,tipo) REFERENCES contenido(id_contenido,tipo) ON DELETE RESTRICT
+-- 9. IMÁGENES DE CARRUSEL: N imágenes, cada una con su orden.
+CREATE TABLE carrusel_imagen (
+    id_carrusel_imagen BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_bloque BIGINT NOT NULL REFERENCES bloque_editorial(id_bloque) ON DELETE CASCADE,
+    id_imagen BIGINT NOT NULL REFERENCES imagen(id_imagen) ON DELETE RESTRICT,
+    orden INTEGER NOT NULL CHECK (orden > 0),
+    pie_es TEXT,
+    pie_en TEXT,
+    CONSTRAINT carrusel_posicion_unica UNIQUE (id_bloque, orden) DEFERRABLE INITIALLY DEFERRED
 );
 
--- ============================================================
--- 4. EQUIPO Y RECURSOS
--- ============================================================
-CREATE TABLE area_equipo (
-    id_area_equipo SERIAL PRIMARY KEY,
-    codigo VARCHAR(30) NOT NULL UNIQUE,
-    nombre VARCHAR(100) NOT NULL,
-    nombre_en VARCHAR(100) NOT NULL
-);
-CREATE TABLE equipo (
-    id_equipo SERIAL PRIMARY KEY,
-    id_area_equipo INTEGER NOT NULL REFERENCES area_equipo(id_area_equipo),
-    nombre VARCHAR(150) NOT NULL,
-    cargo VARCHAR(150) NOT NULL,
-    cargo_en VARCHAR(150),
-    descripcion TEXT,
-    descripcion_en TEXT,
-    id_archivo INTEGER REFERENCES archivo(id_archivo),
-    orden INTEGER NOT NULL DEFAULT 0 CHECK (orden >= 0),
-    estado VARCHAR(20) NOT NULL DEFAULT 'activo' CHECK (estado IN ('activo','inactivo','eliminado')),
-    fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    fecha_actualizacion TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-CREATE TABLE tipo_recurso (
-    id_tipo_recurso SERIAL PRIMARY KEY,
-    codigo VARCHAR(30) NOT NULL UNIQUE,
-    nombre VARCHAR(150) NOT NULL,
-    nombre_en VARCHAR(150) NOT NULL
-);
-CREATE TABLE recurso (
-    id_recurso SERIAL PRIMARY KEY,
-    id_tipo_recurso INTEGER NOT NULL REFERENCES tipo_recurso(id_tipo_recurso),
-    titulo VARCHAR(250) NOT NULL,
-    titulo_en VARCHAR(250),
-    descripcion TEXT,
-    descripcion_en TEXT,
-    anio SMALLINT CHECK (anio BETWEEN 1800 AND 2200),
-    formato VARCHAR(20) NOT NULL CHECK (formato IN ('PDF','GeoJSON','KML','ZIP','DOCX','XLSX','Enlace','Otro')),
-    id_archivo INTEGER REFERENCES archivo(id_archivo),
-    estado VARCHAR(20) NOT NULL DEFAULT 'borrador' CHECK (estado IN ('borrador','publicado','inactivo','eliminado')),
-    fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    fecha_actualizacion TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    CHECK (estado <> 'publicado' OR id_archivo IS NOT NULL)
+-- 10. CARGOS, bilingües para el equipo.
+CREATE TABLE cargo (
+    id_cargo BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nombre_cargo_es VARCHAR(150) NOT NULL UNIQUE,
+    nombre_cargo_en VARCHAR(150) NOT NULL
 );
 
--- ============================================================
--- 5. MEMBRESÍAS (SOLICITUDES, NO COBROS)
--- ============================================================
-CREATE TABLE plan_membresia (
-    id_plan_membresia SERIAL PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL UNIQUE,
-    nombre_en VARCHAR(100),
-    descripcion TEXT,
-    descripcion_en TEXT,
-    precio DECIMAL(10,2) NOT NULL CHECK (precio >= 0),
-    moneda CHAR(3) NOT NULL DEFAULT 'BOB' CHECK (moneda ~ '^[A-Z]{3}$'),
-    periodicidad VARCHAR(15) NOT NULL DEFAULT 'mensual' CHECK (periodicidad IN ('mensual','anual')),
-    color VARCHAR(7) NOT NULL DEFAULT '#2381C4' CHECK (color ~ '^#[A-Fa-f0-9]{6}$'),
-    id_archivo INTEGER REFERENCES archivo(id_archivo),
-    orden INTEGER NOT NULL DEFAULT 0 CHECK (orden >= 0),
-    estado VARCHAR(20) NOT NULL DEFAULT 'inactivo' CHECK (estado IN ('activo','inactivo','eliminado'))
+-- 11. CATEGORÍAS DE SOCIOS / ALIADOS.
+CREATE TABLE categoria_socio (
+    id_categoria_socio VARCHAR(35) PRIMARY KEY,
+    nombre_es VARCHAR(120) NOT NULL,
+    nombre_en VARCHAR(120) NOT NULL
 );
-CREATE TABLE beneficio_plan (
-    id_beneficio_plan SERIAL PRIMARY KEY,
-    id_plan_membresia INTEGER NOT NULL REFERENCES plan_membresia(id_plan_membresia) ON DELETE CASCADE,
-    descripcion TEXT NOT NULL,
-    descripcion_en TEXT,
-    orden INTEGER NOT NULL DEFAULT 0 CHECK (orden >= 0)
-);
-CREATE TABLE solicitud_membresia (
-    id_solicitud_membresia SERIAL PRIMARY KEY,
-    id_plan_membresia INTEGER NOT NULL REFERENCES plan_membresia(id_plan_membresia) ON DELETE RESTRICT,
-    nombre_completo VARCHAR(150) NOT NULL,
-    correo VARCHAR(254) NOT NULL,
-    celular VARCHAR(30),
-    ciudad VARCHAR(100),
-    pais VARCHAR(100),
-    precio_acordado DECIMAL(10,2) NOT NULL CHECK (precio_acordado >= 0),
-    moneda CHAR(3) NOT NULL CHECK (moneda ~ '^[A-Z]{3}$'),
-    periodicidad VARCHAR(15) NOT NULL CHECK (periodicidad IN ('mensual','anual')),
-    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente','aprobada','rechazada','cancelada')),
-    fecha_solicitud TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    fecha_respuesta TIMESTAMPTZ,
-    id_usuario_respuesta INTEGER REFERENCES usuario(id_usuario)
-);
+INSERT INTO categoria_socio (id_categoria_socio, nombre_es, nombre_en) VALUES
+('socios_financieros', 'Socios y financieros', 'Partners and funders'),
+('aliados_estrategicos', 'Aliados estratégicos', 'Strategic allies'),
+('miembros_corporativos', 'Miembros corporativos', 'Corporate members');
 
--- ============================================================
--- 6. RESERVAS NATURALES Y SOLICITUDES DE VISITA
--- ============================================================
-CREATE TABLE reserva_natural (
-    id_reserva_natural SERIAL PRIMARY KEY,
-    id_paisaje INTEGER NOT NULL REFERENCES paisaje(id_paisaje) ON DELETE RESTRICT,
+-- 12. NOSOTROS: junta directiva / nuestro equipo / socios y aliados.
+CREATE TABLE nosotros (
+    id_nosotros BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('junta_directiva', 'nuestro_equipo', 'socios_y_aliados')),
     nombre VARCHAR(200) NOT NULL,
-    nombre_en VARCHAR(200),
-    descripcion TEXT,
-    descripcion_en TEXT,
-    ubicacion VARCHAR(200),
-    recomendaciones TEXT,
-    recomendaciones_en TEXT,
-    id_archivo INTEGER REFERENCES archivo(id_archivo),
-    estado VARCHAR(20) NOT NULL DEFAULT 'inactivo' CHECK (estado IN ('activo','inactivo','eliminado')),
-    UNIQUE(id_paisaje,nombre)
-);
-CREATE TABLE solicitud_visita (
-    id_solicitud_visita SERIAL PRIMARY KEY,
-    id_reserva_natural INTEGER NOT NULL REFERENCES reserva_natural(id_reserva_natural) ON DELETE RESTRICT,
-    nombre_completo VARCHAR(150) NOT NULL,
-    correo VARCHAR(254) NOT NULL,
-    celular VARCHAR(30),
-    fecha_preferida DATE NOT NULL,
-    cantidad_visitantes INTEGER NOT NULL CHECK (cantidad_visitantes > 0),
-    comentarios TEXT,
-    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente','confirmada','rechazada','cancelada','realizada')),
-    fecha_solicitud TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    fecha_respuesta TIMESTAMPTZ,
-    id_usuario_respuesta INTEGER REFERENCES usuario(id_usuario)
+    texto_es TEXT NOT NULL,
+    texto_en TEXT NOT NULL,
+    id_imagen BIGINT NOT NULL REFERENCES imagen(id_imagen) ON DELETE RESTRICT,
+    id_cargo BIGINT REFERENCES cargo(id_cargo) ON DELETE RESTRICT,
+    id_categoria_socio VARCHAR(35) REFERENCES categoria_socio(id_categoria_socio) ON DELETE RESTRICT,
+    orden INTEGER NOT NULL DEFAULT 1 CHECK (orden > 0),
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
+    CONSTRAINT nosotros_nombre_no_vacio CHECK (btrim(nombre) <> ''),
+    CONSTRAINT nosotros_tipo_relaciones CHECK (
+        (tipo = 'nuestro_equipo' AND id_cargo IS NOT NULL AND id_categoria_socio IS NULL)
+        OR (tipo = 'junta_directiva' AND id_cargo IS NULL AND id_categoria_socio IS NULL)
+        OR (tipo = 'socios_y_aliados' AND id_cargo IS NULL AND id_categoria_socio IS NOT NULL)
+    )
 );
 
--- ============================================================
--- 7. CONTACTO, PRENSA Y SOUVENIRS
--- ============================================================
-CREATE TABLE consulta (
-    id_consulta SERIAL PRIMARY KEY,
-    tipo VARCHAR(30) NOT NULL CHECK (tipo IN ('general','membresia','donaciones','turismo','prensa','souvenirs','oficinas','otros')),
-    nombre_completo VARCHAR(150) NOT NULL,
-    correo VARCHAR(254) NOT NULL,
-    celular VARCHAR(30),
-    medio_institucion VARCHAR(200),
-    asunto VARCHAR(250),
-    mensaje TEXT NOT NULL CHECK (BTRIM(mensaje) <> ''),
-    estado VARCHAR(20) NOT NULL DEFAULT 'pendiente' CHECK (estado IN ('pendiente','en_revision','respondida','cerrada')),
-    fecha_consulta TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    fecha_respuesta TIMESTAMPTZ,
-    id_usuario_respuesta INTEGER REFERENCES usuario(id_usuario)
+-- 13. CATEGORÍAS DE RECURSOS.
+CREATE TABLE tipo_recurso (
+    id_tipo_recurso VARCHAR(25) PRIMARY KEY,
+    nombre_es VARCHAR(120) NOT NULL,
+    nombre_en VARCHAR(120) NOT NULL
 );
-CREATE TABLE souvenir (
-    id_souvenir SERIAL PRIMARY KEY,
-    nombre VARCHAR(150) NOT NULL,
-    nombre_en VARCHAR(150),
-    descripcion TEXT,
-    descripcion_en TEXT,
-    precio DECIMAL(10,2) NOT NULL CHECK (precio >= 0),
-    moneda CHAR(3) NOT NULL DEFAULT 'BOB' CHECK (moneda ~ '^[A-Z]{3}$'),
-    id_archivo INTEGER REFERENCES archivo(id_archivo),
-    estado VARCHAR(20) NOT NULL DEFAULT 'inactivo' CHECK (estado IN ('activo','inactivo','eliminado')),
-    orden INTEGER NOT NULL DEFAULT 0 CHECK (orden >= 0)
+INSERT INTO tipo_recurso (id_tipo_recurso, nombre_es, nombre_en) VALUES
+('informes', 'Informes y memorias', 'Reports and annual reviews'),
+('publicaciones', 'Publicaciones científicas y técnicas', 'Scientific and technical publications'),
+('sig', 'Recursos SIG / mapas', 'GIS resources and maps'),
+('colaboraciones', 'Colaboraciones', 'Collaborations'),
+('legales', 'Herramientas legales', 'Legal tools');
+
+-- 14. ARCHIVOS PDF: se guarda el documento binario en PostgreSQL (BYTEA).
+-- No se utiliza ninguna ruta ni URL para almacenar el PDF.
+CREATE TABLE archivo_pdf (
+    id_archivo_pdf BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    archivo BYTEA NOT NULL,
+    nombre_archivo VARCHAR(255) NOT NULL,
+    mime VARCHAR(30) NOT NULL DEFAULT 'application/pdf' CHECK (mime = 'application/pdf'),
+    tamano_bytes BIGINT GENERATED ALWAYS AS (octet_length(archivo)::BIGINT) STORED,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
+    CONSTRAINT archivo_pdf_no_vacio CHECK (octet_length(archivo) > 0)
 );
--- El carrito actual es local y genera un mensaje WhatsApp; no crea pedidos.
--- No se almacenan pagos QR/Givebutter ni se simula su confirmación.
 
--- ============================================================
--- 8. ÍNDICES (PK y UNIQUE ya tienen índice)
--- ============================================================
-CREATE INDEX idx_usuario_id_rol ON usuario(id_rol);
-CREATE INDEX idx_rol_permiso_id_permiso ON rol_permiso(id_permiso);
-CREATE INDEX idx_usuario_permiso_id_permiso ON usuario_permiso(id_permiso);
-CREATE INDEX idx_contenido_tipo_estado_fecha ON contenido(tipo,estado,fecha_publicacion DESC);
-CREATE INDEX idx_contenido_usuario ON contenido(id_usuario_creacion);
-CREATE INDEX idx_bloque_archivo ON bloque_contenido(id_archivo);
-CREATE INDEX idx_bloque_imagen_archivo ON bloque_imagen(id_archivo);
-CREATE INDEX idx_paisaje_orden ON paisaje(orden);
-CREATE INDEX idx_paisaje_portada ON paisaje(id_imagen_portada);
-CREATE INDEX idx_programa_paisaje ON programa(id_paisaje,orden);
-CREATE INDEX idx_programa_portada ON programa(id_imagen_portada);
-CREATE INDEX idx_noticia_programa ON noticia(id_programa,fecha_noticia DESC);
-CREATE INDEX idx_noticia_tipo_fecha ON noticia(id_tipo_noticia,fecha_noticia DESC);
-CREATE INDEX idx_noticia_portada ON noticia(id_imagen_portada);
-CREATE INDEX idx_noticia_fecha ON noticia(fecha_noticia DESC);
-CREATE INDEX idx_equipo_area_estado ON equipo(id_area_equipo,estado,orden);
-CREATE INDEX idx_equipo_archivo ON equipo(id_archivo);
-CREATE INDEX idx_recurso_tipo_estado ON recurso(id_tipo_recurso,estado,anio DESC);
-CREATE INDEX idx_recurso_archivo ON recurso(id_archivo);
-CREATE INDEX idx_beneficio_plan ON beneficio_plan(id_plan_membresia,orden);
-CREATE INDEX idx_plan_archivo ON plan_membresia(id_archivo);
-CREATE INDEX idx_solicitud_membresia_plan ON solicitud_membresia(id_plan_membresia);
-CREATE INDEX idx_solicitud_membresia_estado ON solicitud_membresia(estado,fecha_solicitud DESC);
-CREATE INDEX idx_solicitud_membresia_correo ON solicitud_membresia(LOWER(correo));
-CREATE INDEX idx_solicitud_membresia_usuario ON solicitud_membresia(id_usuario_respuesta);
-CREATE INDEX idx_reserva_archivo ON reserva_natural(id_archivo);
-CREATE INDEX idx_solicitud_visita_reserva ON solicitud_visita(id_reserva_natural,fecha_preferida);
-CREATE INDEX idx_solicitud_visita_estado ON solicitud_visita(estado,fecha_solicitud DESC);
-CREATE INDEX idx_solicitud_visita_usuario ON solicitud_visita(id_usuario_respuesta);
-CREATE INDEX idx_consulta_estado ON consulta(estado,fecha_consulta DESC);
-CREATE INDEX idx_consulta_usuario ON consulta(id_usuario_respuesta);
-CREATE INDEX idx_souvenir_estado_orden ON souvenir(estado,orden);
-CREATE INDEX idx_souvenir_archivo ON souvenir(id_archivo);
+-- 15. RECURSOS: exactamente una imagen de portada y uno o más PDF.
+CREATE TABLE recurso (
+    id_recurso BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_tipo_recurso VARCHAR(25) NOT NULL REFERENCES tipo_recurso(id_tipo_recurso),
+    titulo_es TEXT NOT NULL,
+    titulo_en TEXT NOT NULL,
+    descripcion_es TEXT NOT NULL,
+    descripcion_en TEXT NOT NULL,
+    id_imagen BIGINT NOT NULL REFERENCES imagen(id_imagen) ON DELETE RESTRICT,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
+    CONSTRAINT recurso_titulo_es_no_vacio CHECK (btrim(titulo_es) <> ''),
+    CONSTRAINT recurso_titulo_en_no_vacio CHECK (btrim(titulo_en) <> '')
+);
 
--- ============================================================
--- 9. FUNCIONES Y TRIGGERS
--- ============================================================
-CREATE OR REPLACE FUNCTION actualizar_fecha_modificacion()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.fecha_actualizacion := NOW();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE TRIGGER trg_usuario_actualizacion BEFORE UPDATE ON usuario FOR EACH ROW EXECUTE FUNCTION actualizar_fecha_modificacion();
-CREATE TRIGGER trg_contenido_actualizacion BEFORE UPDATE ON contenido FOR EACH ROW EXECUTE FUNCTION actualizar_fecha_modificacion();
-CREATE TRIGGER trg_equipo_actualizacion BEFORE UPDATE ON equipo FOR EACH ROW EXECUTE FUNCTION actualizar_fecha_modificacion();
-CREATE TRIGGER trg_recurso_actualizacion BEFORE UPDATE ON recurso FOR EACH ROW EXECUTE FUNCTION actualizar_fecha_modificacion();
+-- 16. UN RECURSO PUEDE TENER VARIOS PDF EN UN ORDEN DETERMINADO.
+CREATE TABLE recurso_pdf (
+    id_recurso_pdf BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    id_recurso BIGINT NOT NULL REFERENCES recurso(id_recurso) ON DELETE CASCADE,
+    id_archivo_pdf BIGINT NOT NULL REFERENCES archivo_pdf(id_archivo_pdf) ON DELETE RESTRICT,
+    orden INTEGER NOT NULL CHECK (orden > 0),
+    CONSTRAINT recurso_pdf_posicion_unica UNIQUE (id_recurso, orden) DEFERRABLE INITIALLY DEFERRED,
+    CONSTRAINT recurso_pdf_sin_duplicados UNIQUE (id_recurso, id_archivo_pdf)
+);
 
--- La aplicación crea contenido, entidad y bloques en una sola transacción.
--- La validación diferida permite insertar/reordenar bloques durante esa transacción.
-CREATE OR REPLACE FUNCTION validar_contenido_publicado(p_id INTEGER)
-RETURNS VOID AS $$
-DECLARE c contenido%ROWTYPE;
+-- 17. VALIDAR QUE CADA SUBTIPO USE EL TIPO CORRECTO DE CONTENIDO.
+CREATE FUNCTION validar_tipo_contenido() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE tipo_real TEXT;
 BEGIN
-    SELECT * INTO c FROM contenido WHERE id_contenido = p_id;
-    IF NOT FOUND OR c.estado <> 'publicado' THEN RETURN; END IF;
-    IF NOT EXISTS (SELECT 1 FROM bloque_contenido WHERE id_contenido=p_id AND tipo='title' AND BTRIM(valor_es)<>'') THEN
-        RAISE EXCEPTION 'El contenido % necesita un título', p_id;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM bloque_contenido WHERE id_contenido=p_id AND tipo<>'title' AND (BTRIM(valor_es)<>'' OR id_archivo IS NOT NULL OR youtube_id IS NOT NULL OR tipo='gallery')) THEN
-        RAISE EXCEPTION 'El contenido % necesita un bloque adicional', p_id;
-    END IF;
-    IF EXISTS (SELECT 1 FROM bloque_contenido b WHERE b.id_contenido=p_id AND b.tipo='gallery' AND NOT EXISTS (SELECT 1 FROM bloque_imagen i WHERE i.id_bloque_contenido=b.id_bloque_contenido)) THEN
-        RAISE EXCEPTION 'El contenido % tiene un carrusel vacío', p_id;
-    END IF;
-    IF c.tipo='paisaje' AND NOT EXISTS (SELECT 1 FROM paisaje WHERE id_contenido=p_id) THEN RAISE EXCEPTION 'Falta el paisaje del contenido %',p_id; END IF;
-    IF c.tipo='programa' AND NOT EXISTS (SELECT 1 FROM programa WHERE id_contenido=p_id) THEN RAISE EXCEPTION 'Falta el programa del contenido %',p_id; END IF;
-    IF c.tipo='noticia' AND NOT EXISTS (SELECT 1 FROM noticia WHERE id_contenido=p_id) THEN RAISE EXCEPTION 'Falta la noticia del contenido %',p_id; END IF;
-END;
-$$ LANGUAGE plpgsql;
-CREATE OR REPLACE FUNCTION trg_validar_editorial()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF TG_OP <> 'INSERT' THEN PERFORM validar_contenido_publicado(OLD.id_contenido); END IF;
-    IF TG_OP <> 'DELETE' THEN PERFORM validar_contenido_publicado(NEW.id_contenido); END IF;
-    RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-CREATE CONSTRAINT TRIGGER trg_validar_contenido AFTER INSERT OR UPDATE ON contenido DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION trg_validar_editorial();
-CREATE CONSTRAINT TRIGGER trg_validar_bloque AFTER INSERT OR UPDATE OR DELETE ON bloque_contenido DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION trg_validar_editorial();
-CREATE CONSTRAINT TRIGGER trg_validar_paisaje AFTER INSERT OR UPDATE OR DELETE ON paisaje DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION trg_validar_editorial();
-CREATE CONSTRAINT TRIGGER trg_validar_programa AFTER INSERT OR UPDATE OR DELETE ON programa DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION trg_validar_editorial();
-CREATE CONSTRAINT TRIGGER trg_validar_noticia AFTER INSERT OR UPDATE OR DELETE ON noticia DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION trg_validar_editorial();
-CREATE OR REPLACE FUNCTION trg_validar_galeria()
-RETURNS TRIGGER AS $$
-DECLARE p_id INTEGER;
-BEGIN
-    IF TG_OP <> 'INSERT' THEN SELECT id_contenido INTO p_id FROM bloque_contenido WHERE id_bloque_contenido=OLD.id_bloque_contenido; PERFORM validar_contenido_publicado(p_id); END IF;
-    IF TG_OP <> 'DELETE' THEN SELECT id_contenido INTO p_id FROM bloque_contenido WHERE id_bloque_contenido=NEW.id_bloque_contenido; PERFORM validar_contenido_publicado(p_id); END IF;
-    RETURN NULL;
-END;
-$$ LANGUAGE plpgsql;
-CREATE CONSTRAINT TRIGGER trg_validar_imagen_galeria AFTER INSERT OR UPDATE OR DELETE ON bloque_imagen DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION trg_validar_galeria();
-
--- Impedir eliminación lógica del padre mientras existan hijos no eliminados.
-CREATE OR REPLACE FUNCTION proteger_eliminacion_editorial()
-RETURNS TRIGGER AS $$
-BEGIN
-    IF NEW.estado='eliminado' AND OLD.estado IS DISTINCT FROM NEW.estado THEN
-        IF NEW.tipo='paisaje' AND EXISTS (SELECT 1 FROM paisaje p JOIN programa g USING(id_paisaje) JOIN contenido c ON c.id_contenido=g.id_contenido WHERE p.id_contenido=NEW.id_contenido AND c.estado<>'eliminado') THEN
-            RAISE EXCEPTION 'Reasigna o elimina los programas asociados primero';
-        END IF;
-        IF NEW.tipo='programa' AND EXISTS (SELECT 1 FROM programa p JOIN noticia n USING(id_programa) JOIN contenido c ON c.id_contenido=n.id_contenido WHERE p.id_contenido=NEW.id_contenido AND c.estado<>'eliminado') THEN
-            RAISE EXCEPTION 'Desvincula, reasigna o elimina las noticias asociadas primero';
-        END IF;
-        IF NEW.tipo='paisaje' AND EXISTS (SELECT 1 FROM paisaje p JOIN reserva_natural r USING(id_paisaje) WHERE p.id_contenido=NEW.id_contenido AND r.estado<>'eliminado') THEN
-            RAISE EXCEPTION 'Reasigna o elimina las reservas naturales asociadas primero';
-        END IF;
+    SELECT c.tipo INTO tipo_real FROM contenido_editorial c WHERE c.id_contenido = NEW.id_contenido;
+    IF tipo_real IS DISTINCT FROM TG_ARGV[0] THEN
+        RAISE EXCEPTION 'El contenido % debe ser de tipo %, pero es %', NEW.id_contenido, TG_ARGV[0], tipo_real;
     END IF;
     RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-CREATE TRIGGER trg_proteger_eliminacion BEFORE UPDATE OF estado ON contenido FOR EACH ROW EXECUTE FUNCTION proteger_eliminacion_editorial();
-
--- ============================================================
--- 10. VISTAS PARA CONSULTAS PÚBLICAS (SIN DATOS PERSONALES)
--- ============================================================
-CREATE VIEW vista_paisaje_publicado AS
-SELECT p.id_paisaje,p.id_contenido,p.slug,p.color,p.orden,b.valor_es AS nombre,b.valor_en AS nombre_en,a.url AS imagen
-FROM paisaje p JOIN contenido c USING(id_contenido)
-JOIN bloque_contenido b ON b.id_contenido=c.id_contenido AND b.tipo='title'
-LEFT JOIN archivo a ON a.id_archivo=p.id_imagen_portada
-WHERE c.estado='publicado' AND c.fecha_publicacion<=NOW();
-CREATE VIEW vista_programa_publicado AS
-SELECT p.id_programa,p.id_contenido,p.id_paisaje,p.slug,p.orden,b.valor_es AS nombre,b.valor_en AS nombre_en,a.url AS imagen
-FROM programa p JOIN contenido c USING(id_contenido)
-JOIN vista_paisaje_publicado v ON v.id_paisaje=p.id_paisaje
-JOIN bloque_contenido b ON b.id_contenido=c.id_contenido AND b.tipo='title'
-LEFT JOIN archivo a ON a.id_archivo=p.id_imagen_portada
-WHERE c.estado='publicado' AND c.fecha_publicacion<=NOW();
-CREATE VIEW vista_noticia_publicada AS
-SELECT n.id_noticia,n.id_contenido,n.id_programa,n.slug,n.fecha_noticia,t.codigo AS categoria,b.valor_es AS titulo,b.valor_en AS titulo_en,a.url AS imagen
-FROM noticia n JOIN contenido c USING(id_contenido)
-JOIN tipo_noticia t USING(id_tipo_noticia)
-JOIN bloque_contenido b ON b.id_contenido=c.id_contenido AND b.tipo='title'
-LEFT JOIN archivo a ON a.id_archivo=n.id_imagen_portada
-WHERE c.estado='publicado' AND c.fecha_publicacion<=NOW()
-AND (n.id_programa IS NULL OR EXISTS (SELECT 1 FROM vista_programa_publicado p WHERE p.id_programa=n.id_programa));
-CREATE VIEW vista_recurso_publicado AS
-SELECT r.id_recurso,t.codigo AS tipo,r.titulo,r.titulo_en,r.descripcion,r.descripcion_en,r.anio,r.formato,a.url
-FROM recurso r JOIN tipo_recurso t USING(id_tipo_recurso) JOIN archivo a USING(id_archivo)
-WHERE r.estado='publicado';
-CREATE VIEW vista_equipo_activo AS
-SELECT e.id_equipo,e.nombre,e.cargo,e.cargo_en,e.descripcion,e.descripcion_en,e.orden,t.codigo AS grupo,a.url AS imagen
-FROM equipo e JOIN area_equipo t USING(id_area_equipo) LEFT JOIN archivo a USING(id_archivo)
-WHERE e.estado='activo';
-
--- ============================================================
--- 11. DATOS INICIALES: CATÁLOGOS Y PERMISOS
--- ============================================================
-INSERT INTO rol(nombre) VALUES ('Administrador'),('Editor'),('Consulta');
-INSERT INTO permiso(nombre) VALUES
-('dashboard'),('paisajes'),('programas'),('noticias'),('equipo'),('recursos'),
-('membresias'),('reservas'),('consultas'),('souvenirs'),('usuarios'),('configuracion');
-INSERT INTO rol_permiso(id_rol,id_permiso)
-SELECT r.id_rol,p.id_permiso FROM rol r CROSS JOIN permiso p WHERE r.nombre='Administrador';
-INSERT INTO rol_permiso(id_rol,id_permiso)
-SELECT r.id_rol,p.id_permiso FROM rol r CROSS JOIN permiso p WHERE r.nombre='Editor' AND p.nombre IN ('dashboard','paisajes','programas','noticias','equipo','recursos');
-INSERT INTO rol_permiso(id_rol,id_permiso)
-SELECT r.id_rol,p.id_permiso FROM rol r CROSS JOIN permiso p WHERE r.nombre='Consulta' AND p.nombre='dashboard';
-INSERT INTO tipo_noticia(codigo,nombre,nombre_en) VALUES
-('institutional','Noticias institucionales','Institutional news'),
-('stories','Historias de conservación','Conservation stories'),
-('events','Agenda y eventos','Agenda and events'),
-('social','Redes sociales','Social media'),
-('videos','Videos de YouTube','YouTube videos'),
-('infographics','Infografías','Infographics'),
-('gallery','Fotogalería / Flickr','Photo gallery / Flickr');
-INSERT INTO tipo_recurso(codigo,nombre,nombre_en) VALUES
-('informes','Informes y memorias','Reports and annual reviews'),
-('publicaciones','Publicaciones científicas y técnicas','Scientific and technical publications'),
-('sig','Recursos SIG / mapas','GIS resources / maps'),
-('colaboraciones','Colaboraciones','Collaborations'),
-('legales','Herramientas legales','Legal tools');
-INSERT INTO area_equipo(codigo,nombre,nombre_en) VALUES
-('direccion','Dirección','Management'),('programas','Programas','Programmes'),('apoyo','Áreas de apoyo','Support areas');
-
--- ============================================================
--- 12. DATOS MOCK: SE MANTIENEN COMO BORRADORES / INACTIVOS
--- ============================================================
-DO $$
-DECLARE
-    r RECORD; c_id INTEGER; a_id INTEGER; p_id INTEGER; g_id INTEGER;
-BEGIN
-    FOR r IN SELECT * FROM (VALUES
-        ('beni','Pastizales del Beni','Beni Grasslands','#9b793c',1),
-        ('yungas','Yungas','Yungas','#34734e',2),
-        ('andes','Andes Altos','High Andes','#648497',3),
-        ('seco','Bosque Seco Interandino','Inter-Andean Dry Forest','#ad7851',4),
-        ('amazonia','Amazonía','Amazon','#668f37',5)
-    ) AS v(slug,es,en,color,orden) LOOP
-        INSERT INTO archivo(url,mime_type) VALUES ('/images/home/'||r.orden||'.jpg','image/jpeg') RETURNING id_archivo INTO a_id;
-        INSERT INTO contenido(tipo) VALUES ('paisaje') RETURNING id_contenido INTO c_id;
-        INSERT INTO paisaje(id_contenido,slug,color,id_imagen_portada,orden) VALUES(c_id,r.slug,r.color,a_id,r.orden);
-        INSERT INTO bloque_contenido(id_contenido,tipo,orden,valor_es,valor_en) VALUES
-            (c_id,'title',0,r.es,r.en),(c_id,'text',1,'Contenido de demostración del paisaje.','Sample landscape content.');
-        INSERT INTO bloque_contenido(id_contenido,tipo,orden,id_archivo) VALUES(c_id,'image',2,a_id);
-    END LOOP;
-    SELECT id_paisaje,id_imagen_portada INTO p_id,a_id FROM paisaje WHERE slug='beni';
-    INSERT INTO contenido(tipo) VALUES ('programa') RETURNING id_contenido INTO c_id;
-    INSERT INTO programa(id_contenido,id_paisaje,slug,id_imagen_portada) VALUES(c_id,p_id,'barbaazul',a_id) RETURNING id_programa INTO g_id;
-    INSERT INTO bloque_contenido(id_contenido,tipo,orden,valor_es,valor_en) VALUES
-        (c_id,'title',0,'Paraba Barba Azul','Blue-throated Macaw'),(c_id,'text',1,'Ejemplo de programa de conservación.','Sample conservation programme.');
-    INSERT INTO contenido(tipo) VALUES ('noticia') RETURNING id_contenido INTO c_id;
-    INSERT INTO noticia(id_contenido,id_programa,id_tipo_noticia,slug,id_imagen_portada) VALUES(c_id,g_id,(SELECT id_tipo_noticia FROM tipo_noticia WHERE codigo='stories'),'demo-n1',a_id);
-    INSERT INTO bloque_contenido(id_contenido,tipo,orden,valor_es,valor_en) VALUES
-        (c_id,'title',0,'Monitoreo de aves — ejemplo','Bird monitoring — sample'),(c_id,'text',1,'Noticia de demostración asociada a un programa.','Sample news linked to a programme.');
-    INSERT INTO contenido(tipo) VALUES ('noticia') RETURNING id_contenido INTO c_id;
-    INSERT INTO noticia(id_contenido,id_tipo_noticia,slug) VALUES(c_id,(SELECT id_tipo_noticia FROM tipo_noticia WHERE codigo='institutional'),'demo-n2');
-    INSERT INTO bloque_contenido(id_contenido,tipo,orden,valor_es,valor_en) VALUES
-        (c_id,'title',0,'Noticias institucionales — ejemplo','Institutional news — sample'),(c_id,'text',1,'Noticia independiente de demostración.','Independent sample news.');
 END;
 $$;
-INSERT INTO plan_membresia(nombre,nombre_en,descripcion,precio,color,orden) VALUES
-('Alas libres','Free wings','Plan de demostración.',30,'#185e91',1),
-('Hábitat vivo','Living habitat','Plan de demostración.',60,'#246344',2),
-('Guardianes de la naturaleza','Nature guardians','Plan de demostración.',120,'#805b19',3);
-INSERT INTO reserva_natural(id_paisaje,nombre) VALUES
-((SELECT id_paisaje FROM paisaje WHERE slug='beni'),'Reserva Natural Barba Azul'),
-((SELECT id_paisaje FROM paisaje WHERE slug='beni'),'Reserva Laney Rickman'),
-((SELECT id_paisaje FROM paisaje WHERE slug='seco'),'Reserva Natural Comunitaria de la Paraba Frente Roja');
-INSERT INTO souvenir(nombre,nombre_en,precio,orden) VALUES
-('Bolsa reutilizable','Reusable bag',35,1),('Polera institucional','Institutional T-shirt',90,2),
-('Set de postales de aves','Bird postcard set',25,3),('Cuaderno de campo','Field notebook',45,4);
+CREATE TRIGGER paisaje_validar_tipo BEFORE INSERT OR UPDATE OF id_contenido ON paisaje
+    FOR EACH ROW EXECUTE FUNCTION validar_tipo_contenido('paisaje');
+CREATE TRIGGER programa_validar_tipo BEFORE INSERT OR UPDATE OF id_contenido ON programa
+    FOR EACH ROW EXECUTE FUNCTION validar_tipo_contenido('programa');
+CREATE TRIGGER noticia_validar_tipo BEFORE INSERT OR UPDATE OF id_contenido ON noticia
+    FOR EACH ROW EXECUTE FUNCTION validar_tipo_contenido('noticia');
+
+CREATE FUNCTION impedir_cambio_tipo_contenido() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+    IF OLD.tipo IS DISTINCT FROM NEW.tipo THEN
+        RAISE EXCEPTION 'No se permite cambiar el tipo de un contenido editorial existente';
+    END IF;
+    RETURN NEW;
+END;
+$$;
+CREATE TRIGGER contenido_tipo_inmutable BEFORE UPDATE OF tipo ON contenido_editorial
+    FOR EACH ROW EXECUTE FUNCTION impedir_cambio_tipo_contenido();
+
+-- 18. ACTUALIZAR updated_at AUTOMÁTICAMENTE.
+CREATE FUNCTION actualizar_timestamp() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+    NEW.updated_at = TIMEZONE('America/La_Paz', NOW());
+    RETURN NEW;
+END;
+$$;
+CREATE TRIGGER contenido_actualizado BEFORE UPDATE ON contenido_editorial
+    FOR EACH ROW EXECUTE FUNCTION actualizar_timestamp();
+CREATE TRIGGER bloque_actualizado BEFORE UPDATE ON bloque_editorial
+    FOR EACH ROW EXECUTE FUNCTION actualizar_timestamp();
+CREATE TRIGGER nosotros_actualizado BEFORE UPDATE ON nosotros
+    FOR EACH ROW EXECUTE FUNCTION actualizar_timestamp();
+CREATE TRIGGER recurso_actualizado BEFORE UPDATE ON recurso
+    FOR EACH ROW EXECUTE FUNCTION actualizar_timestamp();
+
+-- 19. IMPEDIR AGREGAR FOTOS A BLOQUES QUE NO SEAN CARRUSELES.
+CREATE FUNCTION validar_foto_carrusel() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM bloque_editorial WHERE id_bloque = NEW.id_bloque AND tipo = 'carrusel') THEN
+        RAISE EXCEPTION 'Las imágenes del carrusel requieren un bloque de tipo carrusel';
+    END IF;
+    RETURN NEW;
+END;
+$$;
+CREATE TRIGGER carrusel_tipo_valido BEFORE INSERT OR UPDATE OF id_bloque ON carrusel_imagen
+    FOR EACH ROW EXECUTE FUNCTION validar_foto_carrusel();
+
+CREATE FUNCTION impedir_cambio_bloque_carrusel() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+    IF OLD.tipo = 'carrusel' AND NEW.tipo <> 'carrusel'
+       AND EXISTS (SELECT 1 FROM carrusel_imagen WHERE id_bloque = OLD.id_bloque) THEN
+        RAISE EXCEPTION 'Elimina antes las imágenes del carrusel para cambiar su tipo';
+    END IF;
+    RETURN NEW;
+END;
+$$;
+CREATE TRIGGER bloque_carrusel_tipo BEFORE UPDATE OF tipo ON bloque_editorial
+    FOR EACH ROW EXECUTE FUNCTION impedir_cambio_bloque_carrusel();
+
+-- 20. VERIFICAR AL FINAL DE LA TRANSACCIÓN: CARRUSEL >= 2 IMÁGENES.
+-- Un carrusel y sus fotos deben insertarse en la MISMA transacción.
+CREATE FUNCTION comprobar_minimo_carrusel() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE objetivo BIGINT;
+BEGIN
+    IF TG_TABLE_NAME = 'bloque_editorial' THEN
+        objetivo := NEW.id_bloque;
+    ELSE
+        objetivo := CASE WHEN TG_OP = 'DELETE' THEN OLD.id_bloque ELSE NEW.id_bloque END;
+    END IF;
+    IF EXISTS (SELECT 1 FROM bloque_editorial WHERE id_bloque = objetivo AND tipo = 'carrusel')
+       AND (SELECT COUNT(*) FROM carrusel_imagen WHERE id_bloque = objetivo) < 2 THEN
+        RAISE EXCEPTION 'El carrusel % necesita como mínimo dos imágenes', objetivo;
+    END IF;
+    IF TG_TABLE_NAME = 'carrusel_imagen' AND TG_OP = 'UPDATE'
+       AND OLD.id_bloque IS DISTINCT FROM NEW.id_bloque
+       AND EXISTS (SELECT 1 FROM bloque_editorial WHERE id_bloque = OLD.id_bloque AND tipo = 'carrusel')
+       AND (SELECT COUNT(*) FROM carrusel_imagen WHERE id_bloque = OLD.id_bloque) < 2 THEN
+        RAISE EXCEPTION 'El carrusel % necesita como mínimo dos imágenes', OLD.id_bloque;
+    END IF;
+    RETURN NULL;
+END;
+$$;
+CREATE CONSTRAINT TRIGGER bloque_carrusel_minimo AFTER INSERT OR UPDATE ON bloque_editorial
+    DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION comprobar_minimo_carrusel();
+CREATE CONSTRAINT TRIGGER foto_carrusel_minimo AFTER INSERT OR UPDATE OR DELETE ON carrusel_imagen
+    DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION comprobar_minimo_carrusel();
+
+-- 21. VERIFICAR AL FINAL DE LA TRANSACCIÓN: RECURSO >= 1 PDF.
+-- Crear el recurso y adjuntar al menos un PDF en la MISMA transacción.
+CREATE FUNCTION comprobar_minimo_pdf_recurso() RETURNS TRIGGER LANGUAGE plpgsql AS $$
+DECLARE objetivo BIGINT;
+BEGIN
+    IF TG_TABLE_NAME = 'recurso' THEN
+        objetivo := NEW.id_recurso;
+    ELSE
+        objetivo := CASE WHEN TG_OP = 'DELETE' THEN OLD.id_recurso ELSE NEW.id_recurso END;
+    END IF;
+    IF EXISTS (SELECT 1 FROM recurso WHERE id_recurso = objetivo)
+       AND NOT EXISTS (SELECT 1 FROM recurso_pdf WHERE id_recurso = objetivo) THEN
+        RAISE EXCEPTION 'El recurso % debe contener al menos un PDF', objetivo;
+    END IF;
+    IF TG_TABLE_NAME = 'recurso_pdf' AND TG_OP = 'UPDATE'
+       AND OLD.id_recurso IS DISTINCT FROM NEW.id_recurso
+       AND EXISTS (SELECT 1 FROM recurso WHERE id_recurso = OLD.id_recurso)
+       AND NOT EXISTS (SELECT 1 FROM recurso_pdf WHERE id_recurso = OLD.id_recurso) THEN
+        RAISE EXCEPTION 'El recurso % debe contener al menos un PDF', OLD.id_recurso;
+    END IF;
+    RETURN NULL;
+END;
+$$;
+CREATE CONSTRAINT TRIGGER recurso_pdf_minimo AFTER INSERT OR UPDATE ON recurso
+    DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION comprobar_minimo_pdf_recurso();
+CREATE CONSTRAINT TRIGGER adjunto_pdf_minimo AFTER INSERT OR UPDATE OR DELETE ON recurso_pdf
+    DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION comprobar_minimo_pdf_recurso();
+
+-- 22. ÍNDICES PARA CONSULTAS Y RELACIONES FRECUENTES.
+CREATE INDEX idx_contenido_tipo_fecha ON contenido_editorial (tipo, fecha_publicacion DESC);
+CREATE INDEX idx_programa_paisaje ON programa (id_paisaje);
+CREATE INDEX idx_noticia_programa ON noticia (id_programa);
+CREATE INDEX idx_noticia_categoria ON noticia (id_categoria_noticia);
+CREATE INDEX idx_bloque_contenido_orden ON bloque_editorial (id_contenido, orden);
+CREATE INDEX idx_carrusel_bloque_orden ON carrusel_imagen (id_bloque, orden);
+CREATE INDEX idx_nosotros_tipo_orden ON nosotros (tipo, orden);
+CREATE INDEX idx_nosotros_cargo ON nosotros (id_cargo);
+CREATE INDEX idx_nosotros_categoria_socio ON nosotros (id_categoria_socio);
+CREATE INDEX idx_recurso_tipo ON recurso (id_tipo_recurso);
+CREATE INDEX idx_recurso_pdf_orden ON recurso_pdf (id_recurso, orden);
+
+
+-- 23. DICCIONARIO DE CAMPOS: aclaraciones para mantenimiento.
+COMMENT ON COLUMN imagen.archivo IS 'Contenido binario de la imagen, almacenado en PostgreSQL mediante BYTEA.';
+COMMENT ON COLUMN imagen.nombre_archivo IS 'Nombre original del archivo, por ejemplo paraba-barba-azul.jpg.';
+COMMENT ON COLUMN imagen.mime IS 'Tipo de archivo de imagen: JPEG, PNG, WEBP o GIF.';
+COMMENT ON COLUMN imagen.alt_es IS 'Texto alternativo en español para accesibilidad y lectores de pantalla.';
+COMMENT ON COLUMN imagen.alt_en IS 'Texto alternativo en inglés para accesibilidad y lectores de pantalla.';
+COMMENT ON COLUMN imagen.descripcion_es IS 'Descripción de la imagen en español, independiente del texto alternativo.';
+COMMENT ON COLUMN imagen.descripcion_en IS 'Descripción de la imagen en inglés, independiente del texto alternativo.';
+COMMENT ON COLUMN imagen.credito IS 'Nombre de quien tomó la fotografía o fuente que debe recibir crédito.';
+COMMENT ON COLUMN imagen.created_at IS 'Fecha y hora de incorporación de la imagen en horario de La Paz.';
+COMMENT ON COLUMN archivo_pdf.archivo IS 'Contenido binario completo del documento PDF, sin ruta externa.';
+COMMENT ON COLUMN archivo_pdf.nombre_archivo IS 'Nombre del archivo PDF original.';
+COMMENT ON COLUMN archivo_pdf.mime IS 'Tipo MIME del archivo; siempre application/pdf.';
+COMMENT ON COLUMN archivo_pdf.tamano_bytes IS 'Tamaño del PDF, calculado automáticamente en bytes desde el BYTEA.';
+COMMENT ON COLUMN bloque_editorial.orden IS 'Posición del bloque bajo el título fijo: 1, 2, 3, etc.';
+COMMENT ON COLUMN bloque_editorial.texto_es IS 'Contenido textual en español para bloques de párrafo, subtítulo o enlace.';
+COMMENT ON COLUMN bloque_editorial.texto_en IS 'Contenido textual en inglés del mismo bloque.';
+COMMENT ON COLUMN bloque_editorial.pie_es IS 'Pie de imagen o de galería en español, opcional.';
+COMMENT ON COLUMN bloque_editorial.pie_en IS 'Pie de imagen o de galería en inglés, opcional.';
+COMMENT ON COLUMN bloque_editorial.url IS 'Enlace externo o dirección de video; no se usa para guardar imágenes ni PDF.';
+COMMENT ON COLUMN contenido_editorial.fecha_publicacion IS 'Fecha y hora de publicación en horario local America/La_Paz.';
+COMMENT ON COLUMN contenido_editorial.created_at IS 'Fecha y hora local de creación del registro.';
+COMMENT ON COLUMN contenido_editorial.updated_at IS 'Fecha y hora local de la última actualización del registro.';
+
 COMMIT;
 
--- ============================================================
--- 13. CONSULTAS DE EJEMPLO (NO MODIFICAN DATOS)
--- ============================================================
--- Header de paisajes:
--- SELECT * FROM vista_paisaje_publicado ORDER BY orden,id_paisaje;
--- Programas asociados a un paisaje:
--- SELECT * FROM vista_programa_publicado WHERE id_paisaje=1 ORDER BY orden,id_programa;
--- Noticias de un programa:
--- SELECT * FROM vista_noticia_publicada WHERE id_programa=1 ORDER BY fecha_noticia DESC,id_noticia DESC;
--- Noticias independientes:
--- SELECT * FROM vista_noticia_publicada WHERE id_programa IS NULL ORDER BY fecha_noticia DESC;
--- Bloques del contenido (la API debe verificar estado y visibilidad antes de consultar):
--- SELECT * FROM bloque_contenido WHERE id_contenido=1 ORDER BY orden;
--- Fotografías de un carrusel:
--- SELECT i.*,a.url FROM bloque_imagen i JOIN archivo a USING(id_archivo) WHERE id_bloque_contenido=1 ORDER BY i.orden;
--- Recursos por categoría:
--- SELECT * FROM vista_recurso_publicado WHERE tipo='informes' ORDER BY anio DESC;
--- Publicar un mock para pruebas locales (NO en producción):
--- UPDATE contenido SET estado='publicado',fecha_publicacion=NOW() WHERE id_contenido=(SELECT id_contenido FROM paisaje WHERE slug='beni');
--- IMPORTANTE: la API debe usar consultas parametrizadas, validar permisos por operación,
--- sanear HTML antes de persistir/renderizar, validar URLs y proteger datos personales.
--- Las solicitudes deben copiar precio/moneda/periodicidad desde el plan en el servidor.
--- Los roles de esta aplicación NO son roles SQL ni sustituyen GRANT/restricciones de acceso.
+-- FECHAS: TIMESTAMP WITHOUT TIME ZONE guarda la hora local de Bolivia.
+-- TIMEZONE('America/La_Paz', NOW()) produce esa hora directamente.
+-- No almacena el desplazamiento de zona horaria ni el instante UTC.
+-- BORRADO EDITORIAL: eliminar la fila de contenido_editorial (propaga a su subtipo y bloques).
+-- La app actual usa localStorage; esta BD requiere un backend/API para conectarla.
