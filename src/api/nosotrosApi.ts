@@ -13,6 +13,8 @@ export async function listarNosotros(admin=false):Promise<Profile[]>{const rows=
 export const listarCargos=()=>request<Role[]>("/cargos",true);
 export const listarCategorias=(admin=false)=>request<Role[]>("/categorias",admin);
 export const guardarPerfil=(p:Profile,editar:boolean)=>request<string>(editar?`/${encodeURIComponent(p.id)}`:"",true,editar?"PUT":"POST",{...p,image:p.image.startsWith("data:")?p.image:""});
+/** Guarda el orden de presentación: los ids en el orden en que deben aparecer. */
+export const reordenarPerfiles=(ids:string[])=>request<null>("/orden",true,"PUT",{ids});
 export const borrarPerfil=(id:string)=>request<null>(`/${encodeURIComponent(id)}`,true,"DELETE");
 export const guardarCargo=(r:Role,editar:boolean)=>request<string>(editar?`/cargos/${encodeURIComponent(r.id)}`:"/cargos",true,editar?"PUT":"POST",r);
 export const borrarCargo=(id:string)=>request<null>(`/cargos/${encodeURIComponent(id)}`,true,"DELETE");

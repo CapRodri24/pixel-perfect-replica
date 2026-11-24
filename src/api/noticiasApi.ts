@@ -24,6 +24,8 @@ export type NoticiaDetalle = Omit<NoticiaResumen, "updated_at" | "cantidad_bloqu
 export type NoticiaEntrada = {
   titulo_es: string;
   titulo_en: string;
+  /** Fecha de la noticia en formato YYYY-MM-DD. */
+  fecha_publicacion: string;
   id_programa: string;
   id_categoria_noticia: string;
   bloques: BloquePaisaje[];

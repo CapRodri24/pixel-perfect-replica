@@ -16,6 +16,7 @@ import { type BloquePaisaje, type ImagenPaisaje, type TipoBloquePaisaje } from "
 import { AdminHeading, Notice, Empty, Gallery, Video, field, primary, secondary, panel } from "./ui";
 import { sanitize, plain } from "./datos";
 import { withTranslator } from "./traduccion";
+import { Selector } from "./Selector";
 
 type Borrador = NoticiaEntrada & { id_noticia?: string };
 type ErrorCampo = { mensaje: string; destino: string };
@@ -30,7 +31,9 @@ const tipos: { tipo: TipoBloquePaisaje; nombre: string }[] = [
   { tipo: "enlace", nombre: "Enlace de YouTube" },
 ];
 
-const vacio = (): BorradorLocal => ({ titulo_es: "", titulo_en: "", id_programa: "", id_categoria_noticia: "", bloques: [] });
+// Fecha local de hoy en formato YYYY-MM-DD (valor por defecto de la noticia).
+const hoy = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+const vacio = (): BorradorLocal => ({ titulo_es: "", titulo_en: "", fecha_publicacion: hoy(), id_programa: "", id_categoria_noticia: "", bloques: [] });
 let numeroLocal = 0;
 const idLocal = () => `bloque-${++numeroLocal}`;
 const crearBloque = (tipo: TipoBloquePaisaje): BloqueLocal => ({
@@ -77,7 +80,10 @@ function ImagenEditor({ imagen, idioma, onChange, onRemove }: {
     reader.readAsDataURL(file);
   }
   function cambiar(campo: keyof ImagenPaisaje, valor: string) {
-    if (imagen) onChange({ ...imagen, [campo]: valor });
+    if (!imagen) return;
+    // El inglés se vuelve a traducir al guardar si cambia el texto en español.
+    const ingles = campo === "alt_es" ? { alt_en: "" } : campo === "descripcion_es" ? { descripcion_en: "" } : {};
+    onChange({ ...imagen, ...ingles, [campo]: valor });
   }
   return (
     <div className="space-y-3 rounded-xl border border-border bg-background p-3">
@@ -93,10 +99,10 @@ function ImagenEditor({ imagen, idioma, onChange, onRemove }: {
       </div>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       {imagen && <div className="grid gap-3 sm:grid-cols-2">
-        <label className="text-sm font-medium sm:col-span-2">Texto alternativo {idioma.toUpperCase()}
+        <label className="text-sm font-medium sm:col-span-2">Texto alternativo
           <input className={field} value={idioma === "es" ? (imagen.alt_es || "") : (imagen.alt_en || "")} onChange={(e) => cambiar(idioma === "es" ? "alt_es" : "alt_en", e.target.value)} />
         </label>
-        <label className="text-sm font-medium sm:col-span-2">Descripción {idioma.toUpperCase()}
+        <label className="text-sm font-medium sm:col-span-2">Descripción
           <textarea className={field} rows={2} value={idioma === "es" ? (imagen.descripcion_es || "") : (imagen.descripcion_en || "")} onChange={(e) => cambiar(idioma === "es" ? "descripcion_es" : "descripcion_en", e.target.value)} />
         </label>
         <label className="text-sm font-medium sm:col-span-2">Crédito fotográfico
@@ -188,7 +194,7 @@ export default function NoticiasAdmin() {
     setBusy(true); setError(""); setSuccess("");
     try {
       const data = await obtenerNoticia(id);
-      setBorrador({ ...data, bloques: data.bloques.map((b) => ({ ...b, localId: idLocal() })) });
+      setBorrador({ ...data, fecha_publicacion: (data.fecha_publicacion || hoy()).slice(0, 10), bloques: data.bloques.map((b) => ({ ...b, localId: idLocal() })) });
       setIdioma("es");
     } catch (e) { setError(errorTexto(e)); }
     finally { setBusy(false); }
@@ -324,7 +330,7 @@ export default function NoticiasAdmin() {
       setBorrador(traducido);
       setIdioma("en");
     } catch (e) {
-      // Se permite completar manualmente el inglés si el navegador no ofrece traducción.
+      // Si el navegador no ofrece traducción, se muestra la vista previa en inglés con lo que haya.
       setIdioma("en");
       setError(`No se pudo completar la traducción automática: ${errorTexto(e)}`);
     } finally {
@@ -340,21 +346,17 @@ export default function NoticiasAdmin() {
     setBusy(true); setError(""); setSuccess("");
     try {
       const traducido = await traducirCamposPendientes(borrador);
-      if (!traducido.titulo_en.trim()) {
-        setIdioma("en");
-        irAError("titulo-en");
-        throw new Error("Falta completar el título en inglés.");
-      }
+      if (!traducido.titulo_en.trim()) throw new Error("No se pudo traducir el título al inglés. Inténtalo de nuevo.");
       const bloqueIncompleto = traducido.bloques.find((bloque) =>
         ["parrafo", "subtitulo"].includes(bloque.tipo) && !plain(bloque.texto_en || "")
       );
       if (bloqueIncompleto) {
         setIdioma("en");
         irAError(`bloque-${bloqueIncompleto.localId}`);
-        throw new Error("Falta completar el contenido en inglés.");
+        throw new Error("No se pudo traducir uno de los bloques al inglés. Inténtalo de nuevo.");
       }
-      const { id_noticia, id_programa, id_categoria_noticia, titulo_es, titulo_en, bloques } = traducido;
-      const datos: NoticiaEntrada = { titulo_es, titulo_en, id_programa, id_categoria_noticia, bloques: bloques.map(({ localId, ...bloque }) => bloque) };
+      const { id_noticia, id_programa, id_categoria_noticia, titulo_es, titulo_en, fecha_publicacion, bloques } = traducido;
+      const datos: NoticiaEntrada = { titulo_es, titulo_en, fecha_publicacion, id_programa, id_categoria_noticia, bloques: bloques.map(({ localId, ...bloque }) => bloque) };
       if (id_noticia) await actualizarNoticia(id_noticia, datos);
       else await crearNoticia(datos);
       setBorrador(null);
@@ -391,31 +393,22 @@ export default function NoticiasAdmin() {
             </div>
             <fieldset disabled={busy} className="space-y-5">
               <div className="rounded-xl border border-border bg-muted/20 p-4">
-                <label htmlFor="categoria-noticia" className="block text-sm font-semibold text-brand-deep">Categoría de la noticia</label>
-                <select id="categoria-noticia" data-field-id="categoria-noticia" className={field} value={borrador.id_categoria_noticia} onChange={e => patch({id_categoria_noticia:e.target.value})}>
-                  <option value="" disabled>Selecciona una categoría</option>
-                  {categorias.map(c => <option key={c.id_categoria_noticia} value={c.id_categoria_noticia}>{c.nombre_es}</option>)}
-                </select>
-                <label htmlFor="programa-asociado" className="mt-4 block text-sm font-semibold text-brand-deep">¿La noticia está vinculada a un programa?</label>
-                <select id="programa-asociado" data-field-id="programa-asociado" className={field} value={borrador.id_programa} onChange={e => patch({id_programa:e.target.value})}>
-                  <option value="">Publicación independiente (sin programa)</option>
-                  {programas.map(p => <option key={p.id_programa} value={p.id_programa}>{p.titulo_es} · {p.paisaje_titulo_es}</option>)}
-                </select>
+                <Selector label="Categoría de la noticia" required fieldId="categoria-noticia" placeholder="Selecciona una categoría" value={borrador.id_categoria_noticia} onChange={(id_categoria_noticia) => patch({ id_categoria_noticia })}
+                  options={categorias.map((c) => ({ id: c.id_categoria_noticia, label: c.nombre_es }))} />
+                <Selector label="¿La noticia está vinculada a un programa?" className="mt-4" fieldId="programa-asociado" value={borrador.id_programa} onChange={(id_programa) => patch({ id_programa })}
+                  options={[{ id: "", label: "Publicación independiente (sin programa)" }, ...programas.map((p) => ({ id: p.id_programa, label: p.titulo_es, hint: p.paisaje_titulo_es, color: p.color }))]} />
                 <p className="mt-2 text-xs text-muted-foreground">La asociación es opcional. Las noticias independientes también aparecen en Noticias.</p>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <label className="text-sm font-semibold">Título en español
-                  <input required data-field-id="titulo-es" className={field} value={borrador.titulo_es} onChange={(e) => patch({ titulo_es: e.target.value })} />
+                <label className="text-sm font-semibold">Título
+                  <input required data-field-id="titulo-es" className={field} value={borrador.titulo_es} onChange={(e) => patch({ titulo_es: e.target.value, titulo_en: "" })} />
                 </label>
-                <label className="text-sm font-semibold">Título en inglés
-                  <input data-field-id="titulo-en" className={field} value={borrador.titulo_en} onChange={(e) => patch({ titulo_en: e.target.value })} />
+                <label className="text-sm font-semibold">Fecha de la noticia
+                  <input type="date" required data-field-id="fecha" className={field} value={borrador.fecha_publicacion} onChange={(e) => patch({ fecha_publicacion: e.target.value })} />
                 </label>
               </div>
 
-              <div className="flex gap-2 rounded-xl bg-muted/40 p-1">
-                {(["es", "en"] as const).map((value) => <button key={value} type="button" className={`flex-1 rounded-lg px-3 py-2 text-sm font-semibold ${idioma === value ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`} onClick={() => { void cambiarIdioma(value); }} disabled={busy}>{value === "es" ? "Español" : "English"}</button>)}
-              </div>
-              <p className="text-xs text-muted-foreground">Los títulos, párrafos, subtítulos y etiquetas son bilingües. El orden y los archivos multimedia se comparten entre idiomas.</p>
+              <p className="text-xs text-muted-foreground">Escribe todo en español. El inglés se traduce automáticamente al guardar; puedes revisarlo con el botón English de la vista previa.</p>
               {borrador.bloques.map((b, i) => (
                 <div key={b.localId} data-field-id={`bloque-${b.localId}`} tabIndex={-1} className="space-y-3 rounded-xl border border-border bg-muted/20 p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -427,21 +420,21 @@ export default function NoticiasAdmin() {
                     </div>
                   </div>
                   {(b.tipo === "subtitulo" || b.tipo === "enlace") && (
-                    <label className="block text-sm font-medium">{b.tipo === "enlace" ? "Texto del enlace" : "Contenido"} ({idioma.toUpperCase()})
-                      <input className={field} value={(idioma === "es" ? b.texto_es : b.texto_en) || ""} onChange={(e) => patchBloque(b.localId, { [idioma === "es" ? "texto_es" : "texto_en"]: e.target.value })} />
+                    <label className="block text-sm font-medium">{b.tipo === "enlace" ? "Texto del enlace" : "Contenido"}
+                      <input className={field} value={b.texto_es || ""} onChange={(e) => patchBloque(b.localId, { texto_es: e.target.value, texto_en: "" })} />
                     </label>
                   )}
                   {/* El editor de párrafo NO puede ir dentro de un <label>: el navegador reenvía cada clic al primer botón (Negrita). */}
                   {b.tipo === "parrafo" && (
-                    <div className="block text-sm font-medium">Contenido ({idioma.toUpperCase()})
-                      <TextoEnriquecido label={`Párrafo ${idioma.toUpperCase()}`} value={(idioma === "es" ? b.texto_es : b.texto_en) || ""} onChange={(value) => patchBloque(b.localId, { [idioma === "es" ? "texto_es" : "texto_en"]: value })} />
+                    <div className="block text-sm font-medium">Contenido
+                      <TextoEnriquecido label="Párrafo" value={b.texto_es || ""} onChange={(value) => { if (value !== (b.texto_es || "")) patchBloque(b.localId, { texto_es: value, texto_en: "" }); }} />
                     </div>
                   )}
-                  {(b.tipo === "imagen") && <ImagenEditor idioma={idioma} imagen={b.imagen} onChange={(imagen) => patchBloque(b.localId, { imagen })} onRemove={() => setBorrador((old) => old ? { ...old, bloques: old.bloques.map((bloque) => { if (bloque.localId !== b.localId) return bloque; const { imagen: _imagen, ...resto } = bloque; return resto; }) } : null)} />}
+                  {(b.tipo === "imagen") && <ImagenEditor idioma="es" imagen={b.imagen} onChange={(imagen) => patchBloque(b.localId, { imagen })} onRemove={() => setBorrador((old) => old ? { ...old, bloques: old.bloques.map((bloque) => { if (bloque.localId !== b.localId) return bloque; const { imagen: _imagen, ...resto } = bloque; return resto; }) } : null)} />}
                   {b.tipo === "carrusel" && <div className="space-y-3">
                     {(b.imagenes || []).map((imagen, n) => <div key={`${b.localId}-${n}`}>
                       <p className="mb-2 text-xs font-semibold">Fotografía {n + 1}</p>
-                      <ImagenEditor idioma={idioma} imagen={imagen} onChange={(value) => patchBloque(b.localId, { imagenes: (b.imagenes || []).map((old, j) => j === n ? value : old) })} onRemove={() => patchBloque(b.localId, { imagenes: (b.imagenes || []).filter((_, j) => j !== n) })} />
+                      <ImagenEditor idioma="es" imagen={imagen} onChange={(value) => patchBloque(b.localId, { imagenes: (b.imagenes || []).map((old, j) => j === n ? value : old) })} onRemove={() => patchBloque(b.localId, { imagenes: (b.imagenes || []).filter((_, j) => j !== n) })} />
                     </div>)}
                     <label className={`${secondary} inline-flex cursor-pointer items-center`}>
                       <ImagePlus className="size-4" />Añadir fotografías
@@ -454,8 +447,8 @@ export default function NoticiasAdmin() {
                     <input type="url" data-field-id={`url-${b.localId}`} className={field} value={b.url || ""} onChange={(e) => patchBloque(b.localId, { url: e.target.value, tipo: esVideoYouTube(e.target.value) ? "video" : "enlace" })} placeholder="https://" />
                     <span className="mt-1 block text-xs text-muted-foreground">Los enlaces de YouTube se muestran automáticamente como video.</span>
                   </label>}
-                  {(["imagen", "carrusel"].includes(b.tipo)) && <label className="block text-sm font-medium">Pie de fotografía ({idioma.toUpperCase()})
-                    <input className={field} value={(idioma === "es" ? b.pie_es : b.pie_en) || ""} onChange={(e) => patchBloque(b.localId, { [idioma === "es" ? "pie_es" : "pie_en"]: e.target.value })} />
+                  {(["imagen", "carrusel"].includes(b.tipo)) && <label className="block text-sm font-medium">Pie de fotografía
+                    <input className={field} value={b.pie_es || ""} onChange={(e) => patchBloque(b.localId, { pie_es: e.target.value, pie_en: "" })} />
                   </label>}
                 </div>
               ))}
@@ -466,18 +459,21 @@ export default function NoticiasAdmin() {
             </fieldset>
           </form>
           <div className={`${panel} xl:sticky xl:top-20`}>
-            <div className="mb-5 flex items-center gap-2 border-b border-border pb-3 text-xs font-semibold uppercase text-primary"><Eye className="size-4" />Vista previa · {idioma.toUpperCase()}</div>
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-2 border-b border-border pb-3">
+              <span className="flex items-center gap-2 text-xs font-semibold uppercase text-primary"><Eye className="size-4" />Vista previa · {idioma.toUpperCase()}</span>
+              <div className="flex gap-1 rounded-lg bg-muted/40 p-1">
+                {(["es", "en"] as const).map((value) => <button key={value} type="button" className={`rounded-md px-3 py-1 text-xs font-semibold ${idioma === value ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`} onClick={() => { void cambiarIdioma(value); }} disabled={busy}>{value === "es" ? "Español" : "English"}</button>)}
+              </div>
+            </div>
             <VistaPrevia borrador={borrador} idioma={idioma} />
           </div>
         </div>
       ) : <>
         <div className="grid gap-3 sm:grid-cols-2">
-          <label className="block text-sm font-semibold">Filtrar por categoría
-            <select className={field} value={filtroCategoria} onChange={e=>setFiltroCategoria(e.target.value)}><option value="">Todas las categorías</option>{categorias.map(c=><option key={c.id_categoria_noticia} value={c.id_categoria_noticia}>{c.nombre_es}</option>)}</select>
-          </label>
-          <label className="block text-sm font-semibold">Filtrar por programa
-            <select className={field} value={filtroPrograma} onChange={e=>setFiltroPrograma(e.target.value)}><option value="">Todos los programas</option><option value="independiente">Publicaciones independientes</option>{programas.map(p=><option key={p.id_programa} value={p.id_programa}>{p.titulo_es}</option>)}</select>
-          </label>
+          <Selector label="Filtrar por categoría" value={filtroCategoria} onChange={setFiltroCategoria}
+            options={[{ id: "", label: "Todas las categorías", count: items.length }, ...categorias.map((c) => ({ id: c.id_categoria_noticia, label: c.nombre_es, count: items.filter((i) => i.id_categoria_noticia === c.id_categoria_noticia).length }))]} />
+          <Selector label="Filtrar por programa" value={filtroPrograma} onChange={setFiltroPrograma}
+            options={[{ id: "", label: "Todos los programas", count: items.length }, { id: "independiente", label: "Publicaciones independientes", count: items.filter((i) => !i.id_programa).length }, ...programas.map((p) => ({ id: p.id_programa, label: p.titulo_es, hint: p.paisaje_titulo_es, color: p.color, count: items.filter((i) => i.id_programa === p.id_programa).length }))]} />
         </div>
         <div className="flex items-center gap-2 rounded-xl border border-border bg-background px-3"><Search className="size-4 text-muted-foreground" />
           <input className="w-full bg-transparent py-3 text-sm outline-none" aria-label="Buscar noticias" placeholder="Buscar por título…" value={query} onChange={(e) => setQuery(e.target.value)} />
