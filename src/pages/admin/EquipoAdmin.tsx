@@ -2,13 +2,14 @@ import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 
 import { Pencil, Trash2, UserRound, Search, Users, Landmark, Handshake, Plus, Briefcase, CheckCircle2, ImagePlus, Map, Check, ChevronDown } from "lucide-react";
 
-import { type Person, keys, normalizePerson, useStore, uid, safeUrl } from "./datos";
+import { uid } from "./datos";
 
-import { AdminHeading, Field, Notice, Confirm, ImageInput, field, primary, secondary, panel, CloseButton } from "./ui";
+import { AdminHeading, Field, Notice, Confirm, field, primary, secondary, panel, CloseButton } from "./ui";
 
 
 
 import { translateText, translationNotice } from "./traduccion";
+import { type Profile, type Role, type Category, listarNosotros, listarCargos, listarCategorias, guardarPerfil, borrarPerfil, guardarCargo, borrarCargo } from "@/api/nosotrosApi";
 
 
 
@@ -186,12 +187,6 @@ function AdminDropdown({
 }
 
 
-type Category = "junta-directiva" | "equipo" | "socios";
-
-type Profile = Person & { category: Category; roleId: string };
-
-type Role = { id: string; name: string; nameEn: string };
-
 const categories = [
 
   { id: "junta-directiva", label: "Junta directiva", icon: Landmark, description: "Gobernanza y liderazgo institucional", singular: "miembro", accent: "#2381C4", tint: "#edf6fc", border: "#dce7ef" },
@@ -202,41 +197,21 @@ const categories = [
 
 ] as const;
 
-const rolesKey = "admin_cargos";
-
-function normalizeProfile(raw: unknown): Profile {
-
-  const base = normalizePerson(raw);
-
-  const r = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
-
-  const category = r["category"];
-
-  return { ...base, category: category === "junta-directiva" || category === "socios" ? category : "equipo", roleId: typeof r["roleId"] === "string" ? r["roleId"] : "" };
-
-}
-
-function normalizeRole(raw: unknown): Role {
-
-  const r = raw && typeof raw === "object" ? raw as Record<string, unknown> : {};
-
-  return { id: typeof r["id"] === "string" ? r["id"] : uid(), name: typeof r["name"] === "string" ? r["name"] : "", nameEn: typeof r["nameEn"] === "string" ? r["nameEn"] : "" };
-
-}
-
-const blank = (category: Category): Profile => ({ id: uid(), name: "", image: "", description: "", descriptionEn: "", role: "", roleEn: "", roleId: "", group: "programas", category });
-
+const blank = (category: Category): Profile => ({ id: uid(), name: "", image: "", imageId:"", description: "", descriptionEn: "", role: "", roleEn: "", roleId: "", category, partnerCategory:"", orden:1 });
 const folded = (value: string) => value.trim().toLocaleLowerCase("es");
 
 
 
 export default function EquipoAdmin() {
 
-  const { items, save } = useStore(keys.equipo, normalizeProfile);
-
-  const { items: roles, save: saveRoles } = useStore(rolesKey, normalizeRole);
-
+  const [items,setItems]=useState<Profile[]>([]);
+  const [roles,setRoles]=useState<Role[]>([]);
+  const [partnerCategories,setPartnerCategories]=useState<Role[]>([]);
+  const [loading,setLoading]=useState(true);
+  const [ready,setReady]=useState(false);
   const [busy,setBusy]=useState(false);
+  async function refresh(){setLoading(true);try{const [p,r,c]=await Promise.all([listarNosotros(true),listarCargos(),listarCategorias(true)]);setItems(p);setRoles(r);setPartnerCategories(c);setReady(true);}catch(e){setReady(false);setError(e instanceof Error?e.message:"No se pudieron cargar los registros.");}finally{setLoading(false);}}
+  useEffect(()=>{void refresh();},[]);
 
   const [category, setCategory] = useState<Category>("junta-directiva");
 
@@ -266,7 +241,7 @@ export default function EquipoAdmin() {
 
   function clearNotice() { setError(""); setSuccess(""); }
 
-  function start(c: Category) { setCategory(c); setDraft(blank(c)); setManageRoles(false); setRoleDraft(null); clearNotice(); }
+  function start(c: Category) { setCategory(c); setDraft({...blank(c),orden: Math.max(0,...items.filter(p=>p.category===c).map(p=>p.orden))+1}); setManageRoles(false); setRoleDraft(null); clearNotice(); }
 
   function edit(p: Profile) { const role = roleFor(p); setDraft({ ...p, roleId: role?.id ?? p.roleId }); setCategory(p.category); clearNotice(); }
 
@@ -274,11 +249,12 @@ export default function EquipoAdmin() {
 
     e.preventDefault(); if (!draft || busy) return;
 
-    if (!draft.name.trim() || !draft.description.trim() || !safeUrl(draft.image, true)) { setError("Completa nombre, fotografía válida y texto o descripción."); return; }
+    if (!draft.name.trim() || !draft.description.trim() || !draft.image) { setError("Completa nombre, fotografía válida y texto o descripción."); return; }
 
     const role = roles.find(r => r.id === draft.roleId);
 
-    if (draft.category === "equipo" && !role && !draft.role.trim()) { setError("Selecciona o crea un cargo."); return; }
+    if (draft.category === "socios" && !draft.partnerCategory) { setError("Selecciona una categoría de socio."); return; }
+    if (draft.category === "equipo" && !role) { setError("Selecciona o crea un cargo."); return; }
 
     let descriptionEn=draft.descriptionEn; let roleEn=role?.nameEn || draft.roleEn;
 
@@ -290,20 +266,7 @@ export default function EquipoAdmin() {
 
   }
 
-  function commit() {
-
-    if (!pending) return;
-
-    const { person, type } = pending; setPending(null);
-
-    const next = type === "delete" ? items.filter(p => p.id !== person.id) : items.some(p => p.id === person.id) ? items.map(p => p.id === person.id ? person : p) : [...items, person];
-
-    const err = save(next); setError(err);
-
-    if (!err) { setDraft(null); setSuccess(type === "delete" ? "Registro eliminado." : "Registro guardado localmente."); }
-
-  }
-
+  async function commit(){if(!pending||busy)return;const {person,type}=pending;setPending(null);setBusy(true);clearNotice();try{if(type==="delete")await borrarPerfil(person.id);else await guardarPerfil(person,items.some(p=>p.id===person.id));setDraft(null);if(type==="delete")setSuccess("Registro eliminado.");await refresh();}catch(e){setError(e instanceof Error?e.message:"No se pudo guardar el registro.");}finally{setBusy(false);}}
   async function submitRole(e: FormEvent) {
 
     e.preventDefault(); if (!roleDraft || busy) return;
@@ -318,19 +281,11 @@ export default function EquipoAdmin() {
 
     const updated = { ...roleDraft, name, nameEn };
 
-    const old = roles.find(r => r.id === updated.id);
-
-    const err = saveRoles(old ? roles.map(r => r.id === updated.id ? updated : r) : [...roles, updated]);
-
-    setError(err); if (err) return;
-
-    if (draft?.category === "equipo") patch({ roleId: updated.id, role: updated.name, roleEn: updated.nameEn });
-
-    setRoleDraft(null); setSuccess("Cargo guardado.");
+    setBusy(true);try{const id=await guardarCargo(updated,roles.some(r=>r.id===updated.id));if(draft?.category==="equipo")patch({roleId:id,role:updated.name,roleEn:updated.nameEn});setRoleDraft(null);await refresh();setSuccess("Cargo guardado.");}catch(e){setError(e instanceof Error?e.message:"No se pudo guardar el cargo.");}finally{setBusy(false);}
 
   }
 
-  function removeRole() {
+  async function removeRole() {
 
     if (!deleteRole) return;
 
@@ -338,7 +293,7 @@ export default function EquipoAdmin() {
 
     if (items.some(p => p.category === "equipo" && roleFor(p)?.id === target.id) || draft?.roleId === target.id) { setError("No puedes eliminar un cargo asignado. Cambia primero el cargo de los integrantes."); return; }
 
-    const err = saveRoles(roles.filter(r => r.id !== target.id)); setError(err); if (!err) setSuccess("Cargo eliminado.");
+    setBusy(true);try{await borrarCargo(target.id);await refresh();setSuccess("Cargo eliminado.");}catch(e){setError(e instanceof Error?e.message:"No se pudo eliminar el cargo.");}finally{setBusy(false);}
 
   }
 
@@ -357,10 +312,12 @@ export default function EquipoAdmin() {
     <p className="text-sm text-black">{translationNotice}</p>
 
     <Notice error={error} success={success}/>
+    {loading && <p role="status">Cargando registros…</p>}
+    {!loading&&!ready&&<button type="button" className={secondary} onClick={()=>void refresh()}>Reintentar</button>}
 
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
 
-      <div className="flex flex-wrap items-center justify-between gap-4"><div className="flex items-center gap-3"><span style={{backgroundColor:active.tint,color:active.accent}} className="grid size-11 shrink-0 place-items-center rounded-xl"><active.icon className="size-5"/></span><div><h2 className="text-xl font-bold text-brand-deep">{active.label}</h2><p className="text-sm text-black">{count} {count===1?"registro":"registros"}</p></div></div><div className="flex flex-wrap gap-2">{category === "equipo" && <button type="button" className={secondary} disabled={busy} onClick={() => { setManageRoles(v => !v); setRoleDraft(null); clearNotice(); }}><Briefcase className="size-4"/>{manageRoles ? "Cerrar cargos" : "Gestionar cargos"}</button>}{!draft && <button type="button" style={{backgroundColor:active.accent}} className={actionClass} onClick={() => start(category)}><Plus className="size-5"/>Añadir {active.singular}</button>}</div></div>
+      <div className="flex flex-wrap items-center justify-between gap-4"><div className="flex items-center gap-3"><span style={{backgroundColor:active.tint,color:active.accent}} className="grid size-11 shrink-0 place-items-center rounded-xl"><active.icon className="size-5"/></span><div><h2 className="text-xl font-bold text-brand-deep">{active.label}</h2><p className="text-sm text-black">{count} {count===1?"registro":"registros"}</p></div></div><div className="flex flex-wrap gap-2">{category === "equipo" && <button type="button" className={secondary} disabled={busy} onClick={() => { setManageRoles(v => !v); setRoleDraft(null); clearNotice(); }}><Briefcase className="size-4"/>{manageRoles ? "Cerrar cargos" : "Gestionar cargos"}</button>}{!draft && <button type="button" style={{backgroundColor:active.accent}} className={actionClass} disabled={!ready||busy||loading} onClick={() => start(category)}><Plus className="size-5"/>Añadir {active.singular}</button>}</div></div>
 
     </section>
 
@@ -380,12 +337,14 @@ export default function EquipoAdmin() {
 
       <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-display text-xl text-brand-deep">{items.some(p => p.id === draft.id) ? "Editar registro" : "Nuevo registro"} · {active.label}</h3><CloseButton onClick={() => { setDraft(null); clearNotice(); }}/></div>
 
-      <div className="grid gap-5 lg:grid-cols-[1fr_2fr]"><div className="space-y-4 rounded-2xl bg-slate-50 p-4"><div className="flex items-center gap-2 font-semibold text-brand-deep"><ImagePlus className="size-5"/>Imagen del perfil</div><Field label={category === "socios" ? "Fotografía o logotipo" : "Fotografía"}><ImageInput key={draft.id} value={draft.image} onChange={image => setDraft(d => d?.id === draft.id ? { ...d, image } : d)}/></Field></div><div className="space-y-4">
+      <div className="grid gap-5 lg:grid-cols-[1fr_2fr]"><div className="space-y-4 rounded-2xl bg-slate-50 p-4"><div className="flex items-center gap-2 font-semibold text-brand-deep"><ImagePlus className="size-5"/>Imagen del perfil</div><Field label={category === "socios" ? "Fotografía o logotipo" : "Fotografía"}>{draft.image&&<img src={draft.image} alt={draft.name} className="max-h-64 w-full rounded-xl object-contain" onError={e=>{e.currentTarget.style.visibility="hidden";}} onLoad={e=>{e.currentTarget.style.visibility="visible";}}/>}<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" className={field} onChange={e=>{const f=e.target.files?.[0];if(!f)return;if(f.size>5*1024*1024){setError("La imagen debe pesar hasta 5 MB.");return;}const reader=new FileReader();reader.onload=()=>{if(typeof reader.result==="string"){const image=reader.result;setDraft(d=>d?.id===draft.id?{...d,image}:d);}};reader.onerror=()=>setError("No se pudo leer la imagen.");reader.readAsDataURL(f);}}/></Field></div><div className="space-y-4">
 
       <Field label={category === "socios" ? "Nombre del socio o aliado" : "Nombre completo"}><input required className={field} value={draft.name} onChange={e => patch({ name: e.target.value })}/></Field>
 
       {category === "equipo" && <div className="space-y-2"><Field label="Cargo"><AdminDropdown label="Selecciona un cargo" required placeholder="Selecciona un cargo" value={draft.roleId || (draft.role ? "legacy" : "")} options={[...(draft.role && !draft.roleId ? [{id:"legacy",label:`${draft.role} (cargo anterior)`}] : []),...roles.map(r=>({id:r.id,label:r.name}))]} onChange={id=>{if(id==="legacy")return;const r=roles.find(x=>x.id===id);patch({roleId:r?.id??"",role:r?.name??"",roleEn:r?.nameEn??""});}}/></Field><button type="button" className={secondary} onClick={() => { setManageRoles(true); setRoleDraft({ id: uid(), name: "", nameEn: "" }); clearNotice(); }}><Plus className="size-4"/>Crear cargo</button></div>}
 
+      {category==="socios"&&<AdminDropdown label="Categoría de socio" value={draft.partnerCategory} options={partnerCategories.map(c=>({id:c.id,label:c.name}))} onChange={partnerCategory=>patch({partnerCategory})} required/>}
+      <Field label="Orden de presentación"><input type="number" min={1} required className={field} value={draft.orden} onChange={e=>patch({orden:Number(e.target.value)})}/></Field>
       <Field label={category === "equipo" ? "Descripción (ES)" : "Texto (ES)"}><textarea required rows={6} className={field} value={draft.description} onChange={e => patch({ description: e.target.value, descriptionEn:"" })}/></Field>
 
       <Field label={category === "equipo" ? "Descripción (EN, automático o editable)" : "Texto (EN, automático o editable)"}><textarea rows={4} className={field} value={draft.descriptionEn} onChange={e => patch({ descriptionEn: e.target.value })}/></Field>
@@ -394,7 +353,7 @@ export default function EquipoAdmin() {
 
       <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 shadow-sm"><Search className="size-5 text-black"/><input className="w-full bg-transparent py-3 outline-none" aria-label="Buscar registros" placeholder="Buscar por nombre, cargo o texto…" value={query} onChange={e => setQuery(e.target.value)}/></div>
 
-      {!filtered.length ? <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center"><span style={{color:active.accent,backgroundColor:active.tint}} className="mx-auto grid size-20 place-items-center rounded-3xl"><active.icon className="size-9"/></span><h3 className="mt-5 text-xl font-bold text-brand-deep">{query?"No encontramos coincidencias":"Aún no hay registros"}</h3><p className="mx-auto mt-2 max-w-sm text-sm text-black">{query?"Prueba con otro nombre o palabra.":"Añade el primer perfil para empezar a completar esta sección."}</p><button type="button" className={`${actionClass} mt-5`} style={{backgroundColor:active.accent}} onClick={()=>query?setQuery(""):start(category)}>{query?"Limpiar búsqueda":`Añadir ${active.singular}`}</button></div> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{filtered.map(p => <article key={p.id} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg motion-reduce:transform-none motion-reduce:transition-none"><div style={{backgroundColor:active.tint}} className="relative grid aspect-[16/10] place-items-center overflow-hidden">{safeUrl(p.image,true) ? <img src={p.image} alt={p.name} className={`size-full transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none ${p.category === "socios" ? "object-contain p-5" : "object-cover"}`}/> : <UserRound style={{color:active.accent}} className="size-16 opacity-50"/>}</div><div className="space-y-2 p-4"><h3 className="font-display text-xl font-bold text-brand-deep">{p.name}</h3>{p.category === "equipo" && <p style={{backgroundColor:active.tint,color:active.accent}} className="inline-block rounded-full px-3 py-1 text-sm font-semibold">{roleName(p)}</p>}<p className="line-clamp-3 whitespace-pre-line text-sm text-black">{p.description}</p><div className="flex flex-wrap gap-2 pt-2"><button type="button" className={secondary} onClick={() => edit(p)}><Pencil className="size-4"/>Editar</button><button type="button" className={`${secondary} text-red-700`} onClick={() => setPending({ type: "delete", person: p })}><Trash2 className="size-4"/>Eliminar</button></div></div></article>)}</div>}
+      {!filtered.length ? <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center"><span style={{color:active.accent,backgroundColor:active.tint}} className="mx-auto grid size-20 place-items-center rounded-3xl"><active.icon className="size-9"/></span><h3 className="mt-5 text-xl font-bold text-brand-deep">{query?"No encontramos coincidencias":"Aún no hay registros"}</h3><p className="mx-auto mt-2 max-w-sm text-sm text-black">{query?"Prueba con otro nombre o palabra.":"Añade el primer perfil para empezar a completar esta sección."}</p><button type="button" className={`${actionClass} mt-5`} style={{backgroundColor:active.accent}} disabled={!ready||busy||loading} onClick={()=>query?setQuery(""):start(category)}>{query?"Limpiar búsqueda":`Añadir ${active.singular}`}</button></div> : <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{filtered.map(p => <article key={p.id} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg motion-reduce:transform-none motion-reduce:transition-none"><div style={{backgroundColor:active.tint}} className="relative grid aspect-[16/10] place-items-center overflow-hidden">{p.image ? <img src={p.image} alt={p.name} onError={e=>{e.currentTarget.style.visibility="hidden";}} className={`size-full transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none ${p.category === "socios" ? "object-contain p-5" : "object-cover"}`}/> : <UserRound style={{color:active.accent}} className="size-16 opacity-50"/>}</div><div className="space-y-2 p-4"><h3 className="font-display text-xl font-bold text-brand-deep">{p.name}</h3>{p.category === "equipo" && <p style={{backgroundColor:active.tint,color:active.accent}} className="inline-block rounded-full px-3 py-1 text-sm font-semibold">{roleName(p)}</p>}<p className="line-clamp-3 whitespace-pre-line text-sm text-black">{p.description}</p><div className="flex flex-wrap gap-2 pt-2"><button type="button" className={secondary} disabled={busy||!ready} onClick={() => edit(p)}><Pencil className="size-4"/>Editar</button><button type="button" className={`${secondary} text-red-700`} disabled={busy||!ready} onClick={() => setPending({ type: "delete", person: p })}><Trash2 className="size-4"/>Eliminar</button></div></div></article>)}</div>}
 
     </>}
 

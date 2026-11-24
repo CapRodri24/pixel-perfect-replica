@@ -1,4 +1,4 @@
-
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   ArrowUpRight,
@@ -9,63 +9,90 @@ import {
   Users,
   BookOpen,
   HardDrive,
+  Landmark,
+  Handshake,
+  FileText,
+  Clock,
+  RefreshCw,
 } from "lucide-react";
-import {
-  readLandscapes,
-  readPrograms,
-  readNews,
-  readList,
-  keys,
-  normalizePerson,
-  normalizeResource,
-  titleOf,
-} from "./datos";
+import { obtenerDashboard, type DashboardResumen, type TipoRegistro } from "@/api/dashboardApi";
 import { PageTitle, panel } from "./ui";
 
-export default function Dashboard() {
-  const landscapes = readLandscapes();
-  const programs = readPrograms();
-  const news = readNews();
-  const people = readList(keys.equipo, normalizePerson);
-  const resources = readList(
-    keys.recursos,
-    normalizeResource,
-    [],
-    "admin_biblioteca"
-  );
+const labels: Record<TipoRegistro, string> = {
+  paisaje: "Paisaje", programa: "Programa", noticia: "Noticia",
+  nosotros: "Nosotros", recurso: "Recurso",
+};
 
+const details = [
+  { key: "junta", title: "Junta directiva", icon: Landmark },
+  { key: "equipo", title: "Nuestro equipo", icon: Users },
+  { key: "socios", title: "Socios y aliados", icon: Handshake },
+  { key: "pdfs", title: "PDF vinculados", icon: FileText },
+] as const;
+
+function dateLabel(value: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2}) (\d{2}:\d{2})$/.exec(value);
+  return match ? `${match[3]}/${match[2]}/${match[1]} · ${match[4]}` : value;
+}
+
+export function Dashboard() {
+  const [data, setData] = useState<DashboardResumen | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setError("");
+    obtenerDashboard(controller.signal)
+      .then((result) => {
+        if (!controller.signal.aborted) setData(result);
+      })
+      .catch((reason: unknown) => {
+        if (!controller.signal.aborted) {
+          setError(reason instanceof Error ? reason.message : "No se pudo consultar el panel.");
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+    return () => controller.abort();
+  }, [attempt]);
+
+  const landscapes = data?.relaciones_paisajes ?? [];
   const stats = [
     {
       label: "Paisajes",
-      count: landscapes.length,
+      count: data?.paisajes ?? "—",
       to: "/admin/paisajes",
       icon: Map,
       color: "text-primary bg-[#eaf4fc]",
     },
     {
       label: "Programas",
-      count: programs.length,
+      count: data?.programas ?? "—",
       to: "/admin/programas",
       icon: Briefcase,
       color: "text-primary bg-[#eaf4fc]",
     },
     {
       label: "Noticias",
-      count: news.length,
+      count: data?.noticias ?? "—",
       to: "/admin/noticias",
       icon: Newspaper,
       color: "text-primary bg-[#eaf4fc]",
     },
     {
       label: "Nosotros",
-      count: people.length,
+      count: data?.nosotros ?? "—",
       to: "/admin/equipo",
       icon: Users,
       color: "text-primary bg-[#eaf4fc]",
     },
     {
       label: "Recursos",
-      count: resources.length,
+      count: data?.recursos ?? "—",
       to: "/admin/recursos",
       icon: BookOpen,
       color: "text-primary bg-[#eaf4fc]",
@@ -152,7 +179,7 @@ export default function Dashboard() {
           </h2>
 
           <p className="mt-2 text-sm text-muted-foreground">
-            Relaciones registradas en este navegador.
+            Relaciones registradas en la base de datos.
           </p>
 
           <div className="mt-4 divide-y divide-border">
@@ -161,20 +188,18 @@ export default function Dashboard() {
                 key={l.id}
                 className="flex items-center justify-between gap-3 py-3 text-sm"
               >
-                <span>{titleOf(l)}</span>
+                <span>{l.titulo}</span>
 
                 <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-                  {programs.filter(
-                    (p) => p.landscapeId === l.id
-                  ).length}{" "}
-                  programas
+                  {l.programas}{" "}
+                  {l.programas === "1" ? "programa" : "programas"}
                 </span>
               </div>
             ))}
 
             {!landscapes.length && (
               <p className="py-3 text-sm text-muted-foreground">
-                No hay paisajes registrados.
+                {data ? "No hay paisajes registrados." : loading ? "Cargando paisajes…" : "No se pudieron consultar los paisajes."}
               </p>
             )}
           </div>
@@ -188,37 +213,17 @@ export default function Dashboard() {
           <div className="mt-4 space-y-3">
             <div className="flex justify-between rounded-xl bg-muted/40 p-3 text-sm">
               <span>Asociadas a un programa</span>
-              <strong>
-                {
-                  news.filter((n) =>
-                    programs.some((p) => p.id === n.programId)
-                  ).length
-                }
-              </strong>
+              <strong>{data?.noticias_asociadas ?? "—"}</strong>
             </div>
 
             <div className="flex justify-between rounded-xl bg-muted/40 p-3 text-sm">
               <span>Publicaciones</span>
-              <strong>
-                {
-                  news.filter((n) => !n.programId).length
-                }
-              </strong>
+              <strong>{data?.noticias_independientes ?? "—"}</strong>
             </div>
 
             <div className="flex justify-between rounded-xl bg-muted/40 p-3 text-sm">
               <span>Asociación pendiente</span>
-              <strong>
-                {
-                  news.filter(
-                    (n) =>
-                      n.programId &&
-                      !programs.some(
-                        (p) => p.id === n.programId
-                      )
-                  ).length
-                }
-              </strong>
+              <strong>{data?.noticias_pendientes ?? "—"}</strong>
             </div>
           </div>
 
@@ -232,19 +237,89 @@ export default function Dashboard() {
         </section>
       </div>
 
-      {/* Aviso del entorno de demostración */}
-      <div className="mt-5 flex items-start gap-3 rounded-xl border border-border bg-background p-4 text-sm text-muted-foreground">
-        <HardDrive className="mt-0.5 size-5 shrink-0 text-primary" />
+      {/* Detalle institucional y documental */}
+      <section className={`mt-6 ${panel}`}>
+        <h2 className="font-display text-xl text-brand-deep">
+          Detalle institucional y documental
+        </h2>
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {details.map(({ key, title, icon: Icon }) => (
+            <div key={key} className="flex min-w-0 items-center gap-3 rounded-xl bg-muted/40 p-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-[#eaf4fc] text-primary">
+                <Icon className="size-5" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm text-muted-foreground">{title}</p>
+                <p className="mt-1 text-2xl font-bold tabular-nums text-brand-deep">{data?.[key] ?? "—"}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        <p>
-          <strong className="text-foreground">
-            Entorno de demostración.
-          </strong>{" "}
-          Los cambios se guardan en el almacenamiento local del navegador.
-          El sitio público conserva sus datos mock actuales, sin conexión
-          a una base de datos ni autenticación real en este panel.
+      {/* Últimas actualizaciones */}
+      <section className={`mt-6 ${panel}`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="flex items-center gap-2 font-display text-xl text-brand-deep">
+            <Clock className="size-5 shrink-0 text-primary" />
+            Últimas actualizaciones
+          </h2>
+          <button
+            type="button"
+            disabled={loading}
+            onClick={() => setAttempt((value) => value + 1)}
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 text-sm font-semibold text-primary hover:border-primary disabled:opacity-60"
+          >
+            <RefreshCw className={`size-4 ${loading ? "animate-spin motion-reduce:animate-none" : ""}`} />
+            {loading ? "Cargando…" : "Actualizar"}
+          </button>
+        </div>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Últimos ocho registros creados o modificados. Hora de Bolivia.
         </p>
-      </div>
+        <div className="mt-4 divide-y divide-border">
+          {data?.recientes.map((item) => (
+            <div key={`${item.tipo}-${item.id}`} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="break-words font-semibold text-brand-deep">{item.titulo}</p>
+                <p className="mt-1 text-xs text-muted-foreground">{labels[item.tipo]}</p>
+              </div>
+              <span className="shrink-0 text-xs text-muted-foreground">{dateLabel(item.fecha)}</span>
+            </div>
+          ))}
+          {!data?.recientes.length && (
+            <p className="py-3 text-sm text-muted-foreground">
+              {data ? "Todavía no hay registros." : loading ? "Cargando registros…" : "No se pudieron consultar las actualizaciones."}
+            </p>
+          )}
+        </div>
+        {data && (
+          <p className="mt-3 text-xs text-muted-foreground">
+            Última consulta: {dateLabel(data.consultado_en)} (hora de Bolivia).
+          </p>
+        )}
+      </section>
+
+      {/* Estado de la consulta: solo durante la carga o ante un error */}
+      {(loading || error) && (
+        <div className="mt-5 flex items-start gap-3 rounded-xl border border-border bg-background p-4 text-sm text-muted-foreground" role={error ? "alert" : "status"}>
+          <HardDrive className="mt-0.5 size-5 shrink-0 text-primary" />
+
+          <p>
+            <strong className="text-foreground">
+              {loading ? "Consultando información." : "Información no disponible."}
+            </strong>{" "}
+            {loading ? "Cargando los registros de la base de datos." : `${error}${data ? " Se muestran los últimos datos consultados." : " Las cifras todavía no están disponibles."}`}
+            {error && !loading && (
+              <button type="button" onClick={() => setAttempt((value) => value + 1)} className="ml-2 font-semibold text-primary underline">
+                Reintentar
+              </button>
+            )}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
+
+export default Dashboard;

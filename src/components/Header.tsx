@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronDown, ChevronRight, Home, Menu, X } from "lucide-react";
 import { useI18n, type Lang } from "@/i18n/I18nProvider";
 import { Logo } from "./Logo";
-import { landscapes } from "@/config/content";
+import { listarPaisajesPublicos, type PaisajePublicoResumen } from "@/api/paisajesPublicosApi";
+import { listarProgramasPublicos, type ProgramaPublicoResumen } from "@/api/programasPublicosApi";
 import { Button } from "@/components/ui/button";
 
 export const quickLinks = [
@@ -58,28 +59,7 @@ const navSections: NavGroup[] = [
     en: "Landscapes",
     to: "/paisajes",
     hash: "paisajes",
-    children: [
-      { key: "land-map", es: "Mapa general de paisajes", en: "Landscapes overview map", to: "/paisajes", hash: "mapa" },
-      ...landscapes.map((landscape) => ({
-        key: `land-${landscape.id}`,
-        es: `landscapes.items.${landscape.id}.name`,
-        en: `landscapes.items.${landscape.id}.name`,
-        to: "/paisajes?paisaje=beni",
-      })),
-      {
-        key: "land-programs",
-        es: "Programas de conservación de biodiversidad en Bolivia",
-        en: "Biodiversity conservation programs in Bolivia",
-        to: "/paisajes?paisaje=beni",
-        hash: "programas",
-        children: [
-          { key: "land-prog-birds", es: "Conservas aves", en: "Bird conservation", to: "/paisajes?paisaje=beni", hash: "aves" },
-          { key: "land-prog-kba", es: "KBA / Áreas clave", en: "KBA / Key areas", to: "/paisajes?paisaje=beni", hash: "kba" },
-          { key: "land-prog-heart", es: "Nature's heartbeat", en: "Nature's heartbeat", to: "/paisajes?paisaje=beni", hash: "natures-heartbeat" },
-        ],
-      },
-      { key: "land-andina", es: "Acción andina", en: "Acción Andina", to: "/paisajes?paisaje=beni", hash: "accion-andina" },
-    ],
+    children: [],
   },
   {
     key: "resources",
@@ -268,7 +248,7 @@ function MobileSection({ section, onNavigate }: { section: NavGroup; onNavigate:
         <Button asChild variant="ghost" className="flex-1 justify-start text-base">
           <Link to={section.to} onClick={onNavigate}>{pick(lang, section.es, section.en)}</Link>
         </Button>
-        <Button
+        {!!section.children?.length && <Button
           variant="ghost"
           size="icon"
           aria-label={pick(lang, "Abrir subsecciones", "Open subsections")}
@@ -277,9 +257,9 @@ function MobileSection({ section, onNavigate }: { section: NavGroup; onNavigate:
           className={`transition-colors ${open ? "bg-primary/10 text-primary" : ""}`}
         >
           <ChevronDown className={`size-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
-        </Button>
+        </Button>}
       </div>
-      {open && (
+      {open && !!section.children?.length && (
         <div className="mt-2 flex flex-col gap-0.5 rounded-lg border border-border/70 bg-muted/30 p-2">
           {section.children?.map((item) =>
             item.children?.length ? (
@@ -289,7 +269,7 @@ function MobileSection({ section, onNavigate }: { section: NavGroup; onNavigate:
                   <ChevronDown className="mt-0.5 size-3.5 shrink-0 transition-transform duration-200 group-open/sub:rotate-180" />
                 </summary>
                 <div className="ml-3 border-l border-border/70 pl-2">
-                  {["land-programs", "news-media", "contact-donate"].includes(item.key) && (
+                  {(["land-programs", "news-media", "contact-donate"].includes(item.key) || item.key.startsWith("paisaje-db-")) && (
                     <DropdownItem item={{ key: item.key, es: item.es, en: item.en, to: item.to, ...(item.hash !== undefined ? { hash: item.hash } : {}) }} onNavigate={onNavigate} />
                   )}
                   {item.key === "about-partners" && (
@@ -330,6 +310,8 @@ export function Header() {
   const { t, lang } = useI18n();
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState<string | null>(null);
+  const [paisajesPublicos, setPaisajesPublicos] = useState<PaisajePublicoResumen[]>([]);
+  const [programasPublicos, setProgramasPublicos] = useState<ProgramaPublicoResumen[]>([]);
   const [scrolled, setScrolled] = useState(() => window.scrollY > 40);
   const { pathname, key: locationKey } = useLocation();
   const navigate = useNavigate();
@@ -342,6 +324,37 @@ export function Header() {
   };
   const isHome = pathname === "/";
   const solid = !isHome || scrolled || open;
+
+  // Solo se reemplazan los enlaces de paisajes; las demás secciones del menú permanecen intactas.
+  const seccionesNavegacion: NavGroup[] = navSections.map((section) => {
+    if (section.key !== "landscapes") return section;
+    return {
+      ...section,
+      children: paisajesPublicos.map((p) => ({
+        key: `paisaje-db-${p.id_paisaje}`,
+        es: p.titulo_es,
+        en: p.titulo_en,
+        to: `/paisajes?paisaje=${encodeURIComponent(p.id_paisaje)}`,
+        children: programasPublicos.filter(pr => pr.id_paisaje === p.id_paisaje).map(pr => ({
+          key: `programa-db-${pr.id_programa}`, es: pr.titulo_es, en: pr.titulo_en,
+          to: `/programas?programa=${encodeURIComponent(pr.id_programa)}`,
+        })),
+      })),
+    };
+  });
+
+  useEffect(() => {
+    const abort = new AbortController();
+    listarPaisajesPublicos(abort.signal).then((data) => {
+      if (!abort.signal.aborted) setPaisajesPublicos(data);
+    }).catch(() => {
+      // Sin red: el menú conserva su enlace al listado y no falla el encabezado.
+    });
+    listarProgramasPublicos(abort.signal).then(data => {
+      if (!abort.signal.aborted) setProgramasPublicos(data);
+    }).catch(() => { if (!abort.signal.aborted) setProgramasPublicos([]); });
+    return () => abort.abort();
+  }, [pathname, locationKey]);
 
   useEffect(() => {
     const update = () => setScrolled(window.scrollY > 40);
@@ -406,7 +419,7 @@ export function Header() {
                   {isHome && <span aria-hidden="true" className="absolute inset-x-3 bottom-1 h-0.5 rounded-full bg-brand-light" />}
                 </Link>
               </li>
-              {navSections.map((s) => {
+              {seccionesNavegacion.map((s) => {
                 const active = pathname === s.to || pathname.startsWith(`${s.to}/`);
                 return (
                   <li
@@ -439,10 +452,10 @@ export function Header() {
                       className={`relative inline-flex items-center gap-1.5 rounded-md px-3 py-3 text-sm font-medium transition-colors duration-300 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-light ${active ? "text-white" : "text-white/85"}`}
                     >
                       {pick(lang, s.es, s.en)}
-                      <ChevronDown className="size-3 opacity-75 transition-transform duration-300 group-hover:rotate-180 group-focus-within:rotate-180" />
+                      {!!s.children?.length && <ChevronDown className="size-3 opacity-75 transition-transform duration-300 group-hover:rotate-180 group-focus-within:rotate-180" />}
                       <span aria-hidden="true" className={`absolute inset-x-3 bottom-1 h-0.5 rounded-full bg-brand-light transition-transform duration-300 ease-out group-hover:scale-x-100 group-focus-within:scale-x-100 ${active ? "scale-x-100" : "origin-right scale-x-0 group-hover:origin-left"}`} />
                     </Link>
-                    {dismissed !== s.key && <DesktopDropdown section={s} />}
+                    {dismissed !== s.key && !!s.children?.length && <DesktopDropdown section={s} />}
                   </li>
                 );
               })}
@@ -474,7 +487,7 @@ export function Header() {
                   <Link to="/" aria-current={isHome ? "page" : undefined} onClick={() => { setOpen(false); if (isHome) window.scrollTo({ top: 0, behavior: "auto" }); }}><Home className="size-5" />{pick(lang, "Inicio", "Home")}</Link>
                 </Button>
               </div>
-              {navSections.map((s) => <MobileSection key={s.key} section={s} onNavigate={() => setOpen(false)} />)}
+              {seccionesNavegacion.map((s) => <MobileSection key={s.key} section={s} onNavigate={() => setOpen(false)} />)}
               <div className="mt-6 flex items-center justify-center gap-3">
                 <AnniversaryBadge onClick={() => setOpen(false)} />
               </div>

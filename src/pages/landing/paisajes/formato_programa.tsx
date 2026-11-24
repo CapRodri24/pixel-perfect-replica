@@ -1,65 +1,37 @@
 
-import { useRef, useState } from "react";
-import { RelatedNews } from "./noticias-mock";
+import { useEffect, useRef, useState } from "react";
+import { RelatedNews } from "./noticias-publicas";
+import { sanitize } from "@/pages/admin/datos";
+import type { BloquePublico } from "@/api/paisajesPublicosApi";
+import { listarProgramasPublicos, obtenerProgramaPublico, imagenProgramaUrl, type ProgramaPublicoDetalle, type ProgramaPublicoResumen } from "@/api/programasPublicosApi";
 import {
   ArrowLeft,
   ArrowRight,
   ChevronLeft,
   ChevronRight,
   PlayCircle,
+  ImageOff,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { landscapes, programs } from "@/config/content";
 import { useI18n } from "@/i18n/I18nProvider";
 
-export const demoLandscapeUrl = "/paisajes?paisaje=beni";
-
-export const demoProgramLinks = [
-  { id: "conservaaves", anchor: "aves" },
-  { id: "kba", anchor: "kba" },
-  { id: "natures-heartbeat", anchor: "natures-heartbeat" },
-  { id: "accionandina", anchor: "accion-andina" },
-] as const;
-
+// Exports de compatibilidad para los consumidores anteriores, sin registros ficticios.
+export const demoLandscapeUrl = "/paisajes";
+export const demoProgramLinks: readonly { id: string; anchor: string }[] = [];
 export function useLandscapePrograms() {
-  const { t, lang } = useI18n();
-  const es = lang === "es";
-
-  const existing = programs.map((p) => ({
-    id: String(p.id),
-    landscape: p.landscape,
-    image: p.image,
-    name: t<string>(`programs.items.${p.id}.name`),
-    text: t<string>(`programs.items.${p.id}.text`),
-  }));
-
-  return [
-    ...existing,
-    {
-      id: "kba",
-      landscape: null,
-      image:
-        landscapes.find((l) => l.id === "beni")?.image ??
-        "/images/home/1.jpg",
-      name: es
-        ? "KBA / Áreas clave"
-        : "KBA / Key biodiversity areas",
-      text: es
-        ? "Identificación y seguimiento de sitios prioritarios para la biodiversidad."
-        : "Identification and monitoring of priority biodiversity sites.",
-    },
-    {
-      id: "natures-heartbeat",
-      landscape: null,
-      image:
-        landscapes.find((l) => l.id === "yungas")?.image ??
-        "/images/home/2.jpg",
-      name: "Nature's heartbeat",
-      text: es
-        ? "Ejemplo de iniciativa de monitoreo de ecosistemas y participación local."
-        : "Example initiative for ecosystem monitoring and local participation.",
-    },
-  ];
+  const { lang } = useI18n();
+  const [items, setItems] = useState<ProgramaPublicoResumen[]>([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    listarProgramasPublicos(controller.signal).then(data => {
+      if (!controller.signal.aborted) setItems(data);
+    }).catch(() => { if (!controller.signal.aborted) setItems([]); });
+    return () => controller.abort();
+  }, []);
+  return items.map(p => ({ id: p.id_programa, landscape: p.id_paisaje,
+    image: imagenProgramaUrl(p.id_imagen_portada) || "",
+    name: lang === "es" ? p.titulo_es : p.titulo_en,
+    text: new DOMParser().parseFromString((lang === "es" ? p.descripcion_es : p.descripcion_en) || "", "text/html").body.textContent || "" }));
 }
 
 export type EditorialVideo = {
@@ -69,21 +41,29 @@ export type EditorialVideo = {
 
 export type EditorialBlock =
   | { type: "heading"; text: string }
-  | { type: "paragraph"; text: string }
-  | { type: "image"; src: string; alt: string }
+  | { type: "paragraph"; text: string; html?: boolean }
+  | { type: "image"; src: string; alt: string; caption?: string }
+  | { type: "link"; url: string; text: string }
   | {
       type: "gallery";
-      images: { src: string; alt: string }[];
+      images: { src: string; alt: string; caption?: string }[];
     }
   | {
       type: "videos";
       videos: EditorialVideo[];
     };
 
+function EditorialImage({ src, alt, className, draggable }: { src: string; alt: string; className: string; draggable?: boolean }) {
+  const [fallo, setFallo] = useState(false);
+  useEffect(() => setFallo(false), [src]);
+  if (!src || fallo) return <div role="img" aria-label={alt} className={`${className} grid place-items-center bg-muted text-muted-foreground`}><ImageOff className="size-10 opacity-40" /></div>;
+  return <img src={src} alt={alt} loading="lazy" draggable={draggable} className={className} onError={() => setFallo(true)} />;
+}
+
 function ImageCarousel({
   images,
 }: {
-  images: { src: string; alt: string }[];
+  images: { src: string; alt: string; caption?: string }[];
 }) {
   const { lang } = useI18n();
   const es = lang === "es";
@@ -155,10 +135,9 @@ function ImageCarousel({
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <img
+        <EditorialImage
           src={currentImage.src}
           alt={currentImage.alt}
-          loading="lazy"
           draggable={false}
           className="aspect-[4/3] w-full select-none object-cover sm:aspect-[16/9]"
         />
@@ -197,6 +176,7 @@ function ImageCarousel({
         )}
       </div>
 
+      {currentImage.caption && <p className="text-center text-sm text-muted-foreground">{currentImage.caption}</p>}
       {images.length > 1 && (
         <div className="flex justify-center gap-1 overflow-x-auto [scrollbar-width:none]">
           {images.map((_, i) => (
@@ -255,10 +235,9 @@ function EditorialVideoPlayer({
             }: ${video.title}`}
             className="group absolute inset-0 size-full cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
           >
-            <img
+            <EditorialImage
               src={`https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`}
               alt=""
-              loading="lazy"
               className="size-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105"
             />
 
@@ -312,6 +291,7 @@ export function EditorialContent({
             );
 
           case "paragraph":
+            if (block.html) return <div key={i} className="whitespace-pre-line break-words text-base leading-[1.8] text-black sm:text-lg sm:leading-relaxed" dangerouslySetInnerHTML={{__html: sanitize(block.text)}} />;
             return (
               <p
                 key={i}
@@ -322,15 +302,12 @@ export function EditorialContent({
             );
 
           case "image":
-            return (
-              <img
-                key={i}
-                src={block.src}
-                alt={block.alt}
-                loading="lazy"
-                className="aspect-[4/3] w-full rounded-2xl object-cover sm:aspect-[16/9]"
-              />
-            );
+            return <figure key={i}>
+              <EditorialImage src={block.src} alt={block.alt} className="aspect-[4/3] w-full rounded-2xl object-cover sm:aspect-[16/9]" />
+              {block.caption && <figcaption className="mt-3 text-center text-sm text-muted-foreground">{block.caption}</figcaption>}
+            </figure>;
+          case "link":
+            return <a key={i} href={block.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-semibold text-primary hover:underline">{block.text}<ArrowRight className="size-4" /></a>;
 
           case "gallery":
             return (
@@ -375,156 +352,76 @@ export function EditorialContent({
   );
 }
 
-export default function FormatoPrograma({
-  id,
-}: {
-  id: string;
-}) {
+function textoPlano(valor: string) {
+  return new DOMParser().parseFromString(valor, "text/html").body.textContent?.trim() || "";
+}
+function videoId(url: URL): string | null {
+  let id: string | null = null;
+  if (["youtu.be", "www.youtu.be"].includes(url.hostname)) id = url.pathname.split("/")[1] || null;
+  if (["youtube.com", "www.youtube.com", "m.youtube.com", "www.youtube-nocookie.com", "youtube-nocookie.com"].includes(url.hostname)) id = url.searchParams.get("v") || url.pathname.match(/^\/(?:shorts|embed|live)\/([^/]+)/)?.[1] || null;
+  return id && /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null;
+}
+function bloquesEditoriales(bloques: BloquePublico[], es: boolean): EditorialBlock[] {
+  const out: EditorialBlock[] = [];
+  const leyenda = (...values: (string | null | undefined)[]) => values.filter(Boolean).join(" · ");
+  for (const b of bloques) {
+    const text = (es ? b.texto_es : b.texto_en) || "";
+    const pie = (es ? b.pie_es : b.pie_en) || "";
+    switch (b.tipo) {
+      case "parrafo": out.push({type:"paragraph",text,html:true}); break;
+      case "subtitulo": out.push({type:"heading",text:textoPlano(text)}); break;
+      case "imagen": out.push({type:"image",src:imagenProgramaUrl(b.id_imagen)||"",alt:(es?b.imagen?.alt_es:b.imagen?.alt_en)||"",caption:leyenda(pie || (es?b.imagen?.descripcion_es:b.imagen?.descripcion_en),b.imagen?.credito)}); break;
+      case "carrusel": out.push({type:"gallery",images:(b.imagenes||[]).map(f=>({src:imagenProgramaUrl(f.id_imagen)||"",alt:(es?f.alt_es:f.alt_en)||"",caption:leyenda((es?f.pie_es:f.pie_en)||pie||(es?f.descripcion_es:f.descripcion_en),f.credito)}))}); break;
+      case "enlace": case "video": {
+        if (!b.url) break;
+        try {
+          const url = new URL(b.url);
+          if (!["https:", "http:"].includes(url.protocol)) break;
+          const id = videoId(url);
+          if (id) {
+            const video = {id,title:textoPlano(text)||"YouTube"};
+            const last = out[out.length-1];
+            if (last?.type === "videos") last.videos.push(video);
+            else out.push({type:"videos",videos:[video]});
+          } else out.push({type:"link",url:url.href,text:textoPlano(text)||url.hostname});
+        } catch { /* URL inválida: omitir */ }
+        break;
+      }
+    }
+  }
+  return out;
+}
+
+export default function FormatoPrograma({ id }: { id: string }) {
   const { lang } = useI18n();
   const es = lang === "es";
-
-  const program = useLandscapePrograms().find(
-    (p) => p.id === id
-  );
-
-  const anchor = demoProgramLinks.find(
-    (p) => p.id === id
-  )?.anchor;
-
-  if (!program) {
-    return (
-      <div className="container-site section">
-        <p>
-          {es
-            ? "Programa no encontrado."
-            : "Program not found."}
-        </p>
-
-        <Link
-          className="mt-4 inline-flex text-primary underline"
-          to="/programas"
-        >
-          {es
-            ? "Volver a programas"
-            : "Back to programs"}
-        </Link>
-      </div>
-    );
-  }
-
-  const demo =
-    Boolean(anchor) || program.landscape === "beni";
-
-  const blocks: EditorialBlock[] = [
-    {
-      type: "paragraph",
-      text:
-        program.text +
-        (es
-          ? "\n\nLa conservación de la biodiversidad requiere comprender las necesidades de las especies y las condiciones de los ecosistemas donde habitan. Esta ficha ilustra cómo un programa puede presentar sus objetivos, su ámbito de trabajo y las acciones que vinculan la investigación con la protección de la naturaleza."
-          : "\n\nBiodiversity conservation requires understanding the needs of species and the conditions of the ecosystems where they live. This page illustrates how a program can present its objectives, scope and activities linking research with nature protection."),
-    },
-    {
-      type: "image",
-      src: program.image,
-      alt: program.name,
-    },
-    {
-      type: "heading",
-      text: es ? "Sobre el programa" : "About the program",
-    },
-    {
-      type: "paragraph",
-      text: es
-        ? "Como ejemplo de trabajo programático, las actividades pueden incluir recorridos de campo, registro de especies y evaluación de las condiciones del hábitat. Esta información permite orientar las prioridades de conservación y planificar acciones de seguimiento a largo plazo.\n\nLa participación de las comunidades locales es también un componente importante del enfoque. Los espacios de intercambio, la educación ambiental y la colaboración con actores locales pueden contribuir a identificar soluciones compatibles con las necesidades de las personas y la protección de la biodiversidad. Este contenido es ilustrativo y no constituye un informe de resultados del programa."
-        : "Example program activities may include field surveys, species records and assessments of habitat conditions. This information can help guide conservation priorities and plan long-term monitoring.\n\nLocal community participation is also an important part of this approach. Knowledge sharing, environmental education and collaboration with local stakeholders can help identify solutions compatible with people's needs and biodiversity protection. This illustrative content is not a report of program results.",
-    },
-    {
-      type: "heading",
-      text: es ? "Galería de imágenes" : "Image gallery",
-    },
-    {
-      type: "gallery",
-      images: [
-        {
-          src: program.image,
-          alt: program.name,
-        },
-        ...[
-          "/images/home/1.jpg",
-          "/images/home/2.jpg",
-          "/images/home/3.jpg",
-        ].map((src, i) => ({
-          src,
-          alt: `${
-            es ? "Imagen de prueba" : "Demo image"
-          } ${i + 1}`,
-        })),
-      ],
-    },
-    {
-      type: "paragraph",
-      text: es
-        ? "Las fotografías permiten acercar al visitante a los ambientes naturales, las especies y el contexto territorial del trabajo de conservación. La galería es una muestra provisional del formato de publicación; las imágenes definitivas deberán corresponder al programa y contar con sus créditos respectivos."
-        : "Photographs help visitors discover natural environments, species and the territorial context of conservation work. This gallery is a provisional example of the publication format; final images should correspond to the program and include appropriate credits.",
-    },
-    {
-      type: "heading",
-      text: es ? "Videos" : "Videos",
-    },
-    {
-      type: "videos",
-      videos: [
-        {
-          id: "BUuG52ueZQc",
-          title: es
-            ? "La Paraba Barba Azul"
-            : "The Blue-throated Macaw",
-        },
-        {
-          id: "ZrFLlV83MEI",
-          title: es
-            ? "Reserva Laney Rickman"
-            : "Laney Rickman Reserve",
-        },
-      ],
-    },
-  ];
-
-  return (
-    <article className="overflow-x-clip bg-background">
-      <div className="container-site py-8 sm:py-16">
-        <div className="mx-auto max-w-4xl">
-          <Link
-            to={
-              demo
-                ? `${demoLandscapeUrl}#${anchor ?? "programas"}`
-                : "/programas"
-            }
-            className="mb-7 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary hover:underline sm:mb-8"
-          >
-            <ArrowLeft className="size-4" />
-            {demo
-              ? es
-                ? "Volver al paisaje"
-                : "Back to landscape"
-              : es
-              ? "Volver a programas"
-              : "Back to programs"}
-          </Link>
-
-          <h1 className="mb-6 font-display text-3xl leading-tight text-brand-deep sm:text-5xl">
-            {program.name}
-          </h1>
-
-          <EditorialContent
-            key={id}
-            blocks={blocks}
-          />
-
-          <RelatedNews programId={id} />
-        </div>
-      </div>
-    </article>
-  );
+  const [data, setData] = useState<ProgramaPublicoDetalle | null>(null);
+  const [estado, setEstado] = useState<"cargando" | "listo" | "error" | "no-encontrado">("cargando");
+  const [intento, setIntento] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    setData(null); setEstado("cargando");
+    obtenerProgramaPublico(id, controller.signal).then(programa => {
+      if (!controller.signal.aborted) { setData(programa); setEstado("listo"); }
+    }).catch(error => {
+      if (!controller.signal.aborted) setEstado(error instanceof Error && error.message === "NOT_FOUND" ? "no-encontrado" : "error");
+    });
+    return () => controller.abort();
+  }, [id, intento]);
+  return <article className="min-h-[65vh] overflow-x-clip bg-background">
+    <div className="container-site py-8 sm:py-16"><div className="mx-auto max-w-4xl">
+      <Link to={data ? `/paisajes?paisaje=${encodeURIComponent(data.id_paisaje)}#programas` : "/programas"} className="mb-7 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-primary hover:underline sm:mb-8">
+        <ArrowLeft className="size-4" />{data ? (es ? "Volver al paisaje" : "Back to landscape") : (es ? "Volver a programas" : "Back to programs")}
+      </Link>
+      {estado === "cargando" && <p role="status" className="text-muted-foreground">{es ? "Cargando programa…" : "Loading program…"}</p>}
+      {estado === "error" && <div role="status" className="rounded-2xl border border-border bg-muted/40 p-8 text-center"><p>{es ? "No pudimos cargar el programa. Comprueba tu conexión." : "We couldn't load this program. Check your connection."}</p><button type="button" onClick={() => setIntento(n => n + 1)} className="mt-4 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground">{es ? "Volver a intentar" : "Try again"}</button></div>}
+      {estado === "no-encontrado" && <p role="status">{es ? "Programa no encontrado." : "Program not found."}</p>}
+      {estado === "listo" && data && <>
+        <h1 className="mb-6 font-display text-3xl leading-tight text-brand-deep sm:text-5xl">{es ? data.titulo_es : data.titulo_en}</h1>
+        <EditorialContent key={id} blocks={bloquesEditoriales(data.bloques, es)} />
+        {!data.bloques.length && <p className="text-muted-foreground">{es ? "Próximamente compartiremos más información." : "More information will be available soon."}</p>}
+        <RelatedNews programId={id} />
+      </>}
+    </div></div>
+  </article>;
 }
