@@ -5,10 +5,30 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { SectionShortcut } from "@/components/SectionView";
 import { Noticias } from "./noticias";
+import { listarPaisajesPublicos, type PaisajePublicoResumen } from "@/api/paisajesPublicosApi";
 
 const SLIDE_DURATION = 7500;
 const SLIDE_TRANSITION = 1200;
 const SLIDE_COUNT = 5;
+const SLIDE_KEYWORDS: Record<string, string[]> = {
+  beni: ["beni", "pastizal"],
+  yungas: ["yunga"],
+  andes: ["andes"],
+  seco: ["seco", "interandino"],
+  amazonia: ["amazon"],
+};
+/**
+ * Geometrías territoriales de la identidad visual de Armonía: cada paisaje tiene su trazo y color.
+ * Se dibujan en un lienzo de 120 × 24 y la diapositiva activa las va trazando según avanza.
+ */
+const LANDSCAPE_GEOMETRY: Record<string, { color: string; d: string }> = {
+  beni: { color: "#E7B91F", d: "M3 15 C14 10 24 10 34 13 C44 16 52 17 62 14 C72 11 80 9 90 12 C100 15 110 15 117 12" },
+  yungas: { color: "#6DA83A", d: "M3 19 C16 17 26 6 44 5 C60 4 66 14 76 17 C88 20 104 17 117 19" },
+  andes: { color: "#2A86D6", d: "M3 21 L30 10 L42 16 L62 3 L82 16 L92 11 L117 21" },
+  seco: { color: "#D2602E", d: "M3 20 L16 20 L23 14 L43 14 L51 5 L73 5 L79 12 L95 12 L100 17 L117 17" },
+  amazonia: { color: "#8DAA2C", d: "M3 20 C12 12 38 14 54 14 C70 14 76 7 64 5 C55 4 57 1 70 1 C88 1 106 4 117 9" },
+};
+const normalizeText = (text: string) => text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
 let hasShownPreloader = false;
 
 function Preloader({ exiting }: { exiting: boolean }) {
@@ -48,15 +68,27 @@ function Hero({ ready }: { ready: boolean }) {
   const elapsedRef = useRef(0);
   const transitioningRef = useRef(false);
   const touchStartRef = useRef<number | null>(null);
-  const progressRefs = useRef<(HTMLSpanElement | null)[]>([]);
+  const progressRefs = useRef<(SVGPathElement | null)[]>([]);
   const transitionTimerRef = useRef<number | null>(null);
+  const [landscapes, setLandscapes] = useState<PaisajePublicoResumen[]>([]);
+  useEffect(() => {
+    const controller = new AbortController();
+    listarPaisajesPublicos(controller.signal).then(setLandscapes).catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+  // Enlace a la página del paisaje, donde se ven sus programas. Si no existe, abre el listado.
+  const landscapeLink = (slideId: string) => {
+    const keywords = SLIDE_KEYWORDS[slideId] ?? [];
+    const match = landscapes.find((p) => keywords.some((k) => normalizeText(`${p.titulo_es} ${p.titulo_en}`).includes(k)));
+    return match ? `/paisajes?paisaje=${encodeURIComponent(match.id_paisaje)}` : "/paisajes";
+  };
   const slides = [
     {
       id: "beni", image: "/images/home/1.jpg", icon: Feather,
       kicker: es ? "Paisajes de Bolivia" : "Landscapes of Bolivia",
       title: es ? ["Pastizales del Beni"] : ["Beni Grasslands"],
       description: t<string>("landscapes.items.beni.text"),
-      primary: { label: t<string>("quick.member"), to: "/contacto/haztemiembro", internal: true },
+      primary: { label: es ? "Conoce más" : "Learn more", to: landscapeLink("beni"), internal: true },
       secondary: { label: t<string>("quick.donate"), to: "/donar", internal: true },
       tab: t<string>("landscapes.items.beni.name"),
       subtitle: es ? "Sabanas y humedales" : "Savannas and wetlands",
@@ -67,7 +99,7 @@ function Hero({ ready }: { ready: boolean }) {
       kicker: es ? "Paisajes de Bolivia" : "Landscapes of Bolivia",
       title: es ? ["Yungas"] : ["Yungas"],
       description: t<string>("landscapes.items.yungas.text"),
-      primary: { label: t<string>("quick.member"), to: "/contacto/haztemiembro", internal: true },
+      primary: { label: es ? "Conoce más" : "Learn more", to: landscapeLink("yungas"), internal: true },
       secondary: { label: t<string>("quick.donate"), to: "/donar", internal: true },
       tab: t<string>("landscapes.items.yungas.name"),
       subtitle: es ? "Bosques nublados" : "Cloud forests",
@@ -78,7 +110,7 @@ function Hero({ ready }: { ready: boolean }) {
       kicker: es ? "Paisajes de Bolivia" : "Landscapes of Bolivia",
       title: es ? ["Andes Altos"] : ["High Andes"],
       description: t<string>("landscapes.items.andes.text"),
-      primary: { label: t<string>("quick.member"), to: "/contacto/haztemiembro", internal: true },
+      primary: { label: es ? "Conoce más" : "Learn more", to: landscapeLink("andes"), internal: true },
       secondary: { label: t<string>("quick.donate"), to: "/donar", internal: true },
       tab: t<string>("landscapes.items.andes.name"),
       subtitle: es ? "Montañas y fuentes de agua" : "Mountains and water sources",
@@ -89,7 +121,7 @@ function Hero({ ready }: { ready: boolean }) {
       kicker: es ? "Paisajes de Bolivia" : "Landscapes of Bolivia",
       title: es ? ["Bosque Seco", "Interandino"] : ["Inter-Andean", "Dry Forest"],
       description: t<string>("landscapes.items.seco.text"),
-      primary: { label: t<string>("quick.member"), to: "/contacto/haztemiembro", internal: true },
+      primary: { label: es ? "Conoce más" : "Learn more", to: landscapeLink("seco"), internal: true },
       secondary: { label: t<string>("quick.donate"), to: "/donar", internal: true },
       tab: t<string>("landscapes.items.seco.name"),
       subtitle: es ? "Valles secos y cañones" : "Dry valleys and canyons",
@@ -100,7 +132,7 @@ function Hero({ ready }: { ready: boolean }) {
       kicker: es ? "Paisajes de Bolivia" : "Landscapes of Bolivia",
       title: es ? ["Amazonía"] : ["Amazon"],
       description: t<string>("landscapes.items.amazonia.text"),
-      primary: { label: t<string>("quick.member"), to: "/contacto/haztemiembro", internal: true },
+      primary: { label: es ? "Conoce más" : "Learn more", to: landscapeLink("amazonia"), internal: true },
       secondary: { label: t<string>("quick.donate"), to: "/donar", internal: true },
       tab: t<string>("landscapes.items.amazonia.name"),
       subtitle: es ? "Bosques tropicales y ríos" : "Tropical forests and rivers",
@@ -110,7 +142,7 @@ function Hero({ ready }: { ready: boolean }) {
 
   const resetProgress = useCallback(() => {
     elapsedRef.current = 0;
-    progressRefs.current.forEach((bar) => { if (bar) bar.style.transform = "scaleX(0)"; });
+    progressRefs.current.forEach((bar) => { if (bar) bar.style.strokeDashoffset = "1"; });
   }, []);
 
   const goTo = useCallback((index: number) => {
@@ -142,7 +174,7 @@ function Hero({ ready }: { ready: boolean }) {
         elapsedRef.current += delta;
         const progress = Math.min(elapsedRef.current / SLIDE_DURATION, 1);
         const currentBar = progressRefs.current[activeRef.current];
-        if (currentBar) currentBar.style.transform = `scaleX(${progress})`;
+        if (currentBar) currentBar.style.strokeDashoffset = String(1 - progress);
         if (progress >= 1) goTo(activeRef.current + 1);
       }
       frameId = window.requestAnimationFrame(tick);
@@ -171,9 +203,7 @@ function Hero({ ready }: { ready: boolean }) {
     <section id="inicio" aria-roledescription={es ? "Carrusel" : "Carousel"}
       aria-label={es ? "Presentación de Asociación Armonía" : "Introduction to Asociación Armonía"}
       className="relative isolate overflow-hidden bg-brand-deep text-primary-foreground h-svh min-h-[680px] max-[900px]:min-h-[650px] max-sm:min-h-[640px]"
-      onMouseEnter={() => { pausedRef.current = true; }}
-      onMouseLeave={() => { pausedRef.current = false; }}
-      onFocusCapture={() => { focusPausedRef.current = true; }}
+      onFocusCapture={(e) => { if ((e.target as HTMLElement).matches(":focus-visible")) focusPausedRef.current = true; }}
       onBlurCapture={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) focusPausedRef.current = false; }}
       onKeyDown={handleKeyDown}
       onTouchStart={(e) => { touchStartRef.current = e.touches[0]?.clientX ?? null; }}
@@ -198,7 +228,7 @@ function Hero({ ready }: { ready: boolean }) {
             <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(90deg,rgba(5,15,25,.88)_0%,rgba(5,15,25,.60)_45%,rgba(5,15,25,.10)_100%)] max-sm:bg-[linear-gradient(90deg,rgba(5,15,25,.80),rgba(5,15,25,.36))]" />
             <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(0deg,rgba(5,15,25,.85)_0%,transparent_45%)] max-sm:bg-[linear-gradient(0deg,rgba(5,15,25,.85)_0%,transparent_55%)]" />
             {/* El header fijo se superpone a la imagen, no al contenido. */}
-            <div className="container-site relative z-10 flex h-full flex-col justify-center pt-[110px] pb-[165px] max-xl:pt-[94px] max-[900px]:pb-[130px] max-sm:pt-[84px] max-sm:pb-[115px]">
+            <div className="container-site relative z-10 flex h-full flex-col justify-center pt-[110px] pb-[165px] max-xl:pt-[94px] max-[900px]:pb-[130px] max-md:pb-[235px] max-sm:pt-[84px] max-sm:pb-[230px]">
               <div className="max-w-5xl">
                 <div className={`${fadeClass} ${isActive ? "delay-300" : "delay-0"} motion-reduce:delay-0`}>
                   {index === 0 ? (
@@ -220,7 +250,7 @@ function Hero({ ready }: { ready: boolean }) {
                 <p className={`mt-6 max-w-xl text-base leading-relaxed text-white/85 sm:text-lg ${fadeClass} ${isActive ? "delay-[750ms]" : "delay-0"} motion-reduce:delay-0`}>{slide.description}</p>
                 <div className={`mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap ${fadeClass} ${isActive ? "delay-[950ms]" : "delay-0"} motion-reduce:delay-0`}>
                   <Button asChild size="lg" variant="hero">
-                    {slide.primary.internal ? <Link to={slide.primary.to} tabIndex={isActive ? 0 : -1}>{slide.primary.label}<ArrowRight className="size-5" /></Link> : <a href={slide.primary.to} tabIndex={isActive ? 0 : -1}>{slide.primary.label}<ArrowRight className="size-5" /></a>}
+                    {slide.primary.internal ? <Link to={slide.primary.to} tabIndex={isActive ? 0 : -1} aria-label={`${slide.primary.label}: ${slide.tab}`}>{slide.primary.label}<ArrowRight className="size-5" /></Link> : <a href={slide.primary.to} tabIndex={isActive ? 0 : -1}>{slide.primary.label}<ArrowRight className="size-5" /></a>}
                   </Button>
                   <Button asChild size="lg" variant="glass">
                     {slide.secondary.internal ? <Link to={slide.secondary.to} tabIndex={isActive ? 0 : -1}>{slide.secondary.label}</Link> : <a href={slide.secondary.to} tabIndex={isActive ? 0 : -1}>{slide.secondary.label}</a>}
@@ -235,15 +265,20 @@ function Hero({ ready }: { ready: boolean }) {
         {es ? "Desliza" : "Scroll"}
         <span className="h-[60px] w-px bg-linear-to-b from-white/80 to-transparent animate-pulse motion-reduce:animate-none" />
       </div>
-      <div className="absolute inset-x-0 bottom-0 z-30 pb-[30px] max-[900px]:pb-6">
+      <div className="absolute inset-x-0 bottom-0 z-30 pb-[30px] max-[900px]:pb-6 max-md:pb-[calc(8.5rem+env(safe-area-inset-bottom,0px))]">
         <div className="container-site flex items-end gap-7">
           <div role="group" aria-label={es ? "Seleccionar diapositiva" : "Select slide"} className="flex min-w-0 flex-1 gap-[22px] max-[900px]:gap-3.5 max-sm:gap-1.5">
             {slides.map((slide, index) => (
               <button key={slide.id} type="button" disabled={!ready} aria-pressed={active === index} aria-controls={`hero-slide-${index}`} onClick={() => goTo(index)}
-                className={`relative min-w-0 flex-1 cursor-pointer pt-4 text-left transition-colors duration-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-light max-sm:pt-3 ${active === index ? "text-white" : "text-white/55"}`}>
-                <span className="absolute inset-x-0 top-0 h-[3px] overflow-hidden rounded-full bg-white/22">
-                  <span ref={(element) => { progressRefs.current[index] = element; }} className="block size-full origin-left [transform:scaleX(0)] bg-brand-light" />
-                </span>
+                className={`group relative min-w-0 flex-1 cursor-pointer text-left transition-colors duration-300 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-light ${active === index ? "text-white" : "text-white/55"}`}>
+                {/* Geometría del paisaje: el trazo tenue es la guía y el trazo de color marca el avance. */}
+                <svg aria-hidden="true" viewBox="0 0 120 24" fill="none" strokeLinecap="round" strokeLinejoin="round"
+                  className="mx-auto mb-2 block h-auto w-full max-w-[150px] overflow-visible sm:mx-0 sm:mb-3">
+                  <path d={LANDSCAPE_GEOMETRY[slide.id]?.d} stroke={LANDSCAPE_GEOMETRY[slide.id]?.color} strokeWidth="3" strokeOpacity={active === index ? 0.5 : 0.45}
+                    className="transition-[stroke-opacity] duration-300 group-hover:[stroke-opacity:.75]" />
+                  <path ref={(element) => { progressRefs.current[index] = element; }} d={LANDSCAPE_GEOMETRY[slide.id]?.d} stroke={LANDSCAPE_GEOMETRY[slide.id]?.color} strokeWidth="3.6"
+                    pathLength={1} strokeDasharray="1 1" strokeOpacity={active === index ? 1 : 0} style={{ strokeDashoffset: 1, filter: `drop-shadow(0 0 4px ${LANDSCAPE_GEOMETRY[slide.id]?.color ?? "#fff"}88)` }} />
+                </svg>
                 <span className="block font-display text-center text-[10px] font-medium leading-tight sm:text-left sm:text-lg">{slide.tab}</span>
                 <span className="mt-1 block text-xs opacity-80 sm:text-sm max-[900px]:hidden">{slide.subtitle}</span>
               </button>

@@ -127,7 +127,15 @@ function LangSwitch() {
   </div>;
 }
 
-/** Botón conmemorativo de los 30 años */
+/** Botón conmemorativo de los 30 años: anillo dorado, halo suave y un destello periódico. */
+const anniversaryStyles = `
+@keyframes anniv-shine { 0%, 72% { transform: translateX(-130%) rotate(20deg); } 88%, 100% { transform: translateX(130%) rotate(20deg); } }
+@keyframes anniv-halo { 0%, 100% { box-shadow: 0 0 0 0 rgba(212,168,67,.55), 0 6px 16px -6px rgba(0,0,0,.35); } 50% { box-shadow: 0 0 0 7px rgba(212,168,67,0), 0 6px 16px -6px rgba(0,0,0,.35); } }
+@media (prefers-reduced-motion: no-preference) {
+  .anniv-badge { animation: anniv-halo 3s ease-in-out infinite; }
+  .anniv-shine { animation: anniv-shine 5s ease-in-out infinite; }
+}
+`;
 function AnniversaryBadge({ onClick }: { onClick?: (() => void) | undefined }) {
   const { lang } = useI18n();
   return (
@@ -135,19 +143,21 @@ function AnniversaryBadge({ onClick }: { onClick?: (() => void) | undefined }) {
       to="/noticias"
       onClick={onClick}
       aria-label={lang === "es" ? "30 aniversario" : "30th anniversary"}
-      className="group relative inline-flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[#e6d3a2] bg-[#fdfbf5] text-brand-deep shadow-sm transition-[transform,box-shadow,background-color] duration-300 hover:bg-white hover:shadow-lg hover:shadow-black/15 motion-safe:hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-light focus-visible:ring-offset-2 sm:size-[52px]"
+      title={lang === "es" ? "30 años conservando las aves de Bolivia" : "30 years protecting Bolivia’s birds"}
+      className="anniv-badge group relative inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-[conic-gradient(from_200deg,#f6dd8a,#c9962e,#fbe9a8,#b8861f,#f6dd8a)] p-[3px] transition-transform duration-300 motion-safe:hover:-translate-y-0.5 motion-safe:hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-light focus-visible:ring-offset-2 sm:size-16"
     >
-      <span aria-hidden="true" className="pointer-events-none absolute inset-[3px] rounded-full border border-[#c7a45c]/65" />
-      <span aria-hidden="true" className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/80 to-transparent transition-transform duration-700 motion-safe:group-hover:translate-x-full" />
-      <span className="relative flex flex-col items-center leading-none">
-        <span className="font-display text-[23px] font-bold leading-none tracking-[-0.07em] sm:text-[25px]">30</span>
-        <span className="mt-0.5 text-[8px] font-bold uppercase tracking-[0.18em] text-[#826024]">
+      <style>{anniversaryStyles}</style>
+      <span className="relative flex size-full flex-col items-center justify-center overflow-hidden rounded-full bg-gradient-to-b from-white to-[#fbf6e9] text-brand-deep">
+        <span aria-hidden="true" className="pointer-events-none absolute inset-[3px] rounded-full border border-[#c9962e]/55" />
+        <span aria-hidden="true" className="anniv-shine pointer-events-none absolute -inset-y-2 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/90 to-transparent" style={{ transform: "translateX(-130%) rotate(20deg)" }} />
+        <svg aria-hidden="true" viewBox="0 0 24 12" fill="none" className="pointer-events-none absolute top-[7px] h-[7px] w-[14px] text-[#b8861f] sm:top-2 sm:h-2 sm:w-4">
+          <path d="M1 3C6 2 9 5 12 9C15 5 18 2 23 3C18 4 16 7 12 11C8 7 6 4 1 3Z" fill="currentColor" />
+        </svg>
+        <span className="relative mt-1.5 font-display text-[24px] font-bold leading-none tracking-[-0.06em] text-brand-deep sm:text-[28px]">30</span>
+        <span className="relative mt-0.5 text-[8px] font-extrabold uppercase leading-none tracking-[0.2em] text-[#8a6418] sm:text-[9px]">
           {lang === "es" ? "años" : "years"}
         </span>
       </span>
-      <svg aria-hidden="true" viewBox="0 0 24 12" fill="none" className="pointer-events-none absolute right-[5px] top-[5px] h-[7px] w-[13px] text-brand-deep">
-        <path d="M1 3C6 2 9 5 12 9C15 5 18 2 23 3C18 4 16 7 12 11C8 7 6 4 1 3Z" fill="currentColor" />
-      </svg>
     </Link>
   );
 }
