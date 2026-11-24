@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronDown, ChevronRight, Home, Menu, X } from "lucide-react";
 import { useI18n, type Lang } from "@/i18n/I18nProvider";
+import { rutaInterna } from "@/config/rutas";
 import { Logo } from "./Logo";
 import { listarPaisajesPublicos, type PaisajePublicoResumen } from "@/api/paisajesPublicosApi";
 import { listarProgramasPublicos, type ProgramaPublicoResumen } from "@/api/programasPublicosApi";
@@ -171,7 +172,9 @@ function DropdownItem({
   onNavigate?: (() => void) | undefined;
 }) {
   const { lang, t } = useI18n();
-  const { pathname, hash } = useLocation();
+  const { pathname: urlPathname, hash } = useLocation();
+  // Las URLs localizadas (/news/, /support-us/…) se comparan con su ruta interna.
+  const pathname = rutaInterna(urlPathname);
   const label = item.es.startsWith("landscapes.items.") ? t(item.es) : pick(lang, item.es, item.en);
   const hasChildren = !!item.children?.length;
   const href = `${item.to}${item.hash ? `#${item.hash}` : ""}`;
@@ -323,7 +326,9 @@ export function Header() {
   const [paisajesPublicos, setPaisajesPublicos] = useState<PaisajePublicoResumen[]>([]);
   const [programasPublicos, setProgramasPublicos] = useState<ProgramaPublicoResumen[]>([]);
   const [scrolled, setScrolled] = useState(() => window.scrollY > 40);
-  const { pathname, key: locationKey } = useLocation();
+  const { pathname: rawPathname, key: locationKey } = useLocation();
+  // Las URLs localizadas (/es, /en, /news/…) se tratan como su ruta interna.
+  const pathname = rutaInterna(rawPathname);
   const navigate = useNavigate();
   const goBack = () => {
     if (typeof window.history.state?.idx === "number" && window.history.state.idx > 0) {
