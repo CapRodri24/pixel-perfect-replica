@@ -426,12 +426,16 @@ export default function NoticiasAdmin() {
                       <button type="button" className={`${secondary} text-red-700`} title="Quitar bloque" onClick={() => patch({ bloques: borrador.bloques.filter((x) => x.localId !== b.localId) })}><Trash2 className="size-4" /></button>
                     </div>
                   </div>
-                  {(["parrafo", "subtitulo"].includes(b.tipo) || b.tipo === "enlace") && (
+                  {(b.tipo === "subtitulo" || b.tipo === "enlace") && (
                     <label className="block text-sm font-medium">{b.tipo === "enlace" ? "Texto del enlace" : "Contenido"} ({idioma.toUpperCase()})
-                      {b.tipo === "subtitulo" || b.tipo === "enlace" ?
-                        <input className={field} value={(idioma === "es" ? b.texto_es : b.texto_en) || ""} onChange={(e) => patchBloque(b.localId, { [idioma === "es" ? "texto_es" : "texto_en"]: e.target.value })} /> :
-                        <TextoEnriquecido label={`Párrafo ${idioma.toUpperCase()}`} value={(idioma === "es" ? b.texto_es : b.texto_en) || ""} onChange={(value) => patchBloque(b.localId, { [idioma === "es" ? "texto_es" : "texto_en"]: value })} />}
+                      <input className={field} value={(idioma === "es" ? b.texto_es : b.texto_en) || ""} onChange={(e) => patchBloque(b.localId, { [idioma === "es" ? "texto_es" : "texto_en"]: e.target.value })} />
                     </label>
+                  )}
+                  {/* El editor de párrafo NO puede ir dentro de un <label>: el navegador reenvía cada clic al primer botón (Negrita). */}
+                  {b.tipo === "parrafo" && (
+                    <div className="block text-sm font-medium">Contenido ({idioma.toUpperCase()})
+                      <TextoEnriquecido label={`Párrafo ${idioma.toUpperCase()}`} value={(idioma === "es" ? b.texto_es : b.texto_en) || ""} onChange={(value) => patchBloque(b.localId, { [idioma === "es" ? "texto_es" : "texto_en"]: value })} />
+                    </div>
                   )}
                   {(b.tipo === "imagen") && <ImagenEditor idioma={idioma} imagen={b.imagen} onChange={(imagen) => patchBloque(b.localId, { imagen })} onRemove={() => setBorrador((old) => old ? { ...old, bloques: old.bloques.map((bloque) => { if (bloque.localId !== b.localId) return bloque; const { imagen: _imagen, ...resto } = bloque; return resto; }) } : null)} />}
                   {b.tipo === "carrusel" && <div className="space-y-3">
