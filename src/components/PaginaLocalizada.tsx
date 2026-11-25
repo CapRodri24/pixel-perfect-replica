@@ -18,7 +18,7 @@ export function PaginaLocalizada({ clave, children }: { clave: ClaveRuta; childr
 
   // La URL manda: al entrar por una dirección localizada se usa su idioma.
   useEffect(() => {
-    if (idiomaUrl && idiomaUrl !== lang) setLang(idiomaUrl);
+    if (idiomaUrl && idiomaUrl !== lang) setLang(idiomaUrl, { guardar: false });
     // Solo al cambiar de URL; los cambios de idioma posteriores los maneja el efecto siguiente.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idiomaUrl]);
