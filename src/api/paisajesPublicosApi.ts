@@ -14,10 +14,6 @@ export type PaisajePublicoResumen = {
 
 export type FotoPublica = {
   id_imagen: string;
-  alt_es: string | null;
-  alt_en: string | null;
-  descripcion_es: string | null;
-  descripcion_en: string | null;
   credito: string | null;
   pie_es?: string | null;
   pie_en?: string | null;

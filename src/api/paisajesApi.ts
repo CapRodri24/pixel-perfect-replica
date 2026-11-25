@@ -4,10 +4,6 @@ export type ImagenPaisaje = {
   id_imagen?: string;
   archivo?: string;
   nombre_archivo?: string;
-  alt_es?: string;
-  alt_en?: string;
-  descripcion_es?: string;
-  descripcion_en?: string;
   credito?: string;
 };
 

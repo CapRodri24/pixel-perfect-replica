@@ -69,22 +69,19 @@ function ImagenEditor({ imagen, idioma, onChange, onRemove }: {
     reader.onerror = () => setError("No se pudo leer la imagen.");
     reader.onload = () => {
       if (typeof reader.result === "string") onChange({
-        archivo: reader.result, nombre_archivo: file.name,
-        alt_es: "", alt_en: "", descripcion_es: "", descripcion_en: "", credito: "",
+        archivo: reader.result, nombre_archivo: file.name, credito: "",
       });
     };
     reader.readAsDataURL(file);
   }
   function cambiar(campo: keyof ImagenPaisaje, valor: string) {
     if (!imagen) return;
-    // El inglés se vuelve a traducir al guardar si cambia el texto en español.
-    const ingles = campo === "alt_es" ? { alt_en: "" } : campo === "descripcion_es" ? { descripcion_en: "" } : {};
-    onChange({ ...imagen, ...ingles, [campo]: valor });
+    onChange({ ...imagen, [campo]: valor });
   }
   return (
     <div className="space-y-3 rounded-xl border border-border bg-background p-3">
       {imagen && textoImagen(imagen) && (
-        <img src={textoImagen(imagen)} alt={imagen.alt_es || "Vista previa"} className="max-h-52 w-full rounded-xl object-contain" />
+        <img src={textoImagen(imagen)} alt="Vista previa" className="max-h-52 w-full rounded-xl object-contain" />
       )}
       <div className="flex flex-wrap items-center gap-2">
         <label className={`${secondary} cursor-pointer`}>
@@ -95,12 +92,6 @@ function ImagenEditor({ imagen, idioma, onChange, onRemove }: {
       </div>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       {imagen && <div className="grid gap-3 sm:grid-cols-2">
-        <label className="text-sm font-medium sm:col-span-2">Texto alternativo
-          <input className={field} value={idioma === "es" ? (imagen.alt_es || "") : (imagen.alt_en || "")} onChange={(e) => cambiar(idioma === "es" ? "alt_es" : "alt_en", e.target.value)} />
-        </label>
-        <label className="text-sm font-medium sm:col-span-2">Descripción
-          <textarea className={field} rows={2} value={idioma === "es" ? (imagen.descripcion_es || "") : (imagen.descripcion_en || "")} onChange={(e) => cambiar(idioma === "es" ? "descripcion_es" : "descripcion_en", e.target.value)} />
-        </label>
         <label className="text-sm font-medium sm:col-span-2">Crédito fotográfico
           <input className={field} value={imagen.credito || ""} onChange={(e) => cambiar("credito", e.target.value)} />
         </label>
@@ -133,9 +124,9 @@ function VistaPrevia({ borrador, idioma }: { borrador: BorradorLocal; idioma: "e
         const pie = idioma === "es" ? b.pie_es : b.pie_en;
         if (b.tipo === "subtitulo") return <h3 key={b.localId} className="font-display text-xl text-brand-deep">{texto}</h3>;
         if (b.tipo === "parrafo") return <div key={b.localId} className="whitespace-pre-wrap leading-relaxed text-black" dangerouslySetInnerHTML={{ __html: sanitize(texto || "") }} />;
-        if (b.tipo === "imagen") return <figure key={b.localId}>{textoImagen(b.imagen) && <img src={textoImagen(b.imagen)} alt={idioma === "es" ? b.imagen?.alt_es : b.imagen?.alt_en} className="w-full rounded-xl" />}{pie && <figcaption className="mt-2 text-xs text-muted-foreground">{pie}</figcaption>}</figure>;
+        if (b.tipo === "imagen") return <figure key={b.localId}>{textoImagen(b.imagen) && <img src={textoImagen(b.imagen)} alt="" className="w-full rounded-xl" />}{pie && <figcaption className="mt-2 text-xs text-muted-foreground">{pie}</figcaption>}</figure>;
         if (b.tipo === "carrusel") return <figure key={b.localId}><Gallery images={(b.imagenes || []).map((foto) => textoImagen(foto)).filter(Boolean)} />{pie && <figcaption className="mt-2 text-xs text-muted-foreground">{pie}</figcaption>}</figure>;
-        if (b.tipo === "enlace") return <a key={b.localId} className="text-primary underline" href={b.url || "#"} target="_blank" rel="noreferrer">{texto || b.url}</a>;
+        if (b.tipo === "enlace") return <a key={b.localId} className="break-all text-primary underline" href={b.url || "#"} target="_blank" rel="noreferrer">{b.url}</a>;
         return <div key={b.localId}><Video url={b.url || ""} /></div>;
       })}
     </div>
@@ -229,7 +220,7 @@ export default function PaisajesAdmin() {
       const reader = new FileReader();
       reader.onerror = () => reject(new Error("No se pudo leer la fotografía."));
       reader.onload = () => typeof reader.result === "string"
-        ? resolve({ archivo: reader.result, nombre_archivo: file.name, alt_es: "", alt_en: "", descripcion_es: "", descripcion_en: "", credito: "" })
+        ? resolve({ archivo: reader.result, nombre_archivo: file.name, credito: "" })
         : reject(new Error("No se pudo leer la fotografía."));
       reader.readAsDataURL(file);
     });
@@ -270,18 +261,10 @@ export default function PaisajesAdmin() {
         ...(bloque.imagenes ? { imagenes: bloque.imagenes.map((imagen) => ({ ...imagen })) } : {}),
       })),
     };
-    const fotos = traducido.bloques.flatMap((bloque) =>
-      bloque.tipo === "imagen"
-        ? (bloque.imagen ? [bloque.imagen] : [])
-        : bloque.tipo === "carrusel" ? (bloque.imagenes || []) : []
-    );
     const faltaIngles = (traducido.titulo_es.trim() && !traducido.titulo_en.trim()) ||
       traducido.bloques.some((bloque) =>
-        (["parrafo", "subtitulo", "enlace"].includes(bloque.tipo) && plain(bloque.texto_es || "") && !plain(bloque.texto_en || "")) ||
+        (["parrafo", "subtitulo"].includes(bloque.tipo) && plain(bloque.texto_es || "") && !plain(bloque.texto_en || "")) ||
         (bloque.pie_es?.trim() && !bloque.pie_en?.trim())
-      ) || fotos.some((foto) =>
-        (foto.alt_es?.trim() && !foto.alt_en?.trim()) ||
-        (foto.descripcion_es?.trim() && !foto.descripcion_en?.trim())
       );
     if (!faltaIngles) return traducido;
 
@@ -290,20 +273,12 @@ export default function PaisajesAdmin() {
         traducido.titulo_en = await traducir(traducido.titulo_es);
       }
       for (const bloque of traducido.bloques) {
-        if (["parrafo", "subtitulo", "enlace"].includes(bloque.tipo) &&
+        if (["parrafo", "subtitulo"].includes(bloque.tipo) &&
             plain(bloque.texto_es || "") && !plain(bloque.texto_en || "")) {
           bloque.texto_en = await traducir(bloque.texto_es || "", bloque.tipo === "parrafo");
         }
         if (bloque.pie_es?.trim() && !bloque.pie_en?.trim()) {
           bloque.pie_en = await traducir(bloque.pie_es);
-        }
-      }
-      for (const foto of fotos) {
-        if (foto.alt_es?.trim() && !foto.alt_en?.trim()) {
-          foto.alt_en = await traducir(foto.alt_es);
-        }
-        if (foto.descripcion_es?.trim() && !foto.descripcion_en?.trim()) {
-          foto.descripcion_en = await traducir(foto.descripcion_es);
         }
       }
     });
@@ -399,8 +374,8 @@ export default function PaisajesAdmin() {
                       <button type="button" className={`${secondary} text-red-700`} title="Quitar bloque" onClick={() => patch({ bloques: borrador.bloques.filter((x) => x.localId !== b.localId) })}><Trash2 className="size-4" /></button>
                     </div>
                   </div>
-                  {(b.tipo === "subtitulo" || b.tipo === "enlace") && (
-                    <label className="block text-sm font-medium">{b.tipo === "enlace" ? "Texto del enlace" : "Contenido"}
+                  {b.tipo === "subtitulo" && (
+                    <label className="block text-sm font-medium">Contenido
                       <input className={field} value={b.texto_es || ""} onChange={(e) => patchBloque(b.localId, { texto_es: e.target.value, texto_en: "" })} />
                     </label>
                   )}

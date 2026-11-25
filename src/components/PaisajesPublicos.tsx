@@ -47,9 +47,9 @@ function Galeria({ fotos, pie }: { fotos: FotoPublica[]; pie: string }) {
   if (fotos.length === 0) return null;
   const actual = fotos[indice % fotos.length];
   if (!actual) return null;
-  const alt = (lang === "es" ? actual.alt_es : actual.alt_en) || (lang === "es" ? actual.descripcion_es : actual.descripcion_en) || "";
   const credit = actual.credito || "";
-  const descripcion = (lang === "es" ? actual.pie_es || actual.descripcion_es : actual.pie_en || actual.descripcion_en) || "";
+  const descripcion = (lang === "es" ? actual.pie_es : actual.pie_en) || "";
+  const alt = descripcion || pie;
   return <figure className="space-y-3">
     <div className="relative overflow-hidden rounded-2xl">
       <Imagen id={actual.id_imagen} alt={alt} className="aspect-[4/3] w-full object-contain bg-muted sm:aspect-video" />
@@ -70,12 +70,11 @@ function RenderBloque({ bloque }: { bloque: BloquePublico }) {
   if (bloque.tipo === "parrafo") return <div className="whitespace-pre-wrap break-words text-base leading-[1.8] text-black sm:text-lg" dangerouslySetInnerHTML={{ __html: sanitize(text) }} />;
   if (bloque.tipo === "subtitulo") return <h2 className="pt-3 font-display text-2xl font-semibold leading-tight text-brand-deep sm:text-3xl">{text.replace(/<[^>]*>/g, "")}</h2>;
   if (bloque.tipo === "imagen") {
-    const alt = (lang === "es" ? bloque.imagen?.alt_es : bloque.imagen?.alt_en) || "";
-    const descripcion = (lang === "es" ? bloque.imagen?.descripcion_es : bloque.imagen?.descripcion_en) || "";
-    return <figure><Imagen id={bloque.id_imagen} alt={alt} className="max-h-[650px] w-full rounded-2xl bg-muted object-contain" />{(pie || descripcion || bloque.imagen?.credito) && <figcaption className="mt-3 text-center text-sm text-muted-foreground">{pie || descripcion}{(pie || descripcion) && bloque.imagen?.credito ? " · " : ""}{bloque.imagen?.credito || ""}</figcaption>}</figure>;
+    const credito = bloque.imagen?.credito || "";
+    return <figure><Imagen id={bloque.id_imagen} alt={pie} className="max-h-[650px] w-full rounded-2xl bg-muted object-contain" />{(pie || credito) && <figcaption className="mt-3 text-center text-sm text-muted-foreground">{pie}{pie && credito ? " · " : ""}{credito}</figcaption>}</figure>;
   }
   if (bloque.tipo === "carrusel") return <Galeria fotos={bloque.imagenes || []} pie={pie} />;
-  if (bloque.tipo === "video" || bloque.tipo === "enlace") return bloque.url ? <Youtube url={bloque.url} titulo={text || "YouTube"} /> : null;
+  if (bloque.tipo === "video" || bloque.tipo === "enlace") return bloque.url ? <Youtube url={bloque.url} titulo="YouTube" /> : null;
   return null;
 }
 

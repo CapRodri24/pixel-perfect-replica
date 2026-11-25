@@ -370,8 +370,8 @@ function bloquesEditoriales(bloques: BloquePublico[], es: boolean): EditorialBlo
     switch (b.tipo) {
       case "parrafo": out.push({type:"paragraph",text,html:true}); break;
       case "subtitulo": out.push({type:"heading",text:textoPlano(text)}); break;
-      case "imagen": out.push({type:"image",src:imagenProgramaUrl(b.id_imagen)||"",alt:(es?b.imagen?.alt_es:b.imagen?.alt_en)||"",caption:leyenda(pie || (es?b.imagen?.descripcion_es:b.imagen?.descripcion_en),b.imagen?.credito)}); break;
-      case "carrusel": out.push({type:"gallery",images:(b.imagenes||[]).map(f=>({src:imagenProgramaUrl(f.id_imagen)||"",alt:(es?f.alt_es:f.alt_en)||"",caption:leyenda((es?f.pie_es:f.pie_en)||pie||(es?f.descripcion_es:f.descripcion_en),f.credito)}))}); break;
+      case "imagen": out.push({type:"image",src:imagenProgramaUrl(b.id_imagen)||"",alt:pie,caption:leyenda(pie,b.imagen?.credito)}); break;
+      case "carrusel": out.push({type:"gallery",images:(b.imagenes||[]).map(f=>({src:imagenProgramaUrl(f.id_imagen)||"",alt:(es?f.pie_es:f.pie_en)||pie,caption:leyenda((es?f.pie_es:f.pie_en)||pie,f.credito)}))}); break;
       case "enlace": case "video": {
         if (!b.url) break;
         try {
@@ -379,11 +379,11 @@ function bloquesEditoriales(bloques: BloquePublico[], es: boolean): EditorialBlo
           if (!["https:", "http:"].includes(url.protocol)) break;
           const id = videoId(url);
           if (id) {
-            const video = {id,title:textoPlano(text)||"YouTube"};
+            const video = {id,title:"YouTube"};
             const last = out[out.length-1];
             if (last?.type === "videos") last.videos.push(video);
             else out.push({type:"videos",videos:[video]});
-          } else out.push({type:"link",url:url.href,text:textoPlano(text)||url.hostname});
+          } else out.push({type:"link",url:url.href,text:url.hostname});
         } catch { /* URL inválida: omitir */ }
         break;
       }

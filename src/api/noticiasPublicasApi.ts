@@ -3,7 +3,7 @@ const API_URL = String(import.meta.env["VITE_API_URL"] || "http://localhost:5000
 export const imagenNoticiaUrl = (id: string | null | undefined) => id ? `${API_URL}/noticias/imagenes/${encodeURIComponent(id)}` : "";
 export type NoticiaPublicaBase = { id_noticia: string; id_programa: string | null; id_categoria_noticia: string; categoria_es: string; categoria_en: string; programa_titulo_es: string | null; programa_titulo_en: string | null; titulo_es: string; titulo_en: string; fecha_publicacion: string; };
 export type NoticiaPublicaResumen = NoticiaPublicaBase & { id_imagen_portada: string | null; descripcion_es: string | null; descripcion_en: string | null; };
-export type NoticiaPublicaDetalle = NoticiaPublicaBase & { id_contenido: string; bloques: BloquePublico[]; };
+export type NoticiaPublicaDetalle = NoticiaPublicaBase & { id_contenido: string; autor: string | null; bloques: BloquePublico[]; };
 type Respuesta<T> = { success: boolean; data?: T; message?: string };
 
 async function obtener<T>(path: string, signal?: AbortSignal): Promise<T> {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, CalendarDays } from "lucide-react";
+import { ArrowLeft, CalendarDays, PenLine } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { BloquePublico } from "@/api/paisajesPublicosApi";
 import { obtenerNoticiaPublica, imagenNoticiaUrl, type NoticiaPublicaDetalle } from "@/api/noticiasPublicasApi";
@@ -24,8 +24,8 @@ function bloquesEditoriales(bloques: BloquePublico[], es: boolean): EditorialBlo
     switch (b.tipo) {
       case "parrafo": out.push({type:"paragraph",text,html:true}); break;
       case "subtitulo": out.push({type:"heading",text:textoPlano(text)}); break;
-      case "imagen": out.push({type:"image",src:imagenNoticiaUrl(b.id_imagen)||"",alt:(es?b.imagen?.alt_es:b.imagen?.alt_en)||"",caption:leyenda(pie || (es?b.imagen?.descripcion_es:b.imagen?.descripcion_en),b.imagen?.credito)}); break;
-      case "carrusel": out.push({type:"gallery",images:(b.imagenes||[]).map(f=>({src:imagenNoticiaUrl(f.id_imagen)||"",alt:(es?f.alt_es:f.alt_en)||"",caption:leyenda((es?f.pie_es:f.pie_en)||pie||(es?f.descripcion_es:f.descripcion_en),f.credito)}))}); break;
+      case "imagen": out.push({type:"image",src:imagenNoticiaUrl(b.id_imagen)||"",alt:pie,caption:leyenda(pie,b.imagen?.credito)}); break;
+      case "carrusel": out.push({type:"gallery",images:(b.imagenes||[]).map(f=>({src:imagenNoticiaUrl(f.id_imagen)||"",alt:(es?f.pie_es:f.pie_en)||pie,caption:leyenda((es?f.pie_es:f.pie_en)||pie,f.credito)}))}); break;
       case "enlace": case "video": {
         if (!b.url) break;
         try {
@@ -33,11 +33,11 @@ function bloquesEditoriales(bloques: BloquePublico[], es: boolean): EditorialBlo
           if (!["https:", "http:"].includes(url.protocol)) break;
           const id = videoId(url);
           if (id) {
-            const video = {id,title:textoPlano(text)||"YouTube"};
+            const video = {id,title:"YouTube"};
             const last = out[out.length-1];
             if (last?.type === "videos") last.videos.push(video);
             else out.push({type:"videos",videos:[video]});
-          } else out.push({type:"link",url:url.href,text:textoPlano(text)||url.hostname});
+          } else out.push({type:"link",url:url.href,text:url.hostname});
         } catch { /* URL inválida: omitir */ }
         break;
       }
@@ -65,6 +65,7 @@ export default function FormatoNoticias({id}:{id:string}) {
       {data.id_programa&&<Link to={`/programas?programa=${encodeURIComponent(data.id_programa)}`} className="mb-6 inline-block text-sm font-semibold text-primary hover:underline">{es?data.programa_titulo_es:data.programa_titulo_en}</Link>}
       <EditorialContent key={id} blocks={bloquesEditoriales(data.bloques,es)}/>
       {!data.bloques.length&&<p className="text-muted-foreground">{es?"Próximamente compartiremos más información.":"More information will be available soon."}</p>}
+      {data.autor?.trim()&&<p className="mt-10 flex items-center gap-2 border-t border-border pt-6 text-sm text-muted-foreground sm:text-base"><PenLine aria-hidden="true" className="size-4 shrink-0 text-primary"/><span className="italic">{es?"Texto escrito por:":"Written by:"}</span><span className="font-semibold text-brand-deep">{data.autor.trim()}</span></p>}
     </>}
   </div></div></article>;
 }

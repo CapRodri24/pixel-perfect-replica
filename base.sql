@@ -16,19 +16,12 @@ CREATE TABLE usuario (
 );
 
 -- 2. IMÁGENES: se guarda el archivo binario directamente en PostgreSQL (BYTEA).
--- alt_es / alt_en: texto alternativo para accesibilidad, lectores de pantalla
--- y cuando una imagen no puede visualizarse. No es la descripción editorial.
--- descripcion_es / descripcion_en: explicación o descripción de la fotografía.
 -- credito: autoría o crédito fotográfico.
 CREATE TABLE imagen (
     id_imagen BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     archivo BYTEA NOT NULL,
     nombre_archivo VARCHAR(255),
     mime VARCHAR(30) NOT NULL CHECK (mime IN ('image/jpeg', 'image/png', 'image/webp', 'image/gif')),
-    alt_es TEXT,
-    alt_en TEXT,
-    descripcion_es TEXT,
-    descripcion_en TEXT,
     credito TEXT,
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
     CONSTRAINT imagen_archivo_no_vacio CHECK (octet_length(archivo) > 0)
@@ -84,7 +77,9 @@ CREATE TABLE noticia (
     id_noticia BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_contenido BIGINT NOT NULL UNIQUE REFERENCES contenido_editorial(id_contenido) ON DELETE CASCADE,
     id_programa BIGINT REFERENCES programa(id_programa) ON DELETE SET NULL,
-    id_categoria_noticia VARCHAR(30) NOT NULL REFERENCES categoria_noticia(id_categoria_noticia)
+    id_categoria_noticia VARCHAR(30) NOT NULL REFERENCES categoria_noticia(id_categoria_noticia),
+    autor VARCHAR(200),
+    CONSTRAINT noticia_autor_no_vacio CHECK (autor IS NULL OR btrim(autor) <> '')
 );
 
 -- 8. BLOQUES EDITORIALES CON ORDEN LIBRE.
@@ -358,18 +353,15 @@ CREATE INDEX idx_recurso_pdf_orden ON recurso_pdf (id_recurso, orden);
 COMMENT ON COLUMN imagen.archivo IS 'Contenido binario de la imagen, almacenado en PostgreSQL mediante BYTEA.';
 COMMENT ON COLUMN imagen.nombre_archivo IS 'Nombre original del archivo, por ejemplo paraba-barba-azul.jpg.';
 COMMENT ON COLUMN imagen.mime IS 'Tipo de archivo de imagen: JPEG, PNG, WEBP o GIF.';
-COMMENT ON COLUMN imagen.alt_es IS 'Texto alternativo en español para accesibilidad y lectores de pantalla.';
-COMMENT ON COLUMN imagen.alt_en IS 'Texto alternativo en inglés para accesibilidad y lectores de pantalla.';
-COMMENT ON COLUMN imagen.descripcion_es IS 'Descripción de la imagen en español, independiente del texto alternativo.';
-COMMENT ON COLUMN imagen.descripcion_en IS 'Descripción de la imagen en inglés, independiente del texto alternativo.';
 COMMENT ON COLUMN imagen.credito IS 'Nombre de quien tomó la fotografía o fuente que debe recibir crédito.';
 COMMENT ON COLUMN imagen.created_at IS 'Fecha y hora de incorporación de la imagen en horario de La Paz.';
 COMMENT ON COLUMN archivo_pdf.archivo IS 'Contenido binario completo del documento PDF, sin ruta externa.';
 COMMENT ON COLUMN archivo_pdf.nombre_archivo IS 'Nombre del archivo PDF original.';
 COMMENT ON COLUMN archivo_pdf.mime IS 'Tipo MIME del archivo; siempre application/pdf.';
 COMMENT ON COLUMN archivo_pdf.tamano_bytes IS 'Tamaño del PDF, calculado automáticamente en bytes desde el BYTEA.';
+COMMENT ON COLUMN noticia.autor IS 'Nombre de quien escribió la noticia; se muestra al final como «Texto escrito por».';
 COMMENT ON COLUMN bloque_editorial.orden IS 'Posición del bloque bajo el título fijo: 1, 2, 3, etc.';
-COMMENT ON COLUMN bloque_editorial.texto_es IS 'Contenido textual en español para bloques de párrafo, subtítulo o enlace.';
+COMMENT ON COLUMN bloque_editorial.texto_es IS 'Contenido textual en español para bloques de párrafo o subtítulo.';
 COMMENT ON COLUMN bloque_editorial.texto_en IS 'Contenido textual en inglés del mismo bloque.';
 COMMENT ON COLUMN bloque_editorial.pie_es IS 'Pie de imagen o de galería en español, opcional.';
 COMMENT ON COLUMN bloque_editorial.pie_en IS 'Pie de imagen o de galería en inglés, opcional.';

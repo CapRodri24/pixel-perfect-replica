@@ -3,6 +3,7 @@ import { Mail, Phone, MapPin, MessageCircle } from "lucide-react";
 import type { SVGProps } from "react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { Logo } from "./Logo";
+import { REDES_SOCIALES } from "@/config/redesSociales";
 
 const FacebookIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -22,14 +23,21 @@ const YoutubeIcon = (props: SVGProps<SVGSVGElement>) => (
   </svg>
 );
 
+const XIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+    <path d="M18.24 2.25h3.31l-7.23 8.26 8.5 11.24h-6.65l-5.21-6.82-5.97 6.82H1.68l7.73-8.84L1.25 2.25h6.83l4.71 6.23 5.45-6.23zm-1.16 17.52h1.83L7.08 4.13H5.12l11.96 15.64z" />
+  </svg>
+);
+
 export function Footer() {
   const { t, lang } = useI18n();
   const es = lang === "es";
   const link = "inline-flex items-center gap-2 text-sm text-primary-foreground/85 transition-colors hover:text-primary-foreground focus-visible:underline";
   const socials = [
-    { Icon: FacebookIcon, name: "Facebook", href: "https://www.facebook.com/armoniabolivia" },
-    { Icon: InstagramIcon, name: "Instagram", href: "https://www.instagram.com/armonia.bolivia/" },
-    { Icon: YoutubeIcon, name: "YouTube", href: "https://www.youtube.com/channel/UCIIFPr0yTWSeuJ3NPNz-8MQ" },
+    { Icon: InstagramIcon, name: REDES_SOCIALES.instagram.nombre, href: REDES_SOCIALES.instagram.url },
+    { Icon: FacebookIcon, name: REDES_SOCIALES.facebook.nombre, href: REDES_SOCIALES.facebook.url },
+    { Icon: XIcon, name: REDES_SOCIALES.x.nombre, href: REDES_SOCIALES.x.url },
+    { Icon: YoutubeIcon, name: REDES_SOCIALES.youtube.nombre, href: REDES_SOCIALES.youtube.url },
   ];
   const nav = [
     {href:"/nosotros",label:t<string>("nav.about")},

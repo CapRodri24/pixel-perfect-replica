@@ -18,6 +18,7 @@ export type NoticiaResumen = {
 };
 
 export type NoticiaDetalle = Omit<NoticiaResumen, "updated_at" | "cantidad_bloques"> & {
+  autor: string;
   bloques: BloquePaisaje[];
 };
 
@@ -26,6 +27,8 @@ export type NoticiaEntrada = {
   titulo_en: string;
   /** Fecha de la noticia en formato YYYY-MM-DD. */
   fecha_publicacion: string;
+  /** Nombre de quien escribió la noticia (opcional). */
+  autor: string;
   id_programa: string;
   id_categoria_noticia: string;
   bloques: BloquePaisaje[];
