@@ -1,49 +1,53 @@
-/* Identidad tipográfica de Asociación Armonía. */
+/* Identidad tipográfica de Asociación Armonía.
+   Avenir y Arial Nova son fuentes con licencia y el proyecto no incluye sus archivos:
+   se usan si están instaladas en el equipo; si no, se pasa a Arial.
+   Para servirlas a todos, copia los .woff2 con licencia web en public/fonts/ y agrega
+   de nuevo url("/fonts/<archivo>.woff2") format("woff2") en cada src. */
 @font-face {
   font-family: "Armonia Avenir";
-  src: local("Avenir Light"), local("Avenir-Light"), url("/fonts/Avenir-Light.woff2") format("woff2");
+  src: local("Avenir Light"), local("Avenir-Light");
   font-style: normal;
   font-weight: 300;
   font-display: swap;
 }
 @font-face {
   font-family: "Armonia Avenir";
-  src: local("Avenir Roman"), local("Avenir-Roman"), url("/fonts/Avenir-Roman.woff2") format("woff2");
+  src: local("Avenir Roman"), local("Avenir-Roman");
   font-style: normal;
   font-weight: 400;
   font-display: swap;
 }
 @font-face {
   font-family: "Armonia Avenir";
-  src: local("Avenir Black"), local("Avenir-Black"), url("/fonts/Avenir-Black.woff2") format("woff2");
+  src: local("Avenir Black"), local("Avenir-Black");
   font-style: normal;
   font-weight: 900;
   font-display: swap;
 }
 @font-face {
   font-family: "Armonia Arial Nova";
-  src: local("Arial Nova Light"), local("ArialNova-Light"), url("/fonts/ArialNova-Light.woff2") format("woff2");
+  src: local("Arial Nova Light"), local("ArialNova-Light");
   font-style: normal;
   font-weight: 300;
   font-display: swap;
 }
 @font-face {
   font-family: "Armonia Arial Nova";
-  src: local("Arial Nova"), local("ArialNova"), url("/fonts/ArialNova-Regular.woff2") format("woff2");
+  src: local("Arial Nova"), local("ArialNova");
   font-style: normal;
   font-weight: 400;
   font-display: swap;
 }
 @font-face {
   font-family: "Armonia Arial Nova";
-  src: local("Arial Nova Bold"), local("ArialNova-Bold"), url("/fonts/ArialNova-Bold.woff2") format("woff2");
+  src: local("Arial Nova Bold"), local("ArialNova-Bold");
   font-style: normal;
   font-weight: 700;
   font-display: swap;
 }
 @font-face {
   font-family: "Armonia Avenir Condensed";
-  src: local("Avenir Next Condensed Regular"), local("AvenirNextCondensed-Regular"), url("/fonts/AvenirNextCondensed-Regular.woff2") format("woff2");
+  src: local("Avenir Next Condensed Regular"), local("AvenirNextCondensed-Regular");
   font-style: normal;
   font-weight: 400;
   font-display: swap;

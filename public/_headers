@@ -1,3 +1,2 @@
-
 /*
-  Content-Security-Policy: script-src 'self'
+  Content-Security-Policy: script-src 'self' https://givebutter.com https://*.givebutter.com
