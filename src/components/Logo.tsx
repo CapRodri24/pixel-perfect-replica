@@ -1,7 +1,7 @@
 
 import { Link } from "react-router-dom";
 
-export function Logo({ light }: { light?: boolean }) {
+export function Logo({ light, className = "h-12" }: { light?: boolean; className?: string }) {
   return (
     <Link
       to="/"
@@ -15,7 +15,7 @@ export function Logo({ light }: { light?: boolean }) {
             : "/images/logo.png"
         }
         alt="Asociación Armonía"
-        className="h-12 w-auto object-contain rounded-none"
+        className={`${className} w-auto object-contain rounded-none`}
       />
     </Link>
   );

@@ -128,37 +128,21 @@ function LangSwitch() {
   </div>;
 }
 
-/** Botón conmemorativo de los 30 años: anillo dorado, halo suave y un destello periódico. */
-const anniversaryStyles = `
-@keyframes anniv-shine { 0%, 72% { transform: translateX(-130%) rotate(20deg); } 88%, 100% { transform: translateX(130%) rotate(20deg); } }
-@keyframes anniv-halo { 0%, 100% { box-shadow: 0 0 0 0 rgba(212,168,67,.55), 0 6px 16px -6px rgba(0,0,0,.35); } 50% { box-shadow: 0 0 0 7px rgba(212,168,67,0), 0 6px 16px -6px rgba(0,0,0,.35); } }
-@media (prefers-reduced-motion: no-preference) {
-  .anniv-badge { animation: anniv-halo 3s ease-in-out infinite; }
-  .anniv-shine { animation: anniv-shine 5s ease-in-out infinite; }
-}
-`;
-function AnniversaryBadge({ onClick }: { onClick?: (() => void) | undefined }) {
+/** Logo conmemorativo de los 30 años (1996-2026); lleva a las noticias. Del mismo tamaño visual que el logo principal. */
+function AnniversaryBadge({ onClick, className = "h-12 xl:h-[54px]" }: { onClick?: (() => void) | undefined; className?: string }) {
   const { lang } = useI18n();
   return (
     <Link
       to="/noticias"
       onClick={onClick}
-      aria-label={lang === "es" ? "30 aniversario" : "30th anniversary"}
       title={lang === "es" ? "30 años conservando las aves de Bolivia" : "30 years protecting Bolivia’s birds"}
-      className="anniv-badge group relative inline-flex size-14 shrink-0 items-center justify-center rounded-full bg-[conic-gradient(from_200deg,#f6dd8a,#c9962e,#fbe9a8,#b8861f,#f6dd8a)] p-[3px] transition-transform duration-300 motion-safe:hover:-translate-y-0.5 motion-safe:hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-light focus-visible:ring-offset-2 sm:size-16"
+      className="shrink-0 rounded-md transition-transform duration-300 motion-safe:hover:-translate-y-0.5 motion-safe:hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-light"
     >
-      <style>{anniversaryStyles}</style>
-      <span className="relative flex size-full flex-col items-center justify-center overflow-hidden rounded-full bg-gradient-to-b from-white to-[#fbf6e9] text-brand-deep">
-        <span aria-hidden="true" className="pointer-events-none absolute inset-[3px] rounded-full border border-[#c9962e]/55" />
-        <span aria-hidden="true" className="anniv-shine pointer-events-none absolute -inset-y-2 left-0 w-1/2 bg-gradient-to-r from-transparent via-white/90 to-transparent" style={{ transform: "translateX(-130%) rotate(20deg)" }} />
-        <svg aria-hidden="true" viewBox="0 0 24 12" fill="none" className="pointer-events-none absolute top-[7px] h-[7px] w-[14px] text-[#b8861f] sm:top-2 sm:h-2 sm:w-4">
-          <path d="M1 3C6 2 9 5 12 9C15 5 18 2 23 3C18 4 16 7 12 11C8 7 6 4 1 3Z" fill="currentColor" />
-        </svg>
-        <span className="relative mt-1.5 font-display text-[24px] font-bold leading-none tracking-[-0.06em] text-brand-deep sm:text-[28px]">30</span>
-        <span className="relative mt-0.5 text-[8px] font-extrabold uppercase leading-none tracking-[0.2em] text-[#8a6418] sm:text-[9px]">
-          {lang === "es" ? "años" : "years"}
-        </span>
-      </span>
+      <img
+        src="/images/logo-30-anos.png"
+        alt={lang === "es" ? "Armonía, 30 años (1996-2026)" : "Armonía, 30 years (1996-2026)"}
+        className={`${className} block w-auto object-contain [filter:drop-shadow(0_0_1px_rgba(255,255,255,.95))_drop-shadow(0_0_6px_rgba(255,255,255,.5))_drop-shadow(0_2px_6px_rgba(0,0,0,.35))]`}
+      />
     </Link>
   );
 }
@@ -422,7 +406,7 @@ export function Header() {
         <div className={`relative mx-auto flex max-w-[1600px] items-center justify-between gap-1 px-3 sm:gap-4 sm:px-8 transition-[height] duration-400 motion-reduce:transition-none ${scrolled ? "h-16 xl:h-[68px]" : "h-16 xl:h-20"}`}>
           <div className="flex min-w-0 items-center gap-1 sm:gap-2">
             {!isHome && <Button variant="ghost" size="icon" className="size-8 shrink-0 text-white hover:bg-white/10 hover:text-white xl:hidden" aria-label={pick(lang, "Volver atrás", "Go back")} onClick={goBack}><ArrowLeft className="size-5" /></Button>}
-            <Logo light />
+            <Logo light className="h-14 xl:h-16" />
           </div>
 
           <nav aria-label={pick(lang, "Principal", "Main navigation")} className="hidden xl:block">
