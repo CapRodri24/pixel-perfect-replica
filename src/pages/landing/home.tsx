@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
-import { ArrowRight, ChevronLeft, ChevronRight, Feather, Bird, Mountain, Trees } from "lucide-react";
+import { ArrowRight, ChevronLeft, ChevronRight, Feather, Bird, Mountain, Trees, Leaf, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
@@ -333,6 +333,13 @@ function IntroHome() {
     { number: 5, icon: Mountain, label: es ? "Paisajes de Bolivia" : "Landscapes of Bolivia" },
     { number: 3, icon: Trees, label: es ? "Reservas naturales" : "Nature reserves" },
   ];
+  // Los cuatro compromisos de Armonía (los mismos de Nosotros › Quiénes somos).
+  const whatWeDo = [
+    { icon: Bird, color: "#2381C4", text: es ? "Prevenimos la extinción de especies" : "We prevent species extinction" },
+    { icon: Trees, color: "#34734e", text: es ? "Conservamos hábitats clave" : "We conserve key habitats" },
+    { icon: Leaf, color: "#397c74", text: es ? "Impulsamos el uso sostenible" : "We promote sustainable use" },
+    { icon: Users, color: "#987020", text: es ? "Apoyamos a las comunidades" : "We support local communities" },
+  ];
   const reveal = visible ? "motion-safe:animate-[armonia-intro-reveal_850ms_cubic-bezier(.16,1,.3,1)_both]" : "";
   return (
     <section ref={sectionRef} id="quienes-somos-inicio" aria-labelledby="intro-home-title" className="relative isolate overflow-hidden bg-background py-16 sm:py-24 lg:py-28">
@@ -354,10 +361,30 @@ function IntroHome() {
             <div aria-hidden="true" className="absolute -right-3 -top-3 -z-10 h-2/3 w-2/3 rounded-[2rem] border-2 border-primary/25 sm:-right-5 sm:-top-5" />
           </div>
           <div className={reveal} style={visible ? { animationDelay: "120ms" } : undefined}>
-            <div className="flex items-center gap-3 text-primary"><span aria-hidden="true" className="h-px w-10 bg-primary"/><p className="text-sm font-bold uppercase tracking-[.18em]">{es ? "Quiénes somos" : "Who we are"}</p></div>
-            <h2 id="intro-home-title" className="mt-5 font-display text-[clamp(2rem,3.5vw,3.5rem)] font-black leading-[1.12] tracking-tight text-brand-deep">{es ? "Conservamos las aves" : "We conserve Bolivia’s birds"}<span className="block text-[#34734e]">{es ? "y sus hábitats en Bolivia." : "and their habitats."}</span></h2>
-            <p className="mt-6 text-lg leading-relaxed text-muted-foreground">{t("about.text")}</p>
-            <Link to="/nosotros" className="group mt-7 inline-flex min-h-12 items-center gap-4 rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-brand-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">{es ? "Conoce Armonía" : "Discover Armonía"}<ArrowRight className="size-5 motion-safe:transition-transform motion-safe:group-hover:translate-x-1" /></Link>
+            <div className="flex items-center gap-3 text-primary"><span aria-hidden="true" className="h-px w-10 bg-primary"/><p className="text-sm font-bold uppercase tracking-[.18em]">{es ? "Sobre Armonía" : "About Armonía"}</p></div>
+            <h2 id="intro-home-title" className="mt-4 font-display text-[clamp(1.9rem,3vw,3rem)] font-black leading-[1.12] tracking-tight text-brand-deep">{es ? "Conservamos las aves" : "We conserve Bolivia’s birds"}<span className="block text-[#34734e]">{es ? "y sus hábitats en Bolivia." : "and their habitats."}</span></h2>
+            <div className="mt-5 space-y-5">
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-[.14em] text-brand-deep">{es ? "Quiénes somos" : "Who we are"}</h3>
+                <p className="mt-1.5 text-base leading-relaxed text-muted-foreground">
+                  {es
+                    ? "Organización boliviana sin fines de lucro fundada en 1996. Trabajamos con comunidades locales, desde los Andes hasta la Amazonía, para proteger las aves más amenazadas del país."
+                    : "A Bolivian nonprofit founded in 1996. We work with local communities, from the Andes to the Amazon, to protect the country’s most threatened birds."}
+                </p>
+              </div>
+              <div>
+                <h3 className="text-sm font-bold uppercase tracking-[.14em] text-brand-deep">{es ? "Qué hacemos" : "What we do"}</h3>
+                <ul className="mt-2.5 grid gap-x-5 gap-y-2.5 sm:grid-cols-2">
+                  {whatWeDo.map(({ icon: Icon, color, text }) => (
+                    <li key={text} className="flex items-center gap-2.5">
+                      <span className="grid size-8 shrink-0 place-items-center rounded-full" style={{ backgroundColor: `${color}1a`, color }}><Icon aria-hidden="true" className="size-4" /></span>
+                      <span className="text-sm leading-snug text-foreground/85">{text}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+            <Link to="/nosotros" className="group mt-6 inline-flex min-h-12 items-center gap-4 rounded-full bg-primary px-6 py-3 text-base font-semibold text-primary-foreground shadow-sm transition-colors hover:bg-brand-deep focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">{es ? "Conoce Armonía" : "Discover Armonía"}<ArrowRight className="size-5 motion-safe:transition-transform motion-safe:group-hover:translate-x-1" /></Link>
           </div>
         </div>
         <div className={`relative mt-10 grid overflow-hidden rounded-[2rem] bg-brand-deep text-white shadow-card sm:mt-16 sm:grid-cols-3 ${reveal}`} style={visible ? { animationDelay: "240ms" } : undefined}>
