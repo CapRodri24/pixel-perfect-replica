@@ -5,7 +5,8 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { DonationParrot } from "./DonationParrot";
 
-export function DonationForm() {
+/** Formulario de Givebutter. Con `soloFormulario` se omite el título propio (para usarlo dentro de otra tarjeta). */
+export function DonationForm({ soloFormulario = false }: { soloFormulario?: boolean }) {
   const { lang } = useI18n();
   useEffect(() => {
     if (document.getElementById("givebutter-script")) return;
@@ -15,6 +16,7 @@ export function DonationForm() {
     script.id = "givebutter-script";
     document.head.appendChild(script);
   }, []);
+  if (soloFormulario) return <div id="givebutter-form" className="w-full min-w-0 min-h-64 scroll-mt-24"><givebutter-widget id="L4E3Vq" className="block w-full"/></div>;
   return <div id="givebutter-form" className="mx-auto w-full min-w-0 max-w-xl scroll-mt-24"><div className="flex items-center gap-3"><Heart className="size-6 shrink-0 text-primary"/><h2 className="text-3xl text-brand-deep">{lang === "es" ? "Donar" : "Donate"}</h2></div><p className="mt-3 text-muted-foreground">{lang === "es" ? "Tu aporte ayuda a proteger las aves y los paisajes de Bolivia." : "Your gift helps protect Bolivia’s birds and landscapes."}</p><div className="mt-6 min-h-64 w-full min-w-0"><givebutter-widget id="L4E3Vq" className="block w-full"/></div></div>;
 }
 

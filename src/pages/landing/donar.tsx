@@ -672,16 +672,9 @@ export default function Donar() {
                     : "Support the conservation of Bolivia's birds and landscapes through our online donation form."}
                 </p>
 
-                {/* Givebutter original */}
-
-                <div
-                  className="
-                    mt-7 min-w-0
-                    rounded-2xl border border-border/70
-                    bg-muted/30 p-4 sm:p-6
-                  "
-                >
-                  <DonationForm />
+                {/* Formulario de Givebutter directamente en la tarjeta, sin un segundo recuadro ni título repetido. */}
+                <div className="mt-6 min-w-0">
+                  <DonationForm soloFormulario />
                 </div>
 
                 <div
