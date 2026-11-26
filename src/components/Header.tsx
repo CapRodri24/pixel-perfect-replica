@@ -133,7 +133,7 @@ function AnniversaryBadge({ onClick, className = "h-12 xl:h-[54px]" }: { onClick
   const { lang } = useI18n();
   return (
     <Link
-      to="/noticias"
+      to="/30-aniversario-de-armonia/"
       onClick={onClick}
       title={lang === "es" ? "30 años conservando las aves de Bolivia" : "30 years protecting Bolivia’s birds"}
       className="shrink-0 rounded-md transition-transform duration-300 motion-safe:hover:-translate-y-0.5 motion-safe:hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-light"
