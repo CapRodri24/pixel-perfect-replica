@@ -173,7 +173,7 @@ function ProgramasAsociados({ programas }: { programas: ProgramaAsociado[] }) {
       {programas.map(programa => {
         const nombre = es ? programa.titulo_es : programa.titulo_en;
         const descripcion = textoPlano(es ? programa.descripcion_es : programa.descripcion_en);
-        return <article key={programa.id_programa} className="group w-[86%] max-w-[360px] shrink-0 snap-center overflow-hidden rounded-2xl border border-border bg-background transition-all duration-300 hover:border-primary/50 hover:shadow-card sm:w-auto sm:max-w-none">
+        return <article key={programa.id_programa} className="group relative w-[86%] cursor-pointer max-w-[360px] shrink-0 snap-center overflow-hidden rounded-2xl border border-border bg-background transition-all duration-300 hover:border-primary/50 hover:shadow-card sm:w-auto sm:max-w-none">
           <div className="relative aspect-video overflow-hidden">
             <Imagen id={programa.id_imagen_portada} alt={nombre} className="size-full object-cover transition-transform duration-500 motion-safe:group-hover:scale-105" />
             {descripcion && <div className="absolute inset-0 hidden bg-black/65 opacity-0 transition-opacity group-hover:opacity-100 lg:flex lg:items-end"><p className="line-clamp-4 p-4 text-sm leading-relaxed text-white">{descripcion}</p></div>}
@@ -181,7 +181,8 @@ function ProgramasAsociados({ programas }: { programas: ProgramaAsociado[] }) {
           <div className="p-5">
             <h3 className="font-display text-xl font-semibold leading-snug text-brand-deep">{nombre}</h3>
             {descripcion && <p className="mt-3 text-sm leading-relaxed text-muted-foreground lg:sr-only">{descripcion}</p>}
-            <Link to={`/programas?programa=${encodeURIComponent(programa.id_programa)}`} className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-primary hover:underline">{es ? "Conocer más" : "Learn more"}<ArrowRight className="size-4" /></Link>
+            {/* El enlace cubre toda la tarjeta (::after), así un clic en cualquier parte abre el programa. */}
+            <Link to={`/programas?programa=${encodeURIComponent(programa.id_programa)}`} className="mt-4 inline-flex min-h-10 items-center gap-2 text-sm font-semibold text-primary after:absolute after:inset-0 after:rounded-2xl after:content-[''] hover:underline focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-primary group-hover:underline">{es ? "Conocer más" : "Learn more"}<ArrowRight className="size-4" /></Link>
           </div>
         </article>;
       })}
