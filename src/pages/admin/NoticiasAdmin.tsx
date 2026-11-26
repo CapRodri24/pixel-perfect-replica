@@ -94,6 +94,7 @@ function ImagenEditor({ imagen, idioma, onChange, onRemove }: {
         </label>
         {imagen && <button type="button" className={`${secondary} text-red-700`} onClick={onRemove}>Quitar imagen</button>}
       </div>
+      <p className="text-xs text-muted-foreground">Tamaño recomendado: 1600 × 900 px (horizontal 16:9), JPG o WebP de menos de 1 MB. Otros tamaños también se muestran completos, sin recortes.</p>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
       {imagen && <div className="grid gap-3 sm:grid-cols-2">
         <label className="text-sm font-medium sm:col-span-2">Crédito fotográfico
@@ -417,7 +418,7 @@ export default function NoticiasAdmin() {
                       <input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif" className="sr-only" onChange={(e) => { void agregarFotografias(b.localId, e.target.files); e.target.value = ""; }} />
                     </label>
                     {fotoError && <p role="alert" className="text-sm text-red-700">{fotoError}</p>}
-                    <p className="text-xs text-muted-foreground">Mínimo 2 fotografías, máximo 30. Al seleccionar las imágenes se cargan directamente.</p>
+                    <p className="text-xs text-muted-foreground">Mínimo 2 fotografías, máximo 30. Al seleccionar las imágenes se cargan directamente. Para que el carrusel no deje franjas, súbelas todas en 1600 × 900 px (16:9).</p>
                   </div>}
                   {(b.tipo === "enlace" || b.tipo === "video") && <label className="block text-sm font-medium">Enlace de YouTube
                     <input type="url" data-field-id={`url-${b.localId}`} className={field} value={b.url || ""} onChange={(e) => patchBloque(b.localId, { url: e.target.value, tipo: esVideoYouTube(e.target.value) ? "video" : "enlace" })} placeholder="https://" />

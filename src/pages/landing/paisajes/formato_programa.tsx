@@ -53,10 +53,10 @@ export type EditorialBlock =
       videos: EditorialVideo[];
     };
 
-function EditorialImage({ src, alt, className, draggable }: { src: string; alt: string; className: string; draggable?: boolean }) {
+function EditorialImage({ src, alt, className, draggable, fallbackClassName }: { src: string; alt: string; className: string; draggable?: boolean; fallbackClassName?: string }) {
   const [fallo, setFallo] = useState(false);
   useEffect(() => setFallo(false), [src]);
-  if (!src || fallo) return <div role="img" aria-label={alt} className={`${className} grid place-items-center bg-muted text-muted-foreground`}><ImageOff className="size-10 opacity-40" /></div>;
+  if (!src || fallo) return <div role="img" aria-label={alt} className={`${fallbackClassName ?? className} grid place-items-center bg-muted text-muted-foreground`}><ImageOff className="size-10 opacity-40" /></div>;
   return <img src={src} alt={alt} loading="lazy" draggable={draggable} className={className} onError={() => setFallo(true)} />;
 }
 
@@ -139,7 +139,7 @@ function ImageCarousel({
           src={currentImage.src}
           alt={currentImage.alt}
           draggable={false}
-          className="aspect-[4/3] w-full select-none object-cover sm:aspect-[16/9]"
+          className="aspect-[4/3] w-full select-none object-contain sm:aspect-[16/9]"
         />
 
         {images.length > 1 && (
@@ -303,7 +303,7 @@ export function EditorialContent({
 
           case "image":
             return <figure key={i}>
-              <EditorialImage src={block.src} alt={block.alt} className="aspect-[4/3] w-full rounded-2xl object-cover sm:aspect-[16/9]" />
+              <EditorialImage src={block.src} alt={block.alt} className="mx-auto block h-auto max-h-[80vh] w-auto max-w-full rounded-2xl object-contain" fallbackClassName="aspect-[4/3] w-full rounded-2xl sm:aspect-[16/9]" />
               {block.caption && <figcaption className="mt-3 text-center text-sm text-muted-foreground">{block.caption}</figcaption>}
             </figure>;
           case "link":
