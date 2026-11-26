@@ -79,7 +79,9 @@ CREATE TABLE noticia (
     id_programa BIGINT REFERENCES programa(id_programa) ON DELETE SET NULL,
     id_categoria_noticia VARCHAR(30) NOT NULL REFERENCES categoria_noticia(id_categoria_noticia),
     autor VARCHAR(200),
-    CONSTRAINT noticia_autor_no_vacio CHECK (autor IS NULL OR btrim(autor) <> '')
+    fotos_por VARCHAR(200),
+    CONSTRAINT noticia_autor_no_vacio CHECK (autor IS NULL OR btrim(autor) <> ''),
+    CONSTRAINT noticia_fotos_por_no_vacio CHECK (fotos_por IS NULL OR btrim(fotos_por) <> '')
 );
 
 -- 7b. ARCHIVOS PDF (antes de los bloques, que pueden incluir un PDF): se guarda el documento binario en PostgreSQL (BYTEA).
@@ -215,6 +217,49 @@ CREATE TABLE recurso_pdf (
     CONSTRAINT recurso_pdf_sin_duplicados UNIQUE (id_recurso, id_archivo_pdf)
 );
 
+-- 16b. SOUVENIRS: productos con colores, tallas, precio e imagen.
+CREATE TABLE souvenir (
+    id_souvenir BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nombre_es VARCHAR(150) NOT NULL,
+    nombre_en VARCHAR(150) NOT NULL,
+    colores_es TEXT[] NOT NULL DEFAULT '{}',
+    colores_en TEXT[] NOT NULL DEFAULT '{}',
+    tallas TEXT[] NOT NULL DEFAULT '{}',
+    precio NUMERIC(10,2) NOT NULL CHECK (precio >= 0),
+    id_imagen BIGINT NOT NULL REFERENCES imagen(id_imagen) ON DELETE RESTRICT,
+    disponible BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
+    CONSTRAINT souvenir_nombre_no_vacio CHECK (btrim(nombre_es) <> '' AND btrim(nombre_en) <> ''),
+    CONSTRAINT souvenir_colores_traducidos CHECK (cardinality(colores_es) = cardinality(colores_en))
+);
+
+-- 16c. PROMOCIONES DE SOUVENIRS: apartado especial con productos incluidos, precio y vigencia.
+CREATE TABLE souvenir_promocion (
+    id_promocion BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    titulo_es VARCHAR(150) NOT NULL,
+    titulo_en VARCHAR(150) NOT NULL,
+    descripcion_es TEXT,
+    descripcion_en TEXT,
+    id_imagen BIGINT REFERENCES imagen(id_imagen) ON DELETE RESTRICT,
+    precio NUMERIC(10,2) CHECK (precio IS NULL OR precio >= 0),
+    fecha_inicio DATE,
+    fecha_fin DATE,
+    activa BOOLEAN NOT NULL DEFAULT TRUE,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
+    updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
+    CONSTRAINT promocion_titulo_no_vacio CHECK (btrim(titulo_es) <> '' AND btrim(titulo_en) <> ''),
+    CONSTRAINT promocion_fechas CHECK (fecha_inicio IS NULL OR fecha_fin IS NULL OR fecha_fin >= fecha_inicio)
+);
+
+CREATE TABLE souvenir_promocion_producto (
+    id_promocion BIGINT NOT NULL REFERENCES souvenir_promocion(id_promocion) ON DELETE CASCADE,
+    id_souvenir BIGINT NOT NULL REFERENCES souvenir(id_souvenir) ON DELETE CASCADE,
+    cantidad INTEGER NOT NULL DEFAULT 1 CHECK (cantidad BETWEEN 1 AND 99),
+    orden INTEGER NOT NULL CHECK (orden > 0),
+    PRIMARY KEY (id_promocion, id_souvenir)
+);
+
 -- 17. VALIDAR QUE CADA SUBTIPO USE EL TIPO CORRECTO DE CONTENIDO.
 CREATE FUNCTION validar_tipo_contenido() RETURNS TRIGGER LANGUAGE plpgsql AS $$
 DECLARE tipo_real TEXT;
@@ -258,6 +303,10 @@ CREATE TRIGGER bloque_actualizado BEFORE UPDATE ON bloque_editorial
 CREATE TRIGGER nosotros_actualizado BEFORE UPDATE ON nosotros
     FOR EACH ROW EXECUTE FUNCTION actualizar_timestamp();
 CREATE TRIGGER recurso_actualizado BEFORE UPDATE ON recurso
+    FOR EACH ROW EXECUTE FUNCTION actualizar_timestamp();
+CREATE TRIGGER souvenir_actualizado BEFORE UPDATE ON souvenir
+    FOR EACH ROW EXECUTE FUNCTION actualizar_timestamp();
+CREATE TRIGGER promocion_actualizada BEFORE UPDATE ON souvenir_promocion
     FOR EACH ROW EXECUTE FUNCTION actualizar_timestamp();
 
 -- 19. IMPEDIR AGREGAR FOTOS A BLOQUES QUE NO SEAN CARRUSELES.
@@ -353,6 +402,9 @@ CREATE INDEX idx_nosotros_cargo ON nosotros (id_cargo);
 CREATE INDEX idx_nosotros_categoria_socio ON nosotros (id_categoria_socio);
 CREATE INDEX idx_recurso_tipo ON recurso (id_tipo_recurso);
 CREATE INDEX idx_recurso_pdf_orden ON recurso_pdf (id_recurso, orden);
+CREATE INDEX idx_souvenir_disponible ON souvenir (disponible, created_at);
+CREATE INDEX idx_promocion_vigencia ON souvenir_promocion (activa, fecha_inicio, fecha_fin);
+CREATE INDEX idx_promocion_producto_souvenir ON souvenir_promocion_producto (id_souvenir);
 
 
 -- 23. DICCIONARIO DE CAMPOS: aclaraciones para mantenimiento.
@@ -366,6 +418,7 @@ COMMENT ON COLUMN archivo_pdf.nombre_archivo IS 'Nombre del archivo PDF original
 COMMENT ON COLUMN archivo_pdf.mime IS 'Tipo MIME del archivo; siempre application/pdf.';
 COMMENT ON COLUMN archivo_pdf.tamano_bytes IS 'Tamaño del PDF, calculado automáticamente en bytes desde el BYTEA.';
 COMMENT ON COLUMN noticia.autor IS 'Nombre de quien escribió la noticia; se muestra al final como «Texto escrito por».';
+COMMENT ON COLUMN noticia.fotos_por IS 'Autor o autores de las fotografías; se muestra al final, antes de «Texto escrito por», como «Fotos por».';
 COMMENT ON COLUMN bloque_editorial.orden IS 'Posición del bloque bajo el título fijo: 1, 2, 3, etc.';
 COMMENT ON COLUMN bloque_editorial.texto_es IS 'Contenido textual en español para bloques de párrafo o subtítulo.';
 COMMENT ON COLUMN bloque_editorial.texto_en IS 'Contenido textual en inglés del mismo bloque.';
@@ -384,3 +437,13 @@ COMMIT;
 -- No almacena el desplazamiento de zona horaria ni el instante UTC.
 -- BORRADO EDITORIAL: eliminar la fila de contenido_editorial (propaga a su subtipo y bloques).
 -- La app actual usa localStorage; esta BD requiere un backend/API para conectarla.
+COMMENT ON TABLE souvenir IS 'Productos de la tienda de souvenirs que se muestran en la web.';
+COMMENT ON COLUMN souvenir.colores_es IS 'Colores disponibles en español; colores_en guarda la traducción en el mismo orden.';
+COMMENT ON COLUMN souvenir.tallas IS 'Tallas disponibles (S, M, L, Talla única…); vacío si el producto no tiene tallas.';
+COMMENT ON COLUMN souvenir.precio IS 'Precio en bolivianos (Bs).';
+COMMENT ON COLUMN souvenir.disponible IS 'Si es falso, el producto no se muestra en la web.';
+COMMENT ON TABLE souvenir_promocion IS 'Promociones o combos destacados en la tienda de souvenirs.';
+COMMENT ON COLUMN souvenir_promocion.precio IS 'Precio promocional en Bs; el precio normal se calcula sumando los productos incluidos.';
+COMMENT ON COLUMN souvenir_promocion.id_imagen IS 'Imagen o banner de la promoción (por ejemplo, exportado desde Canva); opcional.';
+COMMENT ON COLUMN souvenir_promocion.fecha_inicio IS 'Desde cuándo se muestra; vacío = desde ya.';
+COMMENT ON COLUMN souvenir_promocion.fecha_fin IS 'Último día que se muestra; vacío = sin fecha de fin.';

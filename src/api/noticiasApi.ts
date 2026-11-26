@@ -19,6 +19,7 @@ export type NoticiaResumen = {
 
 export type NoticiaDetalle = Omit<NoticiaResumen, "updated_at" | "cantidad_bloques"> & {
   autor: string;
+  fotos_por: string;
   bloques: BloquePaisaje[];
 };
 
@@ -29,6 +30,8 @@ export type NoticiaEntrada = {
   fecha_publicacion: string;
   /** Nombre de quien escribió la noticia (opcional). */
   autor: string;
+  /** Autor o autores de las fotografías (opcional). */
+  fotos_por: string;
   id_programa: string;
   id_categoria_noticia: string;
   bloques: BloquePaisaje[];

@@ -37,7 +37,7 @@ const tipos: { tipo: TipoBloquePaisaje; nombre: string }[] = [
 
 // Fecha local de hoy en formato YYYY-MM-DD (valor por defecto de la noticia).
 const hoy = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
-const vacio = (): BorradorLocal => ({ titulo_es: "", titulo_en: "", fecha_publicacion: hoy(), autor: "", id_programa: "", id_categoria_noticia: "", bloques: [] });
+const vacio = (): BorradorLocal => ({ titulo_es: "", titulo_en: "", fecha_publicacion: hoy(), autor: "", fotos_por: "", id_programa: "", id_categoria_noticia: "", bloques: [] });
 let numeroLocal = 0;
 const idLocal = () => `bloque-${++numeroLocal}`;
 const crearBloque = (tipo: TipoBloquePaisaje): BloqueLocal => ({
@@ -123,7 +123,10 @@ function VistaPrevia({ borrador, idioma }: { borrador: BorradorLocal; idioma: "e
         if (b.tipo === "pdf") return <VistaPreviaPdf key={b.localId} pdf={b.pdf} />;
         return <EnlaceIncrustado key={b.localId} url={b.url} />;
       })}
-      {borrador.autor.trim() && <p className="border-t border-border pt-4 text-sm italic text-muted-foreground">{idioma === "es" ? "Texto escrito por:" : "Written by:"} <span className="font-semibold not-italic text-brand-deep">{borrador.autor.trim()}</span></p>}
+      {(borrador.fotos_por.trim() || borrador.autor.trim()) && <div className="space-y-1 border-t border-border pt-4 text-sm italic text-muted-foreground">
+        {borrador.fotos_por.trim() && <p>{idioma === "es" ? "Fotos por:" : "Photos by:"} <span className="font-semibold not-italic text-brand-deep">{borrador.fotos_por.trim()}</span></p>}
+        {borrador.autor.trim() && <p>{idioma === "es" ? "Texto escrito por:" : "Written by:"} <span className="font-semibold not-italic text-brand-deep">{borrador.autor.trim()}</span></p>}
+      </div>}
     </div>
   );
 }
@@ -176,7 +179,7 @@ export default function NoticiasAdmin() {
     setBusy(true); setError(""); setSuccess("");
     try {
       const data = await obtenerNoticia(id);
-      setBorrador({ ...data, fecha_publicacion: (data.fecha_publicacion || hoy()).slice(0, 10), autor: data.autor || "", bloques: data.bloques.map((b) => ({ ...b, localId: idLocal() })) });
+      setBorrador({ ...data, fecha_publicacion: (data.fecha_publicacion || hoy()).slice(0, 10), autor: data.autor || "", fotos_por: data.fotos_por || "", bloques: data.bloques.map((b) => ({ ...b, localId: idLocal() })) });
       setIdioma("es");
     } catch (e) { setError(errorTexto(e)); }
     finally { setBusy(false); }
@@ -317,8 +320,8 @@ export default function NoticiasAdmin() {
         irAError(`bloque-${bloqueIncompleto.localId}`);
         throw new Error("No se pudo traducir uno de los bloques al inglés. Inténtalo de nuevo.");
       }
-      const { id_noticia, id_programa, id_categoria_noticia, titulo_es, titulo_en, fecha_publicacion, autor, bloques } = traducido;
-      const datos: NoticiaEntrada = { titulo_es, titulo_en, fecha_publicacion, autor: autor.trim(), id_programa, id_categoria_noticia, bloques: bloques.map(({ localId, ...bloque }) => bloque) };
+      const { id_noticia, id_programa, id_categoria_noticia, titulo_es, titulo_en, fecha_publicacion, autor, fotos_por, bloques } = traducido;
+      const datos: NoticiaEntrada = { titulo_es, titulo_en, fecha_publicacion, autor: autor.trim(), fotos_por: fotos_por.trim(), id_programa, id_categoria_noticia, bloques: bloques.map(({ localId, ...bloque }) => bloque) };
       if (id_noticia) await actualizarNoticia(id_noticia, datos);
       else await crearNoticia(datos);
       setBorrador(null);
@@ -418,10 +421,15 @@ export default function NoticiasAdmin() {
               <div className="flex flex-wrap gap-2 border-t border-border pt-4">
                 {tipos.map((tipo) => <button key={tipo.tipo} type="button" className={secondary} onClick={() => patch({ bloques: [...borrador.bloques, crearBloque(tipo.tipo)] })}><Plus className="size-4" />{tipo.nombre}</button>)}
               </div>
-              <label className="block rounded-xl border border-border bg-muted/20 p-4 text-sm font-semibold">Texto escrito por:
-                <input data-field-id="autor" maxLength={200} className={field} value={borrador.autor} onChange={(e) => patch({ autor: e.target.value })} placeholder="Nombre de quien escribió la noticia" />
-                <span className="mt-1 block text-xs font-normal text-muted-foreground">Opcional. Se muestra al final de la noticia.</span>
-              </label>
+              <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-4">
+                <label className="block text-sm font-semibold">Fotos por:
+                  <input data-field-id="fotos-por" maxLength={200} className={field} value={borrador.fotos_por} onChange={(e) => patch({ fotos_por: e.target.value })} placeholder="Nombre de quien tomó las fotografías" />
+                </label>
+                <label className="block text-sm font-semibold">Texto escrito por:
+                  <input data-field-id="autor" maxLength={200} className={field} value={borrador.autor} onChange={(e) => patch({ autor: e.target.value })} placeholder="Nombre de quien escribió la noticia" />
+                </label>
+                <span className="block text-xs font-normal text-muted-foreground">Ambos son opcionales y se muestran al final de la noticia.</span>
+              </div>
               <button type="submit" className={`${primary} w-full`} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}{busy ? "Guardando…" : "Guardar noticia"}</button>
             </fieldset>
           </form>

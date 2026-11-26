@@ -4,10 +4,10 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { detectarEnlace, tamanoLegible, type EnlaceDetectado } from "@/lib/enlaces";
 
 const marco = "overflow-hidden rounded-2xl border border-border bg-muted";
-const boton = "inline-flex min-h-10 items-center gap-2 rounded-full border border-border bg-background px-4 py-2 text-sm font-semibold text-brand-deep transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+const boton = "inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-brand-deep transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 // En pantallas pequeñas los navegadores no muestran PDF dentro de la página:
-// ahí se ofrece abrirlo en otra pestaña y el visor arranca cerrado.
+// ahí se ofrece abrirlo en otra pestaña. En computadora la vista previa se abre al pedirla.
 function usePantallaAmplia() {
   const consulta = "(min-width: 768px) and (pointer: fine)";
   const [amplia] = useState(() => typeof window !== "undefined" && window.matchMedia?.(consulta).matches === true);
@@ -24,21 +24,21 @@ export function VisorPdf({ vista, descarga, abrir, nombre, tamano }: {
   const { lang } = useI18n();
   const es = lang === "es";
   const amplia = usePantallaAmplia();
-  const [abierto, setAbierto] = useState(amplia);
-  useEffect(() => { setAbierto(amplia); }, [vista, amplia]);
+  const [abierto, setAbierto] = useState(false);
+  useEffect(() => { setAbierto(false); }, [vista]);
   const peso = tamanoLegible(tamano);
-  return <div className="overflow-hidden rounded-2xl border border-border bg-background">
-    <div className="flex flex-wrap items-center gap-3 p-4">
-      <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-red-50 text-red-700"><FileText className="size-6" aria-hidden="true" /></span>
+  return <div className="overflow-hidden rounded-xl border border-border bg-background">
+    <div className="flex flex-wrap items-center gap-3 px-3 py-2.5 sm:px-4">
+      <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-red-50 text-red-700"><FileText className="size-5" aria-hidden="true" /></span>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold text-brand-deep" title={nombre}>{nombre}</p>
+        <p className="truncate text-sm font-semibold text-brand-deep" title={nombre}>{nombre}</p>
         <p className="text-xs text-muted-foreground">PDF{peso ? ` · ${peso}` : ""}</p>
       </div>
       <div className="flex flex-wrap gap-2">
         {amplia
           ? <button type="button" className={boton} aria-expanded={abierto} onClick={() => setAbierto((v) => !v)}>
               {abierto ? <EyeOff className="size-4" aria-hidden="true" /> : <Eye className="size-4" aria-hidden="true" />}
-              {abierto ? (es ? "Ocultar" : "Hide") : (es ? "Ver documento" : "View document")}
+              {abierto ? (es ? "Ocultar vista previa" : "Hide preview") : (es ? "Vista previa" : "Preview")}
             </button>
           : <a className={boton} href={abrir || vista} target="_blank" rel="noopener noreferrer"><Eye className="size-4" aria-hidden="true" />{es ? "Ver documento" : "View document"}</a>}
         <a className={boton} href={descarga} target="_blank" rel="noopener noreferrer" download><Download className="size-4" aria-hidden="true" />{es ? "Descargar" : "Download"}</a>

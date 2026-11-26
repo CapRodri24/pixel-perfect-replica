@@ -7,3 +7,6 @@ export const REDES_SOCIALES = {
 } as const;
 
 export type RedSocial = keyof typeof REDES_SOCIALES;
+
+/** Número de WhatsApp institucional (formato internacional, sin «+»). */
+export const WHATSAPP_ARMONIA = "59172149863";

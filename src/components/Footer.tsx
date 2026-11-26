@@ -3,7 +3,7 @@ import { Mail, Phone, MapPin, MessageCircle } from "lucide-react";
 import type { SVGProps } from "react";
 import { useI18n } from "@/i18n/I18nProvider";
 import { Logo } from "./Logo";
-import { REDES_SOCIALES } from "@/config/redesSociales";
+import { REDES_SOCIALES, WHATSAPP_ARMONIA } from "@/config/redesSociales";
 
 const FacebookIcon = (props: SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
@@ -66,7 +66,7 @@ export function Footer() {
         <div className="min-w-0"><h3 className={heading}>{t("footer.contact")}</h3><div className="mt-3 flex flex-col items-start gap-2.5">
           <a href="mailto:armonia@armonia-bo.org" className={`${link} break-all`}><Mail className="size-4 shrink-0"/>armonia@armonia-bo.org</a>
           <a href="tel:+59172149863" className={link}><Phone className="size-4 shrink-0"/>+591 72149863</a>
-          <a href="https://wa.me/59172149863" target="_blank" rel="noopener noreferrer" className={link}><MessageCircle className="size-4 shrink-0"/>WhatsApp</a>
+          <a href={`https://wa.me/${WHATSAPP_ARMONIA}`} target="_blank" rel="noopener noreferrer" className={link}><MessageCircle className="size-4 shrink-0"/>WhatsApp</a>
           <Link to="/contacto/oficinas" className={link}><MapPin className="size-4 shrink-0"/>{es ? "Nuestras oficinas" : "Our offices"}</Link>
         </div></div>
       </div>

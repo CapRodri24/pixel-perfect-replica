@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, CalendarDays, PenLine } from "lucide-react";
+import { ArrowLeft, CalendarDays, Camera, PenLine } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 import type { BloquePublico } from "@/api/paisajesPublicosApi";
 import { obtenerNoticiaPublica, imagenNoticiaUrl, type NoticiaPublicaDetalle } from "@/api/noticiasPublicasApi";
@@ -63,7 +63,10 @@ export default function FormatoNoticias({id}:{id:string}) {
       {data.id_programa&&<Link to={`/programas?programa=${encodeURIComponent(data.id_programa)}`} className="mb-6 inline-block text-sm font-semibold text-primary hover:underline">{es?data.programa_titulo_es:data.programa_titulo_en}</Link>}
       <EditorialContent key={id} blocks={bloquesEditoriales(data.bloques,es)}/>
       {!data.bloques.length&&<p className="text-muted-foreground">{es?"Próximamente compartiremos más información.":"More information will be available soon."}</p>}
-      {data.autor?.trim()&&<p className="mt-10 flex items-center gap-2 border-t border-border pt-6 text-sm text-muted-foreground sm:text-base"><PenLine aria-hidden="true" className="size-4 shrink-0 text-primary"/><span className="italic">{es?"Texto escrito por:":"Written by:"}</span><span className="font-semibold text-brand-deep">{data.autor.trim()}</span></p>}
+      {(data.fotos_por?.trim()||data.autor?.trim())&&<div className="mt-10 space-y-2 border-t border-border pt-6 text-sm text-muted-foreground sm:text-base">
+        {data.fotos_por?.trim()&&<p className="flex flex-wrap items-center gap-2"><Camera aria-hidden="true" className="size-4 shrink-0 text-primary"/><span className="italic">{es?"Fotos por:":"Photos by:"}</span><span className="font-semibold text-brand-deep">{data.fotos_por.trim()}</span></p>}
+        {data.autor?.trim()&&<p className="flex flex-wrap items-center gap-2"><PenLine aria-hidden="true" className="size-4 shrink-0 text-primary"/><span className="italic">{es?"Texto escrito por:":"Written by:"}</span><span className="font-semibold text-brand-deep">{data.autor.trim()}</span></p>}
+      </div>}
     </>}
   </div></div></article>;
 }

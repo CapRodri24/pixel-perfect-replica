@@ -39,5 +39,31 @@ export const textOf=(r:Editorial)=>plain(r.blocks.find(b=>b.type==="text")?.valu
 export const imageOf=(r:Editorial)=>r.blocks.find(b=>b.type==="image"&&b.value)?.value??r.blocks.find(b=>b.type==="gallery")?.images[0]??"";
 export function safeUrl(value:string, image=false):boolean {if(!value)return false;if(image&&(/^data:image\/(png|jpeg|webp|gif);base64,/i.test(value)||/^\/(?!\/)/.test(value)))return true;try{const u=new URL(value);return u.protocol==="https:"||u.protocol==="http:";}catch{return false;}}
 export function youtubeId(value:string):string|null {try{const u=new URL(value);if(!["https:","http:"].includes(u.protocol))return null;let id:string|null=null;if(u.hostname==="youtu.be")id=u.pathname.split("/")[1]??null;else if(["youtube.com","www.youtube.com","m.youtube.com","www.youtube-nocookie.com","youtube-nocookie.com"].includes(u.hostname))id=u.searchParams.get("v")??u.pathname.match(/^\/(?:embed|shorts|live)\/([^/]+)/)?.[1]??null;return id&&/^[\w-]{11}$/.test(id)?id:null;}catch{return null;}}
-export function sanitize(html:string):string {const doc=new DOMParser().parseFromString(html,"text/html");const allowed=new Set(["B","STRONG","I","EM","U","S","STRIKE","BR","P","DIV","SPAN","UL","OL","LI"]);for(const el of Array.from(doc.body.querySelectorAll("*"))){if(!el.isConnected)continue;if(["SCRIPT","STYLE","IFRAME","OBJECT","SVG","MATH","TEMPLATE"].includes(el.tagName)){el.remove();continue;}if(!allowed.has(el.tagName)){el.replaceWith(...Array.from(el.childNodes));continue;}const align=(el as HTMLElement).style?.textAlign;for(const a of Array.from(el.attributes))el.removeAttribute(a.name);if(align&&["left","right","center","justify"].includes(align))(el as HTMLElement).style.textAlign=align;}return doc.body.innerHTML;}
+// Filtra el HTML de los párrafos: solo formato básico, listas, alineación y enlaces seguros.
+export function sanitize(html:string):string {
+  const doc=new DOMParser().parseFromString(html,"text/html");
+  const allowed=new Set(["B","STRONG","I","EM","U","S","STRIKE","BR","P","DIV","SPAN","UL","OL","LI","A"]);
+  for(const el of Array.from(doc.body.querySelectorAll("*"))){
+    if(!el.isConnected)continue;
+    if(["SCRIPT","STYLE","IFRAME","OBJECT","SVG","MATH","TEMPLATE"].includes(el.tagName)){el.remove();continue;}
+    if(!allowed.has(el.tagName)){el.replaceWith(...Array.from(el.childNodes));continue;}
+    const align=(el as HTMLElement).style?.textAlign;
+    const href=el.tagName==="A"?enlaceSeguro(el.getAttribute("href")||""):null;
+    for(const a of Array.from(el.attributes))el.removeAttribute(a.name);
+    if(align&&["left","right","center","justify"].includes(align))(el as HTMLElement).style.textAlign=align;
+    if(el.tagName==="A"){
+      if(!href){el.replaceWith(...Array.from(el.childNodes));continue;}
+      el.setAttribute("href",href);
+      if(!href.startsWith("mailto:")){el.setAttribute("target","_blank");el.setAttribute("rel","noopener noreferrer");}
+    }
+  }
+  return doc.body.innerHTML;
+}
+/** Devuelve el enlace normalizado si es http(s) o mailto; si no, null. */
+export function enlaceSeguro(valor:string):string|null{
+  const v=valor.trim();
+  if(!v)return null;
+  const conEsquema=/^[a-z][a-z0-9+.-]*:/i.test(v)?v:/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)?`mailto:${v}`:`https://${v.replace(/^\/+/,"")}`;
+  try{const u=new URL(conEsquema);return ["http:","https:","mailto:"].includes(u.protocol)?u.href:null;}catch{return null;}
+}
 export async function imageFile(file:File):Promise<string>{if(!["image/jpeg","image/png","image/webp","image/gif"].includes(file.type))throw new Error("Selecciona una imagen JPG, PNG, WEBP o GIF.");if(file.size>10*1024*1024)throw new Error("La imagen supera 10 MB.");const source=await new Promise<string>((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result));r.onerror=()=>reject(new Error("No se pudo leer la imagen."));r.readAsDataURL(file);});const img=await new Promise<HTMLImageElement>((resolve,reject)=>{const i=new Image();i.onload=()=>resolve(i);i.onerror=()=>reject(new Error("Imagen no válida."));i.src=source;});const scale=Math.min(1,1400/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.max(1,Math.round(img.width*scale));c.height=Math.max(1,Math.round(img.height*scale));const ctx=c.getContext("2d");if(!ctx)throw new Error("No se pudo procesar la imagen.");ctx.drawImage(img,0,0,c.width,c.height);return c.toDataURL("image/webp",.80);}
