@@ -7,7 +7,15 @@ export type ImagenPaisaje = {
   credito?: string;
 };
 
-export type TipoBloquePaisaje = "parrafo" | "subtitulo" | "imagen" | "carrusel" | "enlace" | "video";
+/** PDF de un bloque: existente (id) o recién elegido (archivo en base64). */
+export type PdfBloque = {
+  id_archivo_pdf?: string;
+  archivo?: string;
+  nombre_archivo?: string;
+  tamano_bytes?: number;
+};
+
+export type TipoBloquePaisaje = "parrafo" | "subtitulo" | "imagen" | "carrusel" | "enlace" | "video" | "pdf";
 
 export type BloquePaisaje = {
   id_bloque?: string;
@@ -19,6 +27,7 @@ export type BloquePaisaje = {
   url?: string;
   imagen?: ImagenPaisaje;
   imagenes?: ImagenPaisaje[];
+  pdf?: PdfBloque;
 };
 
 export type PaisajeResumen = {

@@ -2,7 +2,10 @@
 import { useEffect, useRef, useState } from "react";
 import { RelatedNews } from "./noticias-publicas";
 import { sanitize } from "@/pages/admin/datos";
-import type { BloquePublico } from "@/api/paisajesPublicosApi";
+import { estilosTextoEnriquecido } from "@/lib/textoEnriquecido";
+import { pdfContenidoUrl, type BloquePublico } from "@/api/paisajesPublicosApi";
+import { EnlaceIncrustado, VisorPdf } from "@/components/contenido/EnlaceIncrustado";
+import { youtubeId } from "@/lib/enlaces";
 import { listarProgramasPublicos, obtenerProgramaPublico, imagenProgramaUrl, type ProgramaPublicoDetalle, type ProgramaPublicoResumen } from "@/api/programasPublicosApi";
 import {
   ArrowLeft,
@@ -44,6 +47,8 @@ export type EditorialBlock =
   | { type: "paragraph"; text: string; html?: boolean }
   | { type: "image"; src: string; alt: string; caption?: string }
   | { type: "link"; url: string; text: string }
+  | { type: "embed"; url: string }
+  | { type: "pdf"; id: string; name: string; size: number | null }
   | {
       type: "gallery";
       images: { src: string; alt: string; caption?: string }[];
@@ -291,7 +296,7 @@ export function EditorialContent({
             );
 
           case "paragraph":
-            if (block.html) return <div key={i} className="whitespace-pre-line break-words text-base leading-[1.8] text-black sm:text-lg sm:leading-relaxed" dangerouslySetInnerHTML={{__html: sanitize(block.text)}} />;
+            if (block.html) return <div key={i} className={`whitespace-pre-line break-words text-base leading-[1.8] text-black sm:text-lg sm:leading-relaxed ${estilosTextoEnriquecido}`} dangerouslySetInnerHTML={{__html: sanitize(block.text)}} />;
             return (
               <p
                 key={i}
@@ -308,6 +313,12 @@ export function EditorialContent({
             </figure>;
           case "link":
             return <a key={i} href={block.url} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 font-semibold text-primary hover:underline">{block.text}<ArrowRight className="size-4" /></a>;
+
+          case "embed":
+            return <EnlaceIncrustado key={i} url={block.url} />;
+
+          case "pdf":
+            return <VisorPdf key={i} vista={pdfContenidoUrl(block.id) || ""} descarga={pdfContenidoUrl(block.id, true) || ""} nombre={block.name} tamano={block.size} />;
 
           case "gallery":
             return (
@@ -355,12 +366,6 @@ export function EditorialContent({
 function textoPlano(valor: string) {
   return new DOMParser().parseFromString(valor, "text/html").body.textContent?.trim() || "";
 }
-function videoId(url: URL): string | null {
-  let id: string | null = null;
-  if (["youtu.be", "www.youtu.be"].includes(url.hostname)) id = url.pathname.split("/")[1] || null;
-  if (["youtube.com", "www.youtube.com", "m.youtube.com", "www.youtube-nocookie.com", "youtube-nocookie.com"].includes(url.hostname)) id = url.searchParams.get("v") || url.pathname.match(/^\/(?:shorts|embed|live)\/([^/]+)/)?.[1] || null;
-  return id && /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null;
-}
 function bloquesEditoriales(bloques: BloquePublico[], es: boolean): EditorialBlock[] {
   const out: EditorialBlock[] = [];
   const leyenda = (...values: (string | null | undefined)[]) => values.filter(Boolean).join(" · ");
@@ -377,16 +382,19 @@ function bloquesEditoriales(bloques: BloquePublico[], es: boolean): EditorialBlo
         try {
           const url = new URL(b.url);
           if (!["https:", "http:"].includes(url.protocol)) break;
-          const id = videoId(url);
+          const id = youtubeId(url);
           if (id) {
             const video = {id,title:"YouTube"};
             const last = out[out.length-1];
             if (last?.type === "videos") last.videos.push(video);
             else out.push({type:"videos",videos:[video]});
-          } else out.push({type:"link",url:url.href,text:url.hostname});
+          } else out.push({type:"embed",url:url.href}); // SoundCloud, Genially, PDF o página web
         } catch { /* URL inválida: omitir */ }
         break;
       }
+      case "pdf":
+        if (b.id_archivo_pdf) out.push({type:"pdf",id:b.id_archivo_pdf,name:b.pdf_nombre||"documento.pdf",size:b.pdf_tamano??null});
+        break;
     }
   }
   return out;

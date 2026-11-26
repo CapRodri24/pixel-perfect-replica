@@ -82,13 +82,26 @@ CREATE TABLE noticia (
     CONSTRAINT noticia_autor_no_vacio CHECK (autor IS NULL OR btrim(autor) <> '')
 );
 
+-- 7b. ARCHIVOS PDF (antes de los bloques, que pueden incluir un PDF): se guarda el documento binario en PostgreSQL (BYTEA).
+-- No se utiliza ninguna ruta ni URL para almacenar el PDF.
+CREATE TABLE archivo_pdf (
+    id_archivo_pdf BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    archivo BYTEA NOT NULL,
+    nombre_archivo VARCHAR(255) NOT NULL,
+    mime VARCHAR(30) NOT NULL DEFAULT 'application/pdf' CHECK (mime = 'application/pdf'),
+    tamano_bytes BIGINT GENERATED ALWAYS AS (octet_length(archivo)::BIGINT) STORED,
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
+    CONSTRAINT archivo_pdf_no_vacio CHECK (octet_length(archivo) > 0)
+);
+
 -- 8. BLOQUES EDITORIALES CON ORDEN LIBRE.
--- Tipos: párrafo, subtítulo, imagen, carrusel, enlace y video.
+-- Tipos: párrafo, subtítulo, imagen, carrusel, enlace, video y pdf.
+-- Los enlaces se reconocen en la web: YouTube, SoundCloud, Genially, PDF o página web.
 -- 'orden' puede reorganizarse sin cambiar el contenido del bloque.
 CREATE TABLE bloque_editorial (
     id_bloque BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     id_contenido BIGINT NOT NULL REFERENCES contenido_editorial(id_contenido) ON DELETE CASCADE,
-    tipo VARCHAR(12) NOT NULL CHECK (tipo IN ('parrafo', 'subtitulo', 'imagen', 'carrusel', 'enlace', 'video')),
+    tipo VARCHAR(12) NOT NULL CHECK (tipo IN ('parrafo', 'subtitulo', 'imagen', 'carrusel', 'enlace', 'video', 'pdf')),
     orden INTEGER NOT NULL CHECK (orden > 0),
     texto_es TEXT,
     texto_en TEXT,
@@ -96,6 +109,7 @@ CREATE TABLE bloque_editorial (
     pie_es TEXT,
     pie_en TEXT,
     url TEXT,
+    id_archivo_pdf BIGINT REFERENCES archivo_pdf(id_archivo_pdf) ON DELETE RESTRICT,
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
     updated_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
     CONSTRAINT bloque_orden_unico UNIQUE (id_contenido, orden) DEFERRABLE INITIALLY DEFERRED,
@@ -103,10 +117,11 @@ CREATE TABLE bloque_editorial (
         (tipo IN ('parrafo', 'subtitulo')
             AND NULLIF(btrim(texto_es), '') IS NOT NULL
             AND NULLIF(btrim(texto_en), '') IS NOT NULL
-            AND id_imagen IS NULL AND url IS NULL)
-        OR (tipo = 'imagen' AND id_imagen IS NOT NULL AND url IS NULL)
-        OR (tipo = 'carrusel' AND id_imagen IS NULL AND url IS NULL)
-        OR (tipo IN ('enlace', 'video') AND NULLIF(btrim(url), '') IS NOT NULL AND id_imagen IS NULL)
+            AND id_imagen IS NULL AND url IS NULL AND id_archivo_pdf IS NULL)
+        OR (tipo = 'imagen' AND id_imagen IS NOT NULL AND url IS NULL AND id_archivo_pdf IS NULL)
+        OR (tipo = 'carrusel' AND id_imagen IS NULL AND url IS NULL AND id_archivo_pdf IS NULL)
+        OR (tipo IN ('enlace', 'video') AND NULLIF(btrim(url), '') IS NOT NULL AND id_imagen IS NULL AND id_archivo_pdf IS NULL)
+        OR (tipo = 'pdf' AND id_archivo_pdf IS NOT NULL AND id_imagen IS NULL AND url IS NULL)
     )
 );
 
@@ -173,17 +188,7 @@ INSERT INTO tipo_recurso (id_tipo_recurso, nombre_es, nombre_en) VALUES
 ('colaboraciones', 'Colaboraciones', 'Collaborations'),
 ('legales', 'Herramientas legales', 'Legal tools');
 
--- 14. ARCHIVOS PDF: se guarda el documento binario en PostgreSQL (BYTEA).
--- No se utiliza ninguna ruta ni URL para almacenar el PDF.
-CREATE TABLE archivo_pdf (
-    id_archivo_pdf BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    archivo BYTEA NOT NULL,
-    nombre_archivo VARCHAR(255) NOT NULL,
-    mime VARCHAR(30) NOT NULL DEFAULT 'application/pdf' CHECK (mime = 'application/pdf'),
-    tamano_bytes BIGINT GENERATED ALWAYS AS (octet_length(archivo)::BIGINT) STORED,
-    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT TIMEZONE('America/La_Paz', NOW()),
-    CONSTRAINT archivo_pdf_no_vacio CHECK (octet_length(archivo) > 0)
-);
+-- 14. ARCHIVOS PDF: definida antes, en la sección 7b (la usan bloques y recursos).
 
 -- 15. RECURSOS: exactamente una imagen de portada y uno o más PDF.
 CREATE TABLE recurso (
@@ -341,6 +346,7 @@ CREATE INDEX idx_programa_paisaje ON programa (id_paisaje);
 CREATE INDEX idx_noticia_programa ON noticia (id_programa);
 CREATE INDEX idx_noticia_categoria ON noticia (id_categoria_noticia);
 CREATE INDEX idx_bloque_contenido_orden ON bloque_editorial (id_contenido, orden);
+CREATE INDEX idx_bloque_pdf ON bloque_editorial (id_archivo_pdf) WHERE id_archivo_pdf IS NOT NULL;
 CREATE INDEX idx_carrusel_bloque_orden ON carrusel_imagen (id_bloque, orden);
 CREATE INDEX idx_nosotros_tipo_orden ON nosotros (tipo, orden);
 CREATE INDEX idx_nosotros_cargo ON nosotros (id_cargo);
@@ -365,7 +371,8 @@ COMMENT ON COLUMN bloque_editorial.texto_es IS 'Contenido textual en español pa
 COMMENT ON COLUMN bloque_editorial.texto_en IS 'Contenido textual en inglés del mismo bloque.';
 COMMENT ON COLUMN bloque_editorial.pie_es IS 'Pie de imagen o de galería en español, opcional.';
 COMMENT ON COLUMN bloque_editorial.pie_en IS 'Pie de imagen o de galería en inglés, opcional.';
-COMMENT ON COLUMN bloque_editorial.url IS 'Enlace externo o dirección de video; no se usa para guardar imágenes ni PDF.';
+COMMENT ON COLUMN bloque_editorial.url IS 'Enlace de los bloques enlace/video: YouTube, SoundCloud, Genially, PDF o página web; la web detecta el tipo. No guarda imágenes ni PDF subidos.';
+COMMENT ON COLUMN bloque_editorial.id_archivo_pdf IS 'PDF subido para los bloques de tipo pdf; se puede ver o descargar desde la página.';
 COMMENT ON COLUMN contenido_editorial.fecha_publicacion IS 'Fecha y hora de publicación en horario local America/La_Paz.';
 COMMENT ON COLUMN contenido_editorial.created_at IS 'Fecha y hora local de creación del registro.';
 COMMENT ON COLUMN contenido_editorial.updated_at IS 'Fecha y hora local de la última actualización del registro.';

@@ -5,15 +5,10 @@ import { useI18n } from "@/i18n/I18nProvider";
 import type { BloquePublico } from "@/api/paisajesPublicosApi";
 import { obtenerNoticiaPublica, imagenNoticiaUrl, type NoticiaPublicaDetalle } from "@/api/noticiasPublicasApi";
 import { EditorialContent, type EditorialBlock } from "./formato_programa";
+import { youtubeId } from "@/lib/enlaces";
 import { fechaNoticia } from "./noticias-publicas";
 function textoPlano(valor: string) {
   return new DOMParser().parseFromString(valor, "text/html").body.textContent?.trim() || "";
-}
-function videoId(url: URL): string | null {
-  let id: string | null = null;
-  if (["youtu.be", "www.youtu.be"].includes(url.hostname)) id = url.pathname.split("/")[1] || null;
-  if (["youtube.com", "www.youtube.com", "m.youtube.com", "www.youtube-nocookie.com", "youtube-nocookie.com"].includes(url.hostname)) id = url.searchParams.get("v") || url.pathname.match(/^\/(?:shorts|embed|live)\/([^/]+)/)?.[1] || null;
-  return id && /^[A-Za-z0-9_-]{11}$/.test(id) ? id : null;
 }
 function bloquesEditoriales(bloques: BloquePublico[], es: boolean): EditorialBlock[] {
   const out: EditorialBlock[] = [];
@@ -31,16 +26,19 @@ function bloquesEditoriales(bloques: BloquePublico[], es: boolean): EditorialBlo
         try {
           const url = new URL(b.url);
           if (!["https:", "http:"].includes(url.protocol)) break;
-          const id = videoId(url);
+          const id = youtubeId(url);
           if (id) {
             const video = {id,title:"YouTube"};
             const last = out[out.length-1];
             if (last?.type === "videos") last.videos.push(video);
             else out.push({type:"videos",videos:[video]});
-          } else out.push({type:"link",url:url.href,text:url.hostname});
+          } else out.push({type:"embed",url:url.href}); // SoundCloud, Genially, PDF o página web
         } catch { /* URL inválida: omitir */ }
         break;
       }
+      case "pdf":
+        if (b.id_archivo_pdf) out.push({type:"pdf",id:b.id_archivo_pdf,name:b.pdf_nombre||"documento.pdf",size:b.pdf_tamano??null});
+        break;
     }
   }
   return out;

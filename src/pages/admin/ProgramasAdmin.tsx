@@ -10,7 +10,10 @@ import {
   type ProgramaResumen,
 } from "@/api/programasApi";
 import { listarPaisajes, type PaisajeResumen, type BloquePaisaje, type ImagenPaisaje, type TipoBloquePaisaje } from "@/api/paisajesApi";
-import { AdminHeading, Notice, Empty, Gallery, Video, field, primary, secondary, panel } from "./ui";
+import { AdminHeading, Notice, Empty, Gallery, field, primary, secondary, panel } from "./ui";
+import { AyudaEnlace, PdfEditor, VistaPreviaPdf } from "./BloquesContenido";
+import { EditorTexto, estilosTextoEnriquecido } from "./EditorTexto";
+import { EnlaceIncrustado } from "@/components/contenido/EnlaceIncrustado";
 import { sanitize, plain } from "./datos";
 import { withTranslator } from "./traduccion";
 import { Selector } from "./Selector";
@@ -25,7 +28,8 @@ const tipos: { tipo: TipoBloquePaisaje; nombre: string }[] = [
   { tipo: "subtitulo", nombre: "Subtítulo" },
   { tipo: "imagen", nombre: "Imagen" },
   { tipo: "carrusel", nombre: "Carrusel" },
-  { tipo: "enlace", nombre: "Enlace de YouTube" },
+  { tipo: "enlace", nombre: "Enlace" },
+  { tipo: "pdf", nombre: "PDF" },
 ];
 
 const vacio = (): BorradorLocal => ({ titulo_es: "", titulo_en: "", id_paisaje: "", bloques: [] });
@@ -100,21 +104,6 @@ function ImagenEditor({ imagen, idioma, onChange, onRemove }: {
   );
 }
 
-function TextoEnriquecido({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (ref.current && ref.current.innerHTML !== value) ref.current.innerHTML = sanitize(value);
-  }, [value]);
-  function commit() { if (ref.current) onChange(sanitize(ref.current.innerHTML)); }
-  const commands = [["B", "bold", "Negrita"], ["I", "italic", "Cursiva"], ["U", "underline", "Subrayado"], ["S", "strikeThrough", "Tachado"], ["←", "justifyLeft", "Izquierda"], ["↔", "justifyCenter", "Centrar"], ["→", "justifyRight", "Derecha"], ["↺", "removeFormat", "Quitar formato"]] as const;
-  return <div className="overflow-hidden rounded-xl border border-border bg-background">
-    <div className="flex flex-wrap gap-1 border-b border-border bg-muted/30 p-1.5">{commands.map(([title, command, labelText]) =>
-      <button key={command} type="button" title={labelText} aria-label={labelText} className="rounded px-2 py-1 text-xs font-bold hover:bg-muted" onMouseDown={(e) => e.preventDefault()} onClick={() => { ref.current?.focus(); document.execCommand(command, false); commit(); }}>{title}</button>
-    )}</div>
-    <div ref={ref} role="textbox" aria-label={label} aria-multiline="true" contentEditable suppressContentEditableWarning onInput={commit} onBlur={commit} onPaste={(e) => { e.preventDefault(); document.execCommand("insertText", false, e.clipboardData.getData("text/plain")); commit(); }} className="min-h-24 whitespace-pre-wrap p-3 text-sm text-black outline-none" />
-  </div>;
-}
-
 function VistaPrevia({ borrador, idioma }: { borrador: BorradorLocal; idioma: "es" | "en" }) {
   return (
     <div className="space-y-5 break-words">
@@ -123,11 +112,11 @@ function VistaPrevia({ borrador, idioma }: { borrador: BorradorLocal; idioma: "e
         const texto = idioma === "es" ? b.texto_es : b.texto_en;
         const pie = idioma === "es" ? b.pie_es : b.pie_en;
         if (b.tipo === "subtitulo") return <h3 key={b.localId} className="font-display text-xl text-brand-deep">{texto}</h3>;
-        if (b.tipo === "parrafo") return <div key={b.localId} className="whitespace-pre-wrap leading-relaxed text-black" dangerouslySetInnerHTML={{ __html: sanitize(texto || "") }} />;
+        if (b.tipo === "parrafo") return <div key={b.localId} className={`whitespace-pre-wrap leading-relaxed text-black ${estilosTextoEnriquecido}`} dangerouslySetInnerHTML={{ __html: sanitize(texto || "") }} />;
         if (b.tipo === "imagen") return <figure key={b.localId}>{textoImagen(b.imagen) && <img src={textoImagen(b.imagen)} alt="" className="w-full rounded-xl" />}{pie && <figcaption className="mt-2 text-xs text-muted-foreground">{pie}</figcaption>}</figure>;
         if (b.tipo === "carrusel") return <figure key={b.localId}><Gallery images={(b.imagenes || []).map((foto) => textoImagen(foto)).filter(Boolean)} />{pie && <figcaption className="mt-2 text-xs text-muted-foreground">{pie}</figcaption>}</figure>;
-        if (b.tipo === "enlace") return <a key={b.localId} className="break-all text-primary underline" href={b.url || "#"} target="_blank" rel="noreferrer">{b.url}</a>;
-        return <div key={b.localId}><Video url={b.url || ""} /></div>;
+        if (b.tipo === "pdf") return <VistaPreviaPdf key={b.localId} pdf={b.pdf} />;
+        return <EnlaceIncrustado key={b.localId} url={b.url} />;
       })}
     </div>
   );
@@ -204,8 +193,10 @@ export default function ProgramasAdmin() {
         return { mensaje: "Debes adjuntar la fotografía del bloque imagen.", destino: `bloque-${bloque.localId}` };
       if (bloque.tipo === "carrusel" && ((bloque.imagenes?.length || 0) < 2 || bloque.imagenes?.some((imagen) => !imagen.id_imagen && !imagen.archivo)))
         return { mensaje: "Cada carrusel necesita al menos dos fotografías cargadas.", destino: `bloque-${bloque.localId}` };
+      if (bloque.tipo === "pdf" && !bloque.pdf?.archivo && !bloque.pdf?.id_archivo_pdf)
+        return { mensaje: "Sube el archivo PDF del bloque.", destino: `bloque-${bloque.localId}` };
       if (["enlace", "video"].includes(bloque.tipo)) {
-        if (!bloque.url?.trim()) return { mensaje: "Completa la URL del enlace o video.", destino: `url-${bloque.localId}` };
+        if (!bloque.url?.trim()) return { mensaje: "Pega el enlace del bloque.", destino: `url-${bloque.localId}` };
         try {
           const url = new URL(bloque.url);
           if (!["https:", "http:"].includes(url.protocol)) throw new Error("Protocolo inválido");
@@ -248,12 +239,6 @@ export default function ProgramasAdmin() {
       setFotoError(errorTexto(e));
       irAError(`bloque-${id}`);
     }
-  }
-  function esVideoYouTube(url: string) {
-    try {
-      const dominio = new URL(url).hostname.toLowerCase();
-      return dominio === "youtu.be" || dominio === "youtube.com" || dominio.endsWith(".youtube.com") || dominio === "youtube-nocookie.com" || dominio.endsWith(".youtube-nocookie.com");
-    } catch { return false; }
   }
   async function traducirCamposPendientes(origen: BorradorLocal): Promise<BorradorLocal> {
     const traducido: BorradorLocal = {
@@ -390,7 +375,7 @@ export default function ProgramasAdmin() {
                   {/* El editor de párrafo NO puede ir dentro de un <label>: el navegador reenvía cada clic al primer botón (Negrita). */}
                   {b.tipo === "parrafo" && (
                     <div className="block text-sm font-medium">Contenido
-                      <TextoEnriquecido label="Párrafo" value={b.texto_es || ""} onChange={(value) => { if (value !== (b.texto_es || "")) patchBloque(b.localId, { texto_es: value, texto_en: "" }); }} />
+                      <EditorTexto label="Párrafo" value={b.texto_es || ""} onChange={(value) => { if (value !== (b.texto_es || "")) patchBloque(b.localId, { texto_es: value, texto_en: "" }); }} />
                     </div>
                   )}
                   {(b.tipo === "imagen") && <ImagenEditor idioma="es" imagen={b.imagen} onChange={(imagen) => patchBloque(b.localId, { imagen })} onRemove={() => setBorrador((old) => old ? { ...old, bloques: old.bloques.map((bloque) => { if (bloque.localId !== b.localId) return bloque; const { imagen: _imagen, ...resto } = bloque; return resto; }) } : null)} />}
@@ -406,10 +391,11 @@ export default function ProgramasAdmin() {
                     {fotoError && <p role="alert" className="text-sm text-red-700">{fotoError}</p>}
                     <p className="text-xs text-muted-foreground">Mínimo 2 fotografías, máximo 30. Al seleccionar las imágenes se cargan directamente. Para que el carrusel no deje franjas, súbelas todas en 1600 × 900 px (16:9).</p>
                   </div>}
-                  {(b.tipo === "enlace" || b.tipo === "video") && <label className="block text-sm font-medium">Enlace de YouTube
-                    <input type="url" data-field-id={`url-${b.localId}`} className={field} value={b.url || ""} onChange={(e) => patchBloque(b.localId, { url: e.target.value, tipo: esVideoYouTube(e.target.value) ? "video" : "enlace" })} placeholder="https://" />
-                    <span className="mt-1 block text-xs text-muted-foreground">Los enlaces de YouTube se muestran automáticamente como video.</span>
+                  {(b.tipo === "enlace" || b.tipo === "video") && <label className="block text-sm font-medium">Enlace
+                    <input type="url" data-field-id={`url-${b.localId}`} className={field} value={b.url || ""} onChange={(e) => patchBloque(b.localId, { url: e.target.value, tipo: "enlace" })} placeholder="https://" />
+                    <AyudaEnlace url={b.url || ""} />
                   </label>}
+                  {b.tipo === "pdf" && <PdfEditor pdf={b.pdf} onChange={(pdf) => patchBloque(b.localId, { pdf })} />}
                   {(["imagen", "carrusel"].includes(b.tipo)) && <label className="block text-sm font-medium">Pie de fotografía
                     <input className={field} value={b.pie_es || ""} onChange={(e) => patchBloque(b.localId, { pie_es: e.target.value, pie_en: "" })} />
                   </label>}

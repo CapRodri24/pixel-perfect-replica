@@ -21,7 +21,7 @@ export type FotoPublica = {
 
 export type BloquePublico = {
   id_bloque: string;
-  tipo: "parrafo" | "subtitulo" | "imagen" | "carrusel" | "enlace" | "video";
+  tipo: "parrafo" | "subtitulo" | "imagen" | "carrusel" | "enlace" | "video" | "pdf";
   orden: number;
   texto_es: string | null;
   texto_en: string | null;
@@ -29,6 +29,9 @@ export type BloquePublico = {
   pie_en: string | null;
   url: string | null;
   id_imagen: string | null;
+  id_archivo_pdf?: string | null;
+  pdf_nombre?: string | null;
+  pdf_tamano?: number | null;
   imagen?: Omit<FotoPublica, "id_imagen"> | null;
   imagenes?: FotoPublica[];
 };
@@ -85,6 +88,11 @@ export function listarPaisajesPublicos(signal?: AbortSignal) {
 
 export function obtenerPaisajePublico(id: string, signal?: AbortSignal) {
   return obtener<PaisajePublicoDetalle>(`/${encodeURIComponent(id)}`, signal);
+}
+
+/** PDF subido en un bloque de noticia, programa o paisaje. */
+export function pdfContenidoUrl(id: string | null | undefined, descargar = false): string | null {
+  return id && /^[1-9]\d*$/.test(id) ? `${API_URL}/contenido/pdf/${id}${descargar ? "?descargar=1" : ""}` : null;
 }
 
 export function imagenPaisajeUrl(id: string | null | undefined): string | null {

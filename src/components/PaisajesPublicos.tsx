@@ -5,8 +5,10 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { SectionHeading } from "@/components/SectionHeading";
 import { Button } from "@/components/ui/button";
 import { sanitize } from "@/pages/admin/datos";
+import { estilosTextoEnriquecido } from "@/lib/textoEnriquecido";
+import { EnlaceIncrustado, VisorPdf } from "@/components/contenido/EnlaceIncrustado";
 import {
-  imagenPaisajeUrl, listarPaisajesPublicos, obtenerPaisajePublico,
+  imagenPaisajeUrl, listarPaisajesPublicos, obtenerPaisajePublico, pdfContenidoUrl,
   type FotoPublica, type PaisajePublicoResumen, type PaisajePublicoDetalle,
   type BloquePublico, type ProgramaAsociado,
 } from "@/api/paisajesPublicosApi";
@@ -25,19 +27,6 @@ function Imagen({ id, alt, className }: { id: string | null | undefined; alt: st
   useEffect(() => { setFallo(false); }, [url]);
   if (!url || fallo) return <div aria-label={alt} role="img" className={`${className} grid place-items-center bg-muted text-muted-foreground`}><ImageOff className="size-10 opacity-40" aria-hidden="true" /></div>;
   return <img src={url} alt={alt} loading="lazy" decoding="async" className={className} onError={() => setFallo(true)} />;
-}
-
-function Youtube({ url, titulo }: { url: string; titulo: string }) {
-  let id: string | null = null;
-  try {
-    const parsed = new URL(url);
-    if (parsed.hostname === "youtu.be" || parsed.hostname === "www.youtu.be") id = parsed.pathname.split("/")[1] || null;
-    if (["youtube.com", "www.youtube.com", "m.youtube.com", "www.youtube-nocookie.com", "youtube-nocookie.com"].includes(parsed.hostname)) {
-      id = parsed.searchParams.get("v") || parsed.pathname.match(/^\/(?:shorts|embed|live)\/([^/]+)/)?.[1] || null;
-    }
-  } catch { /* URL no válida: no mostrar reproductor */ }
-  if (!id || !/^[A-Za-z0-9_-]{11}$/.test(id)) return null;
-  return <div className="aspect-video overflow-hidden rounded-2xl bg-muted"><iframe className="size-full border-0" src={`https://www.youtube-nocookie.com/embed/${id}`} title={titulo} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /></div>;
 }
 
 function Galeria({ fotos, pie }: { fotos: FotoPublica[]; pie: string }) {
@@ -67,14 +56,16 @@ function RenderBloque({ bloque }: { bloque: BloquePublico }) {
   const { lang } = useI18n();
   const text = (lang === "es" ? bloque.texto_es : bloque.texto_en) || "";
   const pie = (lang === "es" ? bloque.pie_es : bloque.pie_en) || "";
-  if (bloque.tipo === "parrafo") return <div className="whitespace-pre-wrap break-words text-base leading-[1.8] text-black sm:text-lg" dangerouslySetInnerHTML={{ __html: sanitize(text) }} />;
+  if (bloque.tipo === "parrafo") return <div className={`whitespace-pre-wrap break-words text-base leading-[1.8] text-black sm:text-lg ${estilosTextoEnriquecido}`} dangerouslySetInnerHTML={{ __html: sanitize(text) }} />;
   if (bloque.tipo === "subtitulo") return <h2 className="pt-3 font-display text-2xl font-semibold leading-tight text-brand-deep sm:text-3xl">{text.replace(/<[^>]*>/g, "")}</h2>;
   if (bloque.tipo === "imagen") {
     const credito = bloque.imagen?.credito || "";
     return <figure><Imagen id={bloque.id_imagen} alt={pie} className="max-h-[650px] w-full rounded-2xl bg-muted object-contain" />{(pie || credito) && <figcaption className="mt-3 text-center text-sm text-muted-foreground">{pie}{pie && credito ? " · " : ""}{credito}</figcaption>}</figure>;
   }
   if (bloque.tipo === "carrusel") return <Galeria fotos={bloque.imagenes || []} pie={pie} />;
-  if (bloque.tipo === "video" || bloque.tipo === "enlace") return bloque.url ? <Youtube url={bloque.url} titulo="YouTube" /> : null;
+  // YouTube, SoundCloud, Genially, PDF o página web: se reconoce por el enlace.
+  if (bloque.tipo === "video" || bloque.tipo === "enlace") return <EnlaceIncrustado url={bloque.url} />;
+  if (bloque.tipo === "pdf") return bloque.id_archivo_pdf ? <VisorPdf vista={pdfContenidoUrl(bloque.id_archivo_pdf) || ""} descarga={pdfContenidoUrl(bloque.id_archivo_pdf, true) || ""} nombre={bloque.pdf_nombre || "documento.pdf"} tamano={bloque.pdf_tamano} /> : null;
   return null;
 }
 
