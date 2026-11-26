@@ -6,13 +6,12 @@ import { Link } from "react-router-dom";
 import { ArrowRight, BookOpen, FileText, Heart, Users, Coins, BookMarked } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 
-// Imágenes publicadas en el sitio actual de Armonía.
-const IMG = "https://dev.armoniabolivia.org/wp-content/uploads";
+// Imágenes copiadas del sitio de Armonía a public/images/aniversario.
 const imagenes = {
-  portada: `${IMG}/2026/07/30esp2.jpg`,
-  donar: `${IMG}/elementor/thumbs/Donate-now-1-rqelru56qsgvr14u2z8nqtkukhiw9lod8cfkfu0qgw.webp`,
-  cronica: `${IMG}/2026/07/1996-05-apolo-lois-bennet-et-le-maule.webp`,
-  lineaTiempo: `${IMG}/2026/07/Timeline-2-1024x389.webp`,
+  portada: "/images/aniversario/portada-30-anos.jpg",
+  donar: "/images/aniversario/donar-30-anos.webp",
+  cronica: "/images/aniversario/cronica-apolo-1996.webp",
+  lineaTiempo: "/images/aniversario/linea-de-tiempo.webp",
 };
 const CRONICA = "https://dev.armoniabolivia.org/armonia-30-anos-trabajando-por-la-conservacion-de-la-avifauna-amenazada-de-bolivia/";
 
