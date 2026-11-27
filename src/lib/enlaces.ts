@@ -1,20 +1,35 @@
 // Reconoce qué hay detrás de un enlace del contenido editorial, para mostrarlo
 // dentro de la página: video de YouTube, audio de SoundCloud, presentación de
-// Genially, documento PDF (o archivo de Google Drive) o una página web cualquiera.
+// Genially, audio/foto/video de Macaulay Library, documento PDF (o archivo de Google Drive),
+// páginas de eBird (como referencia) o una página web cualquiera.
 
 export type EnlaceDetectado =
   | { tipo: "youtube"; url: string; id: string }
   | { tipo: "soundcloud"; url: string; embed: string; lista: boolean }
   | { tipo: "genially"; url: string; embed: string }
+  | { tipo: "macaulay"; url: string; id: string; embed: string }
+  | { tipo: "ebird"; url: string; clase: ClaseEbird }
   | { tipo: "pdf"; url: string; nombre: string; vista: string; descarga: string }
   | { tipo: "web"; url: string; dominio: string };
 
 export type TipoEnlace = EnlaceDetectado["tipo"];
+export type ClaseEbird = "especie" | "reporte" | "lista" | "publicacion" | "punto" | "otro";
+
+export const NOMBRE_CLASE_EBIRD: Record<ClaseEbird, { es: string; en: string }> = {
+  especie: { es: "Ficha de especie", en: "Species account" },
+  reporte: { es: "Reporte de viaje", en: "Trip report" },
+  lista: { es: "Lista de observación", en: "Checklist" },
+  publicacion: { es: "Publicación", en: "Post" },
+  punto: { es: "Sitio de observación", en: "Hotspot" },
+  otro: { es: "Enlace", en: "Link" },
+};
 
 export const NOMBRE_TIPO_ENLACE: Record<TipoEnlace, { es: string; en: string }> = {
   youtube: { es: "Video de YouTube", en: "YouTube video" },
   soundcloud: { es: "Audio de SoundCloud", en: "SoundCloud audio" },
   genially: { es: "Presentación de Genially", en: "Genially presentation" },
+  macaulay: { es: "Grabación de Macaulay Library (audio, foto o video)", en: "Macaulay Library recording (audio, photo or video)" },
+  ebird: { es: "Enlace de eBird (se muestra como referencia)", en: "eBird link (shown as a reference)" },
   pdf: { es: "Documento PDF", en: "PDF document" },
   web: { es: "Enlace a otra página", en: "Link to another page" },
 };
@@ -60,6 +75,33 @@ function genially(url: URL): EnlaceDetectado | null {
   return { tipo: "genially", url: url.href, embed: `https://view.genially.com/${id}` };
 }
 
+// Macaulay Library: macaulaylibrary.org/asset/123, …/asset/123/embed o search.macaulaylibrary.org/catalog/123.
+function macaulay(url: URL): EnlaceDetectado | null {
+  const host = dominio(url);
+  if (!es(host, "macaulaylibrary.org")) return null;
+  const id = url.pathname.match(/\/(?:asset|catalog)\/(?:ML)?(\d{3,})/i)?.[1];
+  if (!id) return null;
+  return { tipo: "macaulay", url: url.href, id, embed: `https://macaulaylibrary.org/asset/${id}/embed` };
+}
+
+// eBird no permite mostrarse dentro de otra web: se reconoce para etiquetar mejor la referencia.
+function ebird(url: URL): EnlaceDetectado | null {
+  if (!es(dominio(url), "ebird.org")) return null;
+  const p = url.pathname;
+  const clase: ClaseEbird = /^\/species\//.test(p) ? "especie"
+    : /^\/tripreport\//.test(p) ? "reporte"
+    : /^\/checklist\//.test(p) ? "lista"
+    : /\/post\//.test(p) ? "publicacion"
+    : /^\/hotspot\//.test(p) ? "punto"
+    : "otro";
+  return { tipo: "ebird", url: url.href, clase };
+}
+
+/** Dirección sin parámetros de seguimiento (para mostrarla en las tarjetas). */
+export function urlLimpia(valor: string): string {
+  try { const u = new URL(valor); return `${u.hostname.replace(/^www\./, "")}${u.pathname.replace(/\/$/, "")}`; } catch { return valor; }
+}
+
 function pdf(url: URL): EnlaceDetectado | null {
   const host = dominio(url);
   // Archivos de Google Drive: se muestran con el visor de Drive.
@@ -90,7 +132,7 @@ export function detectarEnlace(valor: string | null | undefined): EnlaceDetectad
   if (!["https:", "http:"].includes(url.protocol)) return null;
   const id = youtubeId(url);
   if (id) return { tipo: "youtube", url: url.href, id };
-  return soundcloud(url) || genially(url) || pdf(url) || { tipo: "web", url: url.href, dominio: dominio(url) };
+  return soundcloud(url) || genially(url) || macaulay(url) || ebird(url) || pdf(url) || { tipo: "web", url: url.href, dominio: dominio(url) };
 }
 
 export function tamanoLegible(bytes: number | null | undefined): string {

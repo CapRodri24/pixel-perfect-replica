@@ -13,6 +13,7 @@ import {
 import { useI18n } from "@/i18n/I18nProvider";
 import { DonationForm } from "@/components/DonationForm";
 import { Button } from "@/components/ui/button";
+import { CarruselMovil } from "@/components/CarruselMovil";
 
 // ==========================================
 // AVE DECORATIVA SOBRE EL QR
@@ -362,12 +363,15 @@ export default function Donar() {
             </p>
           </div>
 
-          <div
-            className="
-              mx-auto mt-10 grid max-w-6xl
-              items-start gap-6
-              lg:grid-cols-2 lg:gap-10
-            "
+          {/* En celular las dos formas de donar se muestran como carrusel (con pestañas)
+              para que la página no sea interminable; en escritorio, lado a lado. */}
+          <div className="mx-auto mt-10 max-w-6xl">
+          <CarruselMovil
+            quiebre="lg"
+            lleno
+            nombre={es ? "Formas de donar" : "Ways to give"}
+            etiquetas={es ? ["Desde Bolivia", "Internacional"] : ["From Bolivia", "International"]}
+            gridEscritorio="items-start lg:grid-cols-2 lg:gap-10"
           >
 
             {/* ==============================
@@ -703,6 +707,7 @@ export default function Donar() {
                 </div>
               </div>
             </article>
+          </CarruselMovil>
           </div>
 
           {/* ==================================

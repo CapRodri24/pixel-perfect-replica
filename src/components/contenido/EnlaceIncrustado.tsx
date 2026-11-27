@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Download, ExternalLink, Eye, EyeOff, FileText, Globe } from "lucide-react";
+import { Bird, Download, ExternalLink, Eye, EyeOff, FileText, Globe } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
-import { detectarEnlace, tamanoLegible, type EnlaceDetectado } from "@/lib/enlaces";
+import { detectarEnlace, NOMBRE_CLASE_EBIRD, tamanoLegible, urlLimpia, type EnlaceDetectado } from "@/lib/enlaces";
 
 const marco = "overflow-hidden rounded-2xl border border-border bg-muted";
 const boton = "inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-background px-3 py-1.5 text-xs font-semibold text-brand-deep transition-colors hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
@@ -48,14 +48,15 @@ export function VisorPdf({ vista, descarga, abrir, nombre, tamano }: {
   </div>;
 }
 
-function TarjetaWeb({ url, dominio }: { url: string; dominio: string }) {
+function TarjetaWeb({ url, dominio, etiqueta, ave }: { url: string; dominio: string; etiqueta?: string; ave?: boolean }) {
   const { lang } = useI18n();
+  const Icono = ave ? Bird : Globe;
   return <a href={url} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-4 rounded-2xl border border-border bg-background p-4 transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-    <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"><Globe className="size-6" aria-hidden="true" /></span>
+    <span className={`grid size-11 shrink-0 place-items-center rounded-xl ${ave ? "bg-[#e8f3ec] text-[#2f7d4f]" : "bg-primary/10 text-primary"}`}><Icono className="size-6" aria-hidden="true" /></span>
     <span className="min-w-0 flex-1">
-      <span className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{lang === "es" ? "Referencia" : "Reference"}</span>
+      <span className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">{etiqueta ?? (lang === "es" ? "Referencia" : "Reference")}</span>
       <span className="block truncate font-semibold text-brand-deep group-hover:text-primary">{dominio}</span>
-      <span className="block truncate text-sm text-muted-foreground">{url}</span>
+      <span className="block truncate text-sm text-muted-foreground">{urlLimpia(url)}</span>
     </span>
     <ExternalLink className="size-5 shrink-0 text-muted-foreground group-hover:text-primary" aria-hidden="true" />
   </a>;
@@ -69,6 +70,7 @@ function AbrirEnSitio({ url, sitio }: { url: string; sitio: string }) {
 }
 
 export function ContenidoEnlace({ enlace }: { enlace: EnlaceDetectado }) {
+  const { lang } = useI18n();
   switch (enlace.tipo) {
     case "youtube":
       return <div className={`aspect-video ${marco}`}><iframe className="size-full border-0" src={`https://www.youtube-nocookie.com/embed/${enlace.id}?rel=0`} title="YouTube" loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /></div>;
@@ -82,6 +84,14 @@ export function ContenidoEnlace({ enlace }: { enlace: EnlaceDetectado }) {
         <div className={`aspect-video ${marco}`}><iframe className="size-full border-0" src={enlace.embed} title="Genially" loading="lazy" allow="fullscreen; autoplay" allowFullScreen /></div>
         <AbrirEnSitio url={enlace.url} sitio="Genially" />
       </div>;
+    case "macaulay":
+      // Reproductor oficial de Macaulay Library (sonido con espectrograma, foto o video).
+      return <div>
+        <div className={marco} style={{ aspectRatio: "800 / 431", minHeight: 260 }}><iframe className="size-full border-0" src={enlace.embed} title={`Macaulay Library ML${enlace.id}`} loading="lazy" allow="autoplay; fullscreen" allowFullScreen /></div>
+        <AbrirEnSitio url={`https://macaulaylibrary.org/asset/${enlace.id}`} sitio="Macaulay Library" />
+      </div>;
+    case "ebird":
+      return <TarjetaWeb url={enlace.url} dominio="eBird" ave etiqueta={`eBird · ${NOMBRE_CLASE_EBIRD[enlace.clase][lang === "es" ? "es" : "en"]}`} />;
     case "pdf":
       return <VisorPdf vista={enlace.vista} descarga={enlace.descarga} abrir={enlace.url} nombre={enlace.nombre} />;
     case "web":

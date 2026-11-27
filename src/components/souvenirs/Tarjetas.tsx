@@ -24,8 +24,8 @@ function Foto({ src, alt, className }: { src: string; alt: string; className: st
 function Opciones({ titulo, valores, elegido, onElegir, colores }: {
   titulo: string; valores: string[]; elegido: string; onElegir: (v: string) => void; colores?: boolean;
 }) {
-  return <fieldset className="mt-3">
-    <legend className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{titulo}</legend>
+  return <fieldset className="mt-2.5">
+    <legend className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">{titulo}</legend>
     <div className="flex flex-wrap gap-1.5">
       {valores.map((v) => {
         const activo = v === elegido;
@@ -64,20 +64,22 @@ export function TarjetaProducto({ producto, es, imagenSrc, onAgregar }: {
     setAgregado(true);
     window.setTimeout(() => setAgregado(false), 1400);
   }
-  return <article className="flex flex-col overflow-hidden rounded-3xl border border-border bg-background shadow-card">
-    <Foto src={imagenSrc ?? imagenSouvenirUrl(producto.id_imagen)} alt={nombre} className="aspect-square w-full bg-white object-contain p-3" />
-    <div className="flex flex-1 flex-col border-t border-border p-5">
-      <h3 className="font-display text-xl leading-tight text-brand-deep">{nombre || (es ? "Nombre del producto" : "Product name")}</h3>
-      <p className="mt-2 text-lg font-semibold">{precioBs(producto.precio)}</p>
+  return <article className="flex h-full flex-col overflow-hidden rounded-3xl border border-border bg-background shadow-card">
+    <Foto src={imagenSrc ?? imagenSouvenirUrl(producto.id_imagen)} alt={nombre} className="aspect-[3/2] w-full bg-white object-contain p-2" />
+    <div className="flex flex-1 flex-col border-t border-border p-4">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="font-display text-lg leading-tight text-brand-deep">{nombre || (es ? "Nombre del producto" : "Product name")}</h3>
+        <p className="shrink-0 text-base font-bold text-brand-deep">{precioBs(producto.precio)}</p>
+      </div>
       {colores.length > 0 && <Opciones titulo={es ? "Color" : "Colour"} valores={colores} elegido={color} onElegir={setColor} colores />}
       {producto.tallas.length > 0 && <Opciones titulo={es ? "Talla" : "Size"} valores={producto.tallas} elegido={talla} onElegir={setTalla} />}
-      <div className="mt-auto pt-4">
+      <div className="mt-auto pt-3">
         <button type="button" onClick={agregar} disabled={falta}
-          className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50">
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50">
           {agregado ? <Check className="size-4" aria-hidden="true" /> : <Plus className="size-4" aria-hidden="true" />}
           {agregado ? (es ? "Añadido" : "Added") : (es ? "Añadir al carrito" : "Add to cart")}
         </button>
-        {falta && <p className="mt-2 text-center text-xs text-muted-foreground">
+        {falta && <p className="mt-1.5 text-center text-xs text-muted-foreground">
           {es ? `Elige ${[colores.length > 1 && !color ? "el color" : "", producto.tallas.length > 1 && !talla ? "la talla" : ""].filter(Boolean).join(" y ")}` : `Choose ${[colores.length > 1 && !color ? "a colour" : "", producto.tallas.length > 1 && !talla ? "a size" : ""].filter(Boolean).join(" and ")}`}
         </p>}
       </div>
@@ -113,10 +115,10 @@ export function TarjetaPromocion({ promo, productos, es, imagenSrc, onAgregar }:
     setAgregado(true);
     window.setTimeout(() => setAgregado(false), 1400);
   }
-  return <article className="relative overflow-hidden rounded-3xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 via-background to-sky-50 shadow-card">
+  return <article className="relative h-full overflow-hidden rounded-3xl border-2 border-amber-300 bg-gradient-to-br from-amber-50 via-background to-sky-50 shadow-card">
     <div className={`grid ${imagen ? "md:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]" : ""}`}>
-      {imagen && <Foto src={imagen} alt={titulo} className="max-h-[480px] w-full bg-white object-contain md:h-full" />}
-      <div className="flex flex-col p-6 sm:p-8">
+      {imagen && <Foto src={imagen} alt={titulo} className="max-h-56 w-full bg-white object-contain sm:max-h-[420px] md:h-full" />}
+      <div className="flex flex-col p-5 sm:p-8">
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-400 px-3 py-1 text-xs font-bold uppercase tracking-wide text-amber-950"><Sparkles className="size-3.5" aria-hidden="true" />{es ? "Promoción" : "Special offer"}</span>
           {promo.fecha_fin && <span className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground"><CalendarClock className="size-3.5" aria-hidden="true" />{es ? `Hasta el ${fechaCorta(promo.fecha_fin, es)}` : `Until ${fechaCorta(promo.fecha_fin, es)}`}</span>}

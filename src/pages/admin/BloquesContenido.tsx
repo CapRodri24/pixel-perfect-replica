@@ -14,7 +14,7 @@ export const MAX_PDF_BLOQUE = 10 * 1024 * 1024;
 export function AyudaEnlace({ url }: { url: string }) {
   if (!url.trim()) {
     return <span className="mt-1 block text-xs font-normal text-muted-foreground">
-      Pega el enlace y la página reconoce qué es: los videos de YouTube, audios de SoundCloud, presentaciones de Genially y PDF (también de Google Drive) se ven dentro de la página. Cualquier otro enlace aparece como referencia a esa página.
+      Pega el enlace y la página reconoce qué es: los videos de YouTube, audios de SoundCloud, presentaciones de Genially, grabaciones de Macaulay Library y PDF (también de Google Drive) se ven dentro de la página. Los enlaces de eBird y de cualquier otra página aparecen como referencia.
     </span>;
   }
   const enlace = detectarEnlace(url);

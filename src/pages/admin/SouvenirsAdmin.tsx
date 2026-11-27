@@ -8,6 +8,7 @@ import {
 import { TarjetaProducto, TarjetaPromocion } from "@/components/souvenirs/Tarjetas";
 import { AdminHeading, CloseButton, Confirm, Empty, Notice, field, panel, primary, secondary } from "./ui";
 import { withTranslator } from "./traduccion";
+import { SelectorFecha } from "./SelectorFecha";
 
 type ImagenLocal = { id_imagen?: string | undefined; archivo?: string | undefined; nombre_archivo?: string | undefined };
 type BorradorProducto = Omit<Souvenir, "id_souvenir" | "id_imagen" | "precio"> & { id_souvenir?: string; precio: string; imagen: ImagenLocal };
@@ -297,12 +298,14 @@ export default function SouvenirsAdmin() {
               {(() => { const n = aNumero(promocion.precio); return n !== null && regular > n ? <span className="mt-1 block text-xs font-semibold text-green-700">El cliente ahorra {precioBs(regular - n)} (−{Math.round(((regular - n) / regular) * 100)}%).</span> : null; })()}
             </label>
             <div className="grid gap-3 sm:grid-cols-2">
-              <label className="block text-sm font-semibold">Desde (opcional)
-                <input className={field} type="date" value={promocion.fecha_inicio || ""} onChange={(e) => setPromocion({ ...promocion, fecha_inicio: e.target.value || null })} />
-              </label>
-              <label className="block text-sm font-semibold">Hasta (opcional)
-                <input className={field} type="date" value={promocion.fecha_fin || ""} min={promocion.fecha_inicio || undefined} onChange={(e) => setPromocion({ ...promocion, fecha_fin: e.target.value || null })} />
-              </label>
+              <div className="space-y-1.5 text-sm font-semibold"><span className="block">Desde (opcional)</span>
+                <SelectorFecha etiqueta="Fecha de inicio" placeholder="Desde hoy" valor={promocion.fecha_inicio}
+                  onChange={(fecha_inicio) => setPromocion({ ...promocion, fecha_inicio, fecha_fin: promocion.fecha_fin && fecha_inicio && promocion.fecha_fin < fecha_inicio ? null : promocion.fecha_fin })} />
+              </div>
+              <div className="space-y-1.5 text-sm font-semibold"><span className="block">Hasta (opcional)</span>
+                <SelectorFecha etiqueta="Fecha de fin" placeholder="Sin fecha de fin" valor={promocion.fecha_fin} minimo={promocion.fecha_inicio}
+                  onChange={(fecha_fin) => setPromocion({ ...promocion, fecha_fin })} />
+              </div>
             </div>
             <label className="flex items-center gap-3 text-sm font-semibold">
               <input type="checkbox" className="size-5 accent-[#2381C4]" checked={promocion.activa} onChange={(e) => setPromocion({ ...promocion, activa: e.target.checked })} />

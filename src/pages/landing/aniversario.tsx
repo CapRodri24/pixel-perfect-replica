@@ -5,6 +5,7 @@ import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ArrowRight, BookOpen, FileText, Heart, Users, Coins, BookMarked } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
+import { CRONICA_RUTA } from "@/content/rutasContenido";
 
 // Imágenes copiadas del sitio de Armonía a public/images/aniversario.
 const imagenes = {
@@ -13,7 +14,7 @@ const imagenes = {
   cronica: "/images/aniversario/cronica-apolo-1996.webp",
   lineaTiempo: "/images/aniversario/linea-de-tiempo.webp",
 };
-const CRONICA = "https://dev.armoniabolivia.org/armonia-30-anos-trabajando-por-la-conservacion-de-la-avifauna-amenazada-de-bolivia/";
+
 
 const textos = {
   es: {
@@ -127,7 +128,7 @@ export default function Aniversario() {
       <div className="order-2 lg:order-1">
         <h2 className="font-display text-3xl leading-tight text-brand-deep sm:text-4xl">{t.cronicaTitulo}</h2>
         <p className="mt-5 leading-relaxed text-muted-foreground sm:text-lg">{t.cronicaTexto}</p>
-        <a href={CRONICA} target="_blank" rel="noopener noreferrer" className={`${boton} mt-7 bg-brand-deep text-white hover:bg-primary`}><BookOpen className="size-4" aria-hidden="true" />{t.cronicaBoton}<ArrowRight className="size-4" aria-hidden="true" /></a>
+        <Link to={CRONICA_RUTA} className={`${boton} mt-7 bg-brand-deep text-white hover:bg-primary`}><BookOpen className="size-4" aria-hidden="true" />{t.cronicaBoton}<ArrowRight className="size-4" aria-hidden="true" /></Link>
       </div>
       <img src={imagenes.cronica} alt={t.cronicaAlt} loading="lazy" className="order-1 w-full rounded-3xl object-cover shadow-card lg:order-2" />
     </section>

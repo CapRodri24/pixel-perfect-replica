@@ -5,6 +5,7 @@ import { WHATSAPP_ARMONIA } from "@/config/redesSociales";
 import { obtenerCatalogoSouvenirs, precioBs, precioRegular, type CatalogoSouvenirs } from "@/api/souvenirsApi";
 import { TarjetaProducto, TarjetaPromocion, type SeleccionProducto } from "@/components/souvenirs/Tarjetas";
 import { ContactPage } from "./comun";
+import { CarruselMovil } from "@/components/CarruselMovil";
 
 type ItemCarrito = { clave: string; nombre: string; detalle: string; precio: number; cantidad: number };
 
@@ -60,6 +61,7 @@ export default function Souvenirs() {
       <div className="min-w-0 space-y-10">
         {promociones.length > 0 && <section aria-labelledby="titulo-promociones" className="space-y-5">
           <h2 id="titulo-promociones" className="flex items-center gap-2 font-display text-2xl text-brand-deep sm:text-3xl"><Sparkles className="size-6 text-amber-500" aria-hidden="true" />{es ? "Promociones" : "Special offers"}</h2>
+          <CarruselMovil nombre={es ? "Promociones" : "Special offers"} gridEscritorio="gap-5" lleno>
           {promociones.map((promo) => <TarjetaPromocion key={promo.id_promocion} promo={promo} productos={productos} es={es}
             onAgregar={() => {
               const regular = precioRegular(promo, productos);
@@ -74,10 +76,11 @@ export default function Souvenirs() {
                 precio,
               });
             }} />)}
+          </CarruselMovil>
         </section>}
         {productos.length > 0 && <section aria-labelledby="titulo-productos" className="space-y-5">
           <h2 id="titulo-productos" className="font-display text-2xl text-brand-deep sm:text-3xl">{es ? "Productos" : "Products"}</h2>
-          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+          <CarruselMovil nombre={es ? "Productos" : "Products"} gridEscritorio="sm:grid-cols-2 sm:gap-5 xl:grid-cols-3">
             {productos.map((p) => <TarjetaProducto key={p.id_souvenir} producto={p} es={es}
               onAgregar={({ color, talla }: SeleccionProducto) => agregar({
                 clave: `prod-${p.id_souvenir}-${color}-${talla}`,
@@ -85,7 +88,7 @@ export default function Souvenirs() {
                 detalle: [color && `${es ? "Color" : "Colour"}: ${color}`, talla && `${es ? "Talla" : "Size"}: ${talla}`].filter(Boolean).join(" · "),
                 precio: p.precio,
               })} />)}
-          </div>
+          </CarruselMovil>
         </section>}
         <p className="text-xs text-muted-foreground">{es ? "Precios referenciales en bolivianos. No hay cobro en línea: confirmamos disponibilidad y entrega por WhatsApp." : "Reference prices in bolivianos. No online payment: we confirm availability and delivery via WhatsApp."}</p>
       </div>
