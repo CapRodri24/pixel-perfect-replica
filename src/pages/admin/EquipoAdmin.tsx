@@ -2,14 +2,15 @@ import { useEffect, useState, type FormEvent } from "react";
 
 import { Pencil, Trash2, UserRound, Search, Users, Landmark, Handshake, Plus, Briefcase, CheckCircle2, ImagePlus, ArrowLeft, ArrowRight } from "lucide-react";
 
-import { uid } from "./datos";
+import { plain, sanitize, uid } from "./datos";
+import { EditorTexto, estilosTextoEnriquecido } from "./EditorTexto";
 
 import { AdminHeading, Field, Notice, Confirm, field, primary, secondary, panel, CloseButton } from "./ui";
 import { Selector as AdminDropdown } from "./Selector";
 
 
 
-import { translateText, translationNotice } from "./traduccion";
+import { translateText, translationNotice, withTranslator } from "./traduccion";
 import { type Profile, type Role, type Category, listarNosotros, listarCargos, listarCategorias, guardarPerfil, borrarPerfil, guardarCargo, borrarCargo, reordenarPerfiles } from "@/api/nosotrosApi";
 
 
@@ -80,7 +81,7 @@ export default function EquipoAdmin() {
 
     e.preventDefault(); if (!draft || busy) return;
 
-    if (!draft.name.trim() || !draft.description.trim() || !draft.image) { setError("Completa nombre, fotografía válida y texto o descripción."); return; }
+    if (!draft.name.trim() || !plain(draft.description) || !draft.image) { setError("Completa nombre, fotografía válida y texto o descripción."); return; }
 
     const role = roles.find(r => r.id === draft.roleId);
 
@@ -89,7 +90,7 @@ export default function EquipoAdmin() {
 
     let descriptionEn=draft.descriptionEn; let roleEn=role?.nameEn || draft.roleEn;
 
-    setBusy(true); try { if(!descriptionEn.trim()) descriptionEn=await translateText(draft.description); if(draft.category==="equipo"&&!roleEn.trim()) roleEn=await translateText(role?.name??draft.role); } catch(e){setError(e instanceof Error?e.message:"No se pudo traducir.");return;} finally{setBusy(false);}
+    setBusy(true); try { if(!plain(descriptionEn)) descriptionEn=await withTranslator(t=>t(draft.description,true)); if(draft.category==="equipo"&&!roleEn.trim()) roleEn=await translateText(role?.name??draft.role); } catch(e){setError(e instanceof Error?e.message:"No se pudo traducir.");return;} finally{setBusy(false);}
 
     setDraft({...draft,descriptionEn,roleEn});
 
@@ -145,7 +146,7 @@ export default function EquipoAdmin() {
     finally { setBusy(false); }
   }
 
-  const filtered = items.filter(p => p.category === category && folded(`${p.name} ${roleName(p)} ${p.description}`).includes(folded(query)));
+  const filtered = items.filter(p => p.category === category && folded(`${p.name} ${roleName(p)} ${plain(p.description)}`).includes(folded(query)));
 
   const count = items.filter(p => p.category === category).length;
 
@@ -192,13 +193,16 @@ export default function EquipoAdmin() {
       {category === "equipo" && <div className="space-y-2"><AdminDropdown label="Cargo" required placeholder="Selecciona un cargo" value={draft.roleId || (draft.role ? "legacy" : "")} options={[...(draft.role && !draft.roleId ? [{id:"legacy",label:`${draft.role} (cargo anterior)`}] : []),...roles.map(r=>({id:r.id,label:r.name}))]} onChange={id=>{if(id==="legacy")return;const r=roles.find(x=>x.id===id);patch({roleId:r?.id??"",role:r?.name??"",roleEn:r?.nameEn??""});}}/><button type="button" className={secondary} onClick={() => { setManageRoles(true); setRoleDraft({ id: uid(), name: "", nameEn: "" }); clearNotice(); }}><Plus className="size-4"/>Crear cargo</button></div>}
 
       {category==="socios"&&<AdminDropdown label="Categoría de socio" value={draft.partnerCategory} options={partnerCategories.map(c=>({id:c.id,label:c.name}))} onChange={partnerCategory=>patch({partnerCategory})} required/>}
-      <Field label={category === "equipo" ? "Descripción" : "Texto"}><textarea required rows={6} className={field} value={draft.description} onChange={e => patch({ description: e.target.value, descriptionEn:"" })}/></Field>
+      {/* El editor NO va dentro de un <label>: el navegador reenviaría cada clic al primer botón. */}
+      <div className="block min-w-0 space-y-1.5"><span className="block text-sm font-medium text-foreground">{category === "equipo" ? "Descripción" : "Texto"}</span>
+        <EditorTexto sinEnlaces label={category === "equipo" ? "Descripción" : "Texto"} value={draft.description} onChange={value => { if (value !== draft.description) patch({ description: value, descriptionEn: "" }); }}/>
+      </div>
 
       </div></div><div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-4"><CloseButton onClick={() => { setDraft(null); clearNotice(); }}/><button type="submit" style={{backgroundColor:active.accent}} className={actionClass}><CheckCircle2 className="size-4"/>{busy?"Traduciendo…":"Guardar registro"}</button></div></fieldset></form> : <>
 
       <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 shadow-sm"><Search className="size-5 text-black"/><input className="w-full bg-transparent py-3 outline-none" aria-label="Buscar registros" placeholder="Buscar por nombre, cargo o texto…" value={query} onChange={e => setQuery(e.target.value)}/></div>
 
-      {!filtered.length ? <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center"><span style={{color:active.accent,backgroundColor:active.tint}} className="mx-auto grid size-20 place-items-center rounded-3xl"><active.icon className="size-9"/></span><h3 className="mt-5 text-xl font-bold text-brand-deep">{query?"No encontramos coincidencias":"Aún no hay registros"}</h3><p className="mx-auto mt-2 max-w-sm text-sm text-black">{query?"Prueba con otro nombre o palabra.":"Añade el primer perfil para empezar a completar esta sección."}</p><button type="button" className={`${actionClass} mt-5`} style={{backgroundColor:active.accent}} disabled={!ready||busy||loading} onClick={()=>query?setQuery(""):start(category)}>{query?"Limpiar búsqueda":`Añadir ${active.singular}`}</button></div> : <>{!query && filtered.length > 1 && <p className="text-sm text-black">Usa las flechas ← → de cada tarjeta para cambiar el orden en que aparecen en la web.</p>}<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{filtered.map((p, i) => <article key={p.id} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg motion-reduce:transform-none motion-reduce:transition-none"><div style={{backgroundColor:active.tint}} className="relative grid aspect-[16/10] place-items-center overflow-hidden">{p.image ? <img src={p.image} alt={p.name} onError={e=>{e.currentTarget.style.visibility="hidden";}} className={`size-full transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none ${p.category === "socios" ? "object-contain p-5" : "object-cover"}`}/> : <UserRound style={{color:active.accent}} className="size-16 opacity-50"/>}</div><div className="space-y-2 p-4"><h3 className="font-display text-xl font-bold text-brand-deep">{p.name}</h3>{p.category === "equipo" && <p style={{backgroundColor:active.tint,color:active.accent}} className="inline-block rounded-full px-3 py-1 text-sm font-semibold">{roleName(p)}</p>}<p className="line-clamp-3 whitespace-pre-line text-sm text-black">{p.description}</p><div className="flex flex-wrap gap-2 pt-2">{!query && filtered.length > 1 && <><button type="button" className={secondary} title="Mover antes" aria-label={`Mover ${p.name} antes`} disabled={busy||!ready||i===0} onClick={() => void move(p, -1)}><ArrowLeft className="size-4"/></button><button type="button" className={secondary} title="Mover después" aria-label={`Mover ${p.name} después`} disabled={busy||!ready||i===filtered.length-1} onClick={() => void move(p, 1)}><ArrowRight className="size-4"/></button></>}<button type="button" className={secondary} disabled={busy||!ready} onClick={() => edit(p)}><Pencil className="size-4"/>Editar</button><button type="button" className={`${secondary} text-red-700`} disabled={busy||!ready} onClick={() => setPending({ type: "delete", person: p })}><Trash2 className="size-4"/>Eliminar</button></div></div></article>)}</div></>}
+      {!filtered.length ? <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center"><span style={{color:active.accent,backgroundColor:active.tint}} className="mx-auto grid size-20 place-items-center rounded-3xl"><active.icon className="size-9"/></span><h3 className="mt-5 text-xl font-bold text-brand-deep">{query?"No encontramos coincidencias":"Aún no hay registros"}</h3><p className="mx-auto mt-2 max-w-sm text-sm text-black">{query?"Prueba con otro nombre o palabra.":"Añade el primer perfil para empezar a completar esta sección."}</p><button type="button" className={`${actionClass} mt-5`} style={{backgroundColor:active.accent}} disabled={!ready||busy||loading} onClick={()=>query?setQuery(""):start(category)}>{query?"Limpiar búsqueda":`Añadir ${active.singular}`}</button></div> : <>{!query && filtered.length > 1 && <p className="text-sm text-black">Usa las flechas ← → de cada tarjeta para cambiar el orden en que aparecen en la web.</p>}<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{filtered.map((p, i) => <article key={p.id} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg motion-reduce:transform-none motion-reduce:transition-none"><div style={{backgroundColor:active.tint}} className="relative grid aspect-[16/10] place-items-center overflow-hidden">{p.image ? <img src={p.image} alt={p.name} onError={e=>{e.currentTarget.style.visibility="hidden";}} className={`size-full transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none ${p.category === "socios" ? "object-contain p-5" : "object-cover"}`}/> : <UserRound style={{color:active.accent}} className="size-16 opacity-50"/>}</div><div className="space-y-2 p-4"><h3 className="font-display text-xl font-bold text-brand-deep">{p.name}</h3>{p.category === "equipo" && <p style={{backgroundColor:active.tint,color:active.accent}} className="inline-block rounded-full px-3 py-1 text-sm font-semibold">{roleName(p)}</p>}<div className={`line-clamp-3 whitespace-pre-line text-sm text-black ${estilosTextoEnriquecido}`} dangerouslySetInnerHTML={{ __html: sanitize(p.description) }}/><div className="flex flex-wrap gap-2 pt-2">{!query && filtered.length > 1 && <><button type="button" className={secondary} title="Mover antes" aria-label={`Mover ${p.name} antes`} disabled={busy||!ready||i===0} onClick={() => void move(p, -1)}><ArrowLeft className="size-4"/></button><button type="button" className={secondary} title="Mover después" aria-label={`Mover ${p.name} después`} disabled={busy||!ready||i===filtered.length-1} onClick={() => void move(p, 1)}><ArrowRight className="size-4"/></button></>}<button type="button" className={secondary} disabled={busy||!ready} onClick={() => edit(p)}><Pencil className="size-4"/>Editar</button><button type="button" className={`${secondary} text-red-700`} disabled={busy||!ready} onClick={() => setPending({ type: "delete", person: p })}><Trash2 className="size-4"/>Eliminar</button></div></div></article>)}</div></>}
 
     </>}
 

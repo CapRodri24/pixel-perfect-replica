@@ -48,7 +48,7 @@ function Boton({ activo, titulo, onClick, children }: { activo: boolean; titulo:
   >{children}</button>;
 }
 
-export function EditorTexto({ value, onChange, label }: { value: string; onChange: (v: string) => void; label: string }) {
+export function EditorTexto({ value, onChange, label, sinEnlaces = false }: { value: string; onChange: (v: string) => void; label: string; /** Oculta la herramienta de enlaces (por ejemplo, en Nosotros). */ sinEnlaces?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [activos, setActivos] = useState<Set<Comando>>(new Set());
   const [enEnlace, setEnEnlace] = useState(false);
@@ -200,9 +200,9 @@ export function EditorTexto({ value, onChange, label }: { value: string; onChang
         {alineaciones.map(({ comando, icono: Icono, nombre }) =>
           <Boton key={comando} activo={activos.has(comando)} titulo={nombre} onClick={() => aplicar(comando)}><Icono className="size-4" aria-hidden="true" />{comando === "justifyFull" && <span className="hidden sm:inline">Justificar</span>}</Boton>)}
       </Grupo>
-      <Grupo titulo="Enlace">
+      {!sinEnlaces && <Grupo titulo="Enlace">
         <Boton activo={enEnlace || Boolean(enlace)} titulo="Insertar o editar un enlace en el texto seleccionado (Ctrl+K)" onClick={abrirEnlace}><Link2 className="size-4" aria-hidden="true" /><span className="hidden sm:inline">Enlace</span></Boton>
-      </Grupo>
+      </Grupo>}
       <Grupo titulo="Limpiar">
         <Boton activo={false} titulo="Quitar formato del texto seleccionado" onClick={() => aplicar("removeFormat")}><RemoveFormatting className="size-4" aria-hidden="true" /></Boton>
       </Grupo>
@@ -236,7 +236,7 @@ export function EditorTexto({ value, onChange, label }: { value: string; onChang
       contentEditable
       suppressContentEditableWarning
       onKeyDown={(e) => {
-        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); abrirEnlace(); return; }
+        if (!sinEnlaces && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); abrirEnlace(); return; }
         if (e.key === " " && !e.ctrlKey && !e.metaKey && !e.altKey && listaAutomatica()) {
           e.preventDefault();
           commit();
@@ -249,7 +249,7 @@ export function EditorTexto({ value, onChange, label }: { value: string; onChang
       className={`min-h-28 whitespace-pre-wrap p-3 text-sm leading-relaxed text-black outline-none ${estilosTextoEnriquecido}`}
     />
     <p className="border-t border-border bg-muted/20 px-3 py-1.5 text-[11px] text-muted-foreground">
-      Selecciona el texto y elige un formato; para un enlace selecciona las palabras y pulsa «Enlace». Para una lista escribe «- » o «1. » al inicio de la línea; pulsa Enter dos veces para salir de ella.
+      Selecciona el texto y elige un formato{sinEnlaces ? "." : "; para un enlace selecciona las palabras y pulsa «Enlace»."} Para una lista escribe «- » o «1. » al inicio de la línea; pulsa Enter dos veces para salir de ella.
     </p>
   </div>;
 }
