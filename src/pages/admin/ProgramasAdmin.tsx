@@ -13,7 +13,8 @@ import { listarPaisajes, type PaisajeResumen, type BloquePaisaje, type ImagenPai
 import { AdminHeading, Notice, Empty, Gallery, field, primary, secondary, panel } from "./ui";
 import { AyudaEnlace, PdfEditor, VistaPreviaPdf } from "./BloquesContenido";
 import { EditorTexto, estilosTextoEnriquecido } from "./EditorTexto";
-import { EnlaceIncrustado } from "@/components/contenido/EnlaceIncrustado";
+import { EnlaceIncrustado, GrillaVideos } from "@/components/contenido/EnlaceIncrustado";
+import { agruparVideos } from "@/lib/enlaces";
 import { sanitize, plain } from "./datos";
 import { withTranslator } from "./traduccion";
 import { Selector } from "./Selector";
@@ -108,7 +109,9 @@ function VistaPrevia({ borrador, idioma }: { borrador: BorradorLocal; idioma: "e
   return (
     <div className="space-y-5 break-words">
       <h2 className="font-display text-3xl text-brand-deep">{idioma === "es" ? borrador.titulo_es : borrador.titulo_en || "Título"}</h2>
-      {borrador.bloques.map((b) => {
+      {agruparVideos(borrador.bloques, (x) => (x.tipo === "enlace" || x.tipo === "video") ? x.url : null).map((seg) => {
+        if (seg.tipo === "videos") return <GrillaVideos key={seg.items[0]?.localId} ids={seg.ids} />;
+        const b = seg.item;
         const texto = idioma === "es" ? b.texto_es : b.texto_en;
         const pie = idioma === "es" ? b.pie_es : b.pie_en;
         if (b.tipo === "subtitulo") return <h3 key={b.localId} className="font-display text-xl text-brand-deep">{texto}</h3>;

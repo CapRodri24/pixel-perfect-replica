@@ -6,7 +6,8 @@ import { SectionHeading } from "@/components/SectionHeading";
 import { Button } from "@/components/ui/button";
 import { sanitize } from "@/pages/admin/datos";
 import { estilosTextoEnriquecido } from "@/lib/textoEnriquecido";
-import { EnlaceIncrustado, VisorPdf } from "@/components/contenido/EnlaceIncrustado";
+import { EnlaceIncrustado, GrillaVideos, VisorPdf } from "@/components/contenido/EnlaceIncrustado";
+import { agruparVideos } from "@/lib/enlaces";
 import {
   imagenPaisajeUrl, listarPaisajesPublicos, obtenerPaisajePublico, pdfContenidoUrl,
   type FotoPublica, type PaisajePublicoResumen, type PaisajePublicoDetalle,
@@ -207,7 +208,7 @@ export function DetallePaisajePublico({ id }: { id: string }) {
     {estado === "no-encontrado" && <Mensaje mensaje={es ? "Este paisaje no está disponible." : "This landscape is unavailable."} />}
     {estado === "listo" && data && <>
       <h1 className="mb-8 font-display text-3xl font-semibold leading-tight text-brand-deep sm:text-5xl">{es ? data.titulo_es : data.titulo_en}</h1>
-      {data.bloques.length ? <div className="space-y-7 sm:space-y-9">{data.bloques.map(b => <RenderBloque key={b.id_bloque} bloque={b} />)}</div> : <Mensaje mensaje={es ? "Próximamente compartiremos más información sobre este paisaje." : "More information about this landscape will be available soon."} />}
+      {data.bloques.length ? <div className="space-y-7 sm:space-y-9">{agruparVideos(data.bloques, (b) => (b.tipo === "enlace" || b.tipo === "video") ? b.url : null).map((seg) => seg.tipo === "videos" ? <GrillaVideos key={seg.items[0]?.id_bloque} ids={seg.ids} /> : <RenderBloque key={seg.item.id_bloque} bloque={seg.item} />)}</div> : <Mensaje mensaje={es ? "Próximamente compartiremos más información sobre este paisaje." : "More information about this landscape will be available soon."} />}
       <ProgramasAsociados programas={Array.isArray(data.programas) ? data.programas : []} />
     </>}
   </div></div></article>;

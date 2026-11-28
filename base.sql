@@ -78,7 +78,7 @@ CREATE TABLE noticia (
     id_contenido BIGINT NOT NULL UNIQUE REFERENCES contenido_editorial(id_contenido) ON DELETE CASCADE,
     id_programa BIGINT REFERENCES programa(id_programa) ON DELETE SET NULL,
     id_categoria_noticia VARCHAR(30) NOT NULL REFERENCES categoria_noticia(id_categoria_noticia),
-    autor VARCHAR(200),
+    autor VARCHAR(1000),
     fotos_por VARCHAR(200),
     CONSTRAINT noticia_autor_no_vacio CHECK (autor IS NULL OR btrim(autor) <> ''),
     CONSTRAINT noticia_fotos_por_no_vacio CHECK (fotos_por IS NULL OR btrim(fotos_por) <> '')
@@ -417,7 +417,7 @@ COMMENT ON COLUMN archivo_pdf.archivo IS 'Contenido binario completo del documen
 COMMENT ON COLUMN archivo_pdf.nombre_archivo IS 'Nombre del archivo PDF original.';
 COMMENT ON COLUMN archivo_pdf.mime IS 'Tipo MIME del archivo; siempre application/pdf.';
 COMMENT ON COLUMN archivo_pdf.tamano_bytes IS 'Tamaño del PDF, calculado automáticamente en bytes desde el BYTEA.';
-COMMENT ON COLUMN noticia.autor IS 'Nombre de quien escribió la noticia; se muestra al final como «Texto escrito por».';
+COMMENT ON COLUMN noticia.autor IS 'Quién escribió la noticia (puede incluir formato y enlaces en HTML; máximo 200 caracteres visibles); se muestra al final como «Texto escrito por».';
 COMMENT ON COLUMN noticia.fotos_por IS 'Autor o autores de las fotografías; se muestra al final, antes de «Texto escrito por», como «Fotos por».';
 COMMENT ON COLUMN bloque_editorial.orden IS 'Posición del bloque bajo el título fijo: 1, 2, 3, etc.';
 COMMENT ON COLUMN bloque_editorial.texto_es IS 'Contenido textual en español para bloques de párrafo o subtítulo.';

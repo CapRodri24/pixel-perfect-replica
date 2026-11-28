@@ -48,7 +48,12 @@ function Boton({ activo, titulo, onClick, children }: { activo: boolean; titulo:
   >{children}</button>;
 }
 
-export function EditorTexto({ value, onChange, label, sinEnlaces = false }: { value: string; onChange: (v: string) => void; label: string; /** Oculta la herramienta de enlaces (por ejemplo, en Nosotros). */ sinEnlaces?: boolean }) {
+export function EditorTexto({ value, onChange, label, sinEnlaces = false, unaLinea = false, placeholder }: {
+  value: string; onChange: (v: string) => void; label: string;
+  /** Oculta la herramienta de enlaces (por ejemplo, en Nosotros). */ sinEnlaces?: boolean;
+  /** Campo corto de una sola línea (por ejemplo, «Texto escrito por»): solo formato y enlaces. */ unaLinea?: boolean;
+  placeholder?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [activos, setActivos] = useState<Set<Comando>>(new Set());
   const [enEnlace, setEnEnlace] = useState(false);
@@ -192,14 +197,14 @@ export function EditorTexto({ value, onChange, label, sinEnlaces = false }: { va
         {formato.map(({ comando, icono: Icono, nombre, atajo }) =>
           <Boton key={comando} activo={activos.has(comando)} titulo={atajo ? `${nombre} (${atajo})` : nombre} onClick={() => aplicar(comando)}><Icono className="size-4" aria-hidden="true" /></Boton>)}
       </Grupo>
-      <Grupo titulo="Listas">
+      {!unaLinea && <><Grupo titulo="Listas">
         {listas.map(({ comando, icono: Icono, nombre, ayuda }) =>
           <Boton key={comando} activo={activos.has(comando)} titulo={ayuda} onClick={() => aplicar(comando)}><Icono className="size-4" aria-hidden="true" /><span className="hidden sm:inline">{nombre}</span></Boton>)}
       </Grupo>
       <Grupo titulo="Alineación del texto">
         {alineaciones.map(({ comando, icono: Icono, nombre }) =>
           <Boton key={comando} activo={activos.has(comando)} titulo={nombre} onClick={() => aplicar(comando)}><Icono className="size-4" aria-hidden="true" />{comando === "justifyFull" && <span className="hidden sm:inline">Justificar</span>}</Boton>)}
-      </Grupo>
+      </Grupo></>}
       {!sinEnlaces && <Grupo titulo="Enlace">
         <Boton activo={enEnlace || Boolean(enlace)} titulo="Insertar o editar un enlace en el texto seleccionado (Ctrl+K)" onClick={abrirEnlace}><Link2 className="size-4" aria-hidden="true" /><span className="hidden sm:inline">Enlace</span></Boton>
       </Grupo>}
@@ -232,12 +237,15 @@ export function EditorTexto({ value, onChange, label, sinEnlaces = false }: { va
       ref={ref}
       role="textbox"
       aria-label={label}
-      aria-multiline="true"
+      aria-multiline={!unaLinea}
+      data-placeholder={placeholder}
       contentEditable
       suppressContentEditableWarning
       onKeyDown={(e) => {
         if (!sinEnlaces && (e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") { e.preventDefault(); abrirEnlace(); return; }
-        if (e.key === " " && !e.ctrlKey && !e.metaKey && !e.altKey && listaAutomatica()) {
+        // En una sola línea, Enter no crea párrafos nuevos.
+        if (unaLinea && e.key === "Enter") { e.preventDefault(); return; }
+        if (!unaLinea && e.key === " " && !e.ctrlKey && !e.metaKey && !e.altKey && listaAutomatica()) {
           e.preventDefault();
           commit();
           actualizar();
@@ -245,11 +253,11 @@ export function EditorTexto({ value, onChange, label, sinEnlaces = false }: { va
       }}
       onInput={() => { commit(); actualizar(); }}
       onBlur={commit}
-      onPaste={(e) => { e.preventDefault(); document.execCommand("insertText", false, e.clipboardData.getData("text/plain")); commit(); }}
-      className={`min-h-28 whitespace-pre-wrap p-3 text-sm leading-relaxed text-black outline-none ${estilosTextoEnriquecido}`}
+      onPaste={(e) => { e.preventDefault(); const t = e.clipboardData.getData("text/plain"); document.execCommand("insertText", false, unaLinea ? t.replace(/\s*\n+\s*/g, " ") : t); commit(); }}
+      className={`${unaLinea ? "min-h-11 px-3 py-2.5 empty:before:text-muted-foreground empty:before:content-[attr(data-placeholder)]" : "min-h-28 p-3"} whitespace-pre-wrap text-sm leading-relaxed text-black outline-none ${estilosTextoEnriquecido}`}
     />
-    <p className="border-t border-border bg-muted/20 px-3 py-1.5 text-[11px] text-muted-foreground">
+    {!unaLinea && <p className="border-t border-border bg-muted/20 px-3 py-1.5 text-[11px] text-muted-foreground">
       Selecciona el texto y elige un formato{sinEnlaces ? "." : "; para un enlace selecciona las palabras y pulsa «Enlace»."} Para una lista escribe «- » o «1. » al inicio de la línea; pulsa Enter dos veces para salir de ella.
-    </p>
+    </p>}
   </div>;
 }

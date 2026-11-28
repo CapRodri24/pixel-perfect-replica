@@ -142,28 +142,75 @@ function Cards({
 }) {
   return (
     <div className="grid grid-cols-1 items-start gap-4 sm:gap-5 lg:grid-cols-2">
-      {items.map((p) => {
-        const cargo = p.category === "equipo" ? (es ? p.role : p.roleEn || p.role) : "";
-        return (
+      {items.map((p) =>
+        p.category === "socios" ? (
+          // Socios: la imagen ocupa todo el alto de la tarjeta y una parte del ancho, sin marco.
+          <article
+            key={p.id}
+            className="flex min-h-36 min-w-0 overflow-hidden rounded-2xl border border-border bg-white shadow-sm transition-shadow hover:shadow-md sm:min-h-44"
+          >
+            <ImagenSocio p={p} />
+            <div className="min-w-0 flex-1 p-4 sm:p-5">
+              <h3 className="break-words font-display text-lg font-bold leading-snug text-brand-deep sm:text-xl">{p.name}</h3>
+              <Texto html={es ? p.description : p.descriptionEn || p.description} es={es} />
+            </div>
+          </article>
+        ) : (
           <article
             key={p.id}
             className="flex min-w-0 gap-4 rounded-2xl border border-border bg-white p-4 shadow-sm transition-shadow hover:shadow-md sm:gap-5 sm:p-5"
           >
             <Foto p={p} />
             <div className="min-w-0 flex-1">
-              <h3 className="break-words font-display text-lg font-bold leading-snug text-brand-deep sm:text-xl">
-                {p.name}
-              </h3>
-              {cargo && (
-                <p className="mt-1.5 inline-block rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary sm:text-sm">
-                  {cargo}
-                </p>
-              )}
+              <h3 className="break-words font-display text-lg font-bold leading-snug text-brand-deep sm:text-xl">{p.name}</h3>
               <Texto html={es ? p.description : p.descriptionEn || p.description} es={es} />
             </div>
           </article>
-        );
-      })}
+        )
+      )}
+    </div>
+  );
+}
+
+function ImagenSocio({ p }: { p: Profile }) {
+  const [failed, setFailed] = useState(false);
+  useEffect(() => { setFailed(false); }, [p.image]);
+  return (
+    // Ocupa todo el alto y una franja del ancho, sin marco interior; la imagen se escala entera
+    // (los logotipos no se recortan).
+    <div className="relative w-[36%] shrink-0 self-stretch border-r border-border bg-white sm:w-[34%]">
+      {!failed && p.image ? (
+        <img src={p.image} alt={p.name} loading="lazy" decoding="async" onError={() => setFailed(true)}
+          className="absolute inset-0 block size-full object-contain p-2 sm:p-3" />
+      ) : (
+        <span className="absolute inset-0 grid place-items-center"><Handshake className="size-10 text-muted-foreground" aria-hidden="true" /></span>
+      )}
+    </div>
+  );
+}
+
+// Nuestro equipo: agrupado por área, en el orden en que aparecen las personas.
+function PorArea({ items, es }: { items: Profile[]; es: boolean }) {
+  const grupos: { clave: string; area: string; items: Profile[] }[] = [];
+  for (const p of items) {
+    const clave = p.roleId || p.role || "sin-area";
+    const area = (es ? p.role : p.roleEn || p.role) || (es ? "Equipo" : "Team");
+    const g = grupos.find((x) => x.clave === clave);
+    if (g) g.items.push(p);
+    else grupos.push({ clave, area, items: [p] });
+  }
+  return (
+    <div className="space-y-10">
+      {grupos.map((g) => (
+        <div key={g.clave} className="space-y-4">
+          <h3 className="flex items-center gap-3 font-display text-2xl leading-tight text-brand-deep">
+            <span className="h-7 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+            {g.area}
+            <span className="rounded-full bg-primary/10 px-2.5 py-0.5 font-sans text-sm font-semibold text-primary">{g.items.length}</span>
+          </h3>
+          <Cards items={g.items} es={es} />
+        </div>
+      ))}
     </div>
   );
 }
@@ -266,7 +313,7 @@ export default function NosotrosRegistros({
           </div>
         ) : category !== "socios" ? (
           items.length ? (
-            <Cards items={items} es={es} />
+            category === "equipo" ? <PorArea items={items} es={es} /> : <Cards items={items} es={es} />
           ) : (
             <p className="text-muted-foreground">
               {es

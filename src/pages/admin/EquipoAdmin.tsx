@@ -23,7 +23,7 @@ const categories = [
 
   { id: "junta-directiva", label: "Junta directiva", icon: Landmark, description: "Gobernanza y liderazgo institucional", singular: "miembro", accent: "#2381C4", tint: "#edf6fc", border: "#dce7ef" },
 
-  { id: "equipo", label: "Nuestro equipo", icon: Users, description: "Personas y cargos de la organización", singular: "integrante", accent: "#2381C4", tint: "#edf6fc", border: "#dce7ef" },
+  { id: "equipo", label: "Nuestro equipo", icon: Users, description: "Personas y áreas de la organización", singular: "integrante", accent: "#2381C4", tint: "#edf6fc", border: "#dce7ef" },
 
   { id: "socios", label: "Socios y aliados", icon: Handshake, description: "Organizaciones y colaboración", singular: "aliado", accent: "#2381C4", tint: "#edf6fc", border: "#dce7ef" },
 
@@ -86,7 +86,7 @@ export default function EquipoAdmin() {
     const role = roles.find(r => r.id === draft.roleId);
 
     if (draft.category === "socios" && !draft.partnerCategory) { setError("Selecciona una categoría de socio."); return; }
-    if (draft.category === "equipo" && !role) { setError("Selecciona o crea un cargo."); return; }
+    if (draft.category === "equipo" && !role) { setError("Selecciona o crea un área."); return; }
 
     let descriptionEn=draft.descriptionEn; let roleEn=role?.nameEn || draft.roleEn;
 
@@ -105,15 +105,15 @@ export default function EquipoAdmin() {
 
     const name = roleDraft.name.trim();
 
-    if (!name) { setError("Escribe el nombre del cargo."); return; }
+    if (!name) { setError("Escribe el nombre del área."); return; }
 
-    if (roles.some(r => r.id !== roleDraft.id && folded(r.name) === folded(name))) { setError("Este cargo ya existe."); return; }
+    if (roles.some(r => r.id !== roleDraft.id && folded(r.name) === folded(name))) { setError("Esta área ya existe."); return; }
 
     let nameEn=roleDraft.nameEn.trim();setBusy(true);try{if(!nameEn)nameEn=await translateText(name);}catch(e){setError(e instanceof Error?e.message:"No se pudo traducir.");return;}finally{setBusy(false);}
 
     const updated = { ...roleDraft, name, nameEn };
 
-    setBusy(true);try{const id=await guardarCargo(updated,roles.some(r=>r.id===updated.id));if(draft?.category==="equipo")patch({roleId:id,role:updated.name,roleEn:updated.nameEn});setRoleDraft(null);await refresh();setSuccess("Cargo guardado.");}catch(e){setError(e instanceof Error?e.message:"No se pudo guardar el cargo.");}finally{setBusy(false);}
+    setBusy(true);try{const id=await guardarCargo(updated,roles.some(r=>r.id===updated.id));if(draft?.category==="equipo")patch({roleId:id,role:updated.name,roleEn:updated.nameEn});setRoleDraft(null);await refresh();setSuccess("Área guardada.");}catch(e){setError(e instanceof Error?e.message:"No se pudo guardar el área.");}finally{setBusy(false);}
 
   }
 
@@ -123,9 +123,9 @@ export default function EquipoAdmin() {
 
     const target = deleteRole; setDeleteRole(null);
 
-    if (items.some(p => p.category === "equipo" && roleFor(p)?.id === target.id) || draft?.roleId === target.id) { setError("No puedes eliminar un cargo asignado. Cambia primero el cargo de los integrantes."); return; }
+    if (items.some(p => p.category === "equipo" && roleFor(p)?.id === target.id) || draft?.roleId === target.id) { setError("No puedes eliminar un área asignada. Cambia primero el área de los integrantes."); return; }
 
-    setBusy(true);try{await borrarCargo(target.id);await refresh();setSuccess("Cargo eliminado.");}catch(e){setError(e instanceof Error?e.message:"No se pudo eliminar el cargo.");}finally{setBusy(false);}
+    setBusy(true);try{await borrarCargo(target.id);await refresh();setSuccess("Área eliminada.");}catch(e){setError(e instanceof Error?e.message:"No se pudo eliminar el área.");}finally{setBusy(false);}
 
   }
 
@@ -166,17 +166,17 @@ export default function EquipoAdmin() {
 
     <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
 
-      <div className="flex flex-wrap items-center justify-between gap-4"><div className="flex items-center gap-3"><span style={{backgroundColor:active.tint,color:active.accent}} className="grid size-11 shrink-0 place-items-center rounded-xl"><active.icon className="size-5"/></span><div><h2 className="text-xl font-bold text-brand-deep">{active.label}</h2><p className="text-sm text-black">{count} {count===1?"registro":"registros"}</p></div></div><div className="flex flex-wrap gap-2">{category === "equipo" && <button type="button" className={secondary} disabled={busy} onClick={() => { setManageRoles(v => !v); setRoleDraft(null); clearNotice(); }}><Briefcase className="size-4"/>{manageRoles ? "Cerrar cargos" : "Gestionar cargos"}</button>}{!draft && <button type="button" style={{backgroundColor:active.accent}} className={actionClass} disabled={!ready||busy||loading} onClick={() => start(category)}><Plus className="size-5"/>Añadir {active.singular}</button>}</div></div>
+      <div className="flex flex-wrap items-center justify-between gap-4"><div className="flex items-center gap-3"><span style={{backgroundColor:active.tint,color:active.accent}} className="grid size-11 shrink-0 place-items-center rounded-xl"><active.icon className="size-5"/></span><div><h2 className="text-xl font-bold text-brand-deep">{active.label}</h2><p className="text-sm text-black">{count} {count===1?"registro":"registros"}</p></div></div><div className="flex flex-wrap gap-2">{category === "equipo" && <button type="button" className={secondary} disabled={busy} onClick={() => { setManageRoles(v => !v); setRoleDraft(null); clearNotice(); }}><Briefcase className="size-4"/>{manageRoles ? "Cerrar áreas" : "Gestionar áreas"}</button>}{!draft && <button type="button" style={{backgroundColor:active.accent}} className={actionClass} disabled={!ready||busy||loading} onClick={() => start(category)}><Plus className="size-5"/>Añadir {active.singular}</button>}</div></div>
 
     </section>
 
     {manageRoles && category === "equipo" && <section className={`${panel} space-y-4 border-[#dce7ef]`}>
 
-      <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-display text-xl text-brand-deep">Cargos del equipo</h3><button type="button" className={secondary} disabled={busy} onClick={() => { setRoleDraft({ id: uid(), name: "", nameEn: "" }); clearNotice(); }}><Plus className="size-4"/>Nuevo cargo</button></div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><h3 className="font-display text-xl text-brand-deep">Áreas del equipo</h3><button type="button" className={secondary} disabled={busy} onClick={() => { setRoleDraft({ id: uid(), name: "", nameEn: "" }); clearNotice(); }}><Plus className="size-4"/>Nueva área</button></div>
 
-      {roleDraft && <form onSubmit={submitRole} className="space-y-3 rounded-xl border border-[#dce7ef] bg-[#edf6fc] p-4"><fieldset disabled={busy} className="space-y-3"><Field label="Cargo"><input required className={field} value={roleDraft.name} onChange={e => setRoleDraft({ ...roleDraft, name: e.target.value, nameEn:"" })}/></Field><div className="flex gap-2"><button className={primary} type="submit">{busy?"Traduciendo…":"Guardar cargo"}</button><CloseButton onClick={() => setRoleDraft(null)}/></div></fieldset></form>}
+      {roleDraft && <form onSubmit={submitRole} className="space-y-3 rounded-xl border border-[#dce7ef] bg-[#edf6fc] p-4"><fieldset disabled={busy} className="space-y-3"><Field label="Área"><input required className={field} value={roleDraft.name} onChange={e => setRoleDraft({ ...roleDraft, name: e.target.value, nameEn:"" })}/></Field><div className="flex gap-2"><button className={primary} type="submit">{busy?"Traduciendo…":"Guardar área"}</button><CloseButton onClick={() => setRoleDraft(null)}/></div></fieldset></form>}
 
-      {!roles.length && <p className="text-sm text-black">Todavía no hay cargos registrados.</p>}
+      {!roles.length && <p className="text-sm text-black">Todavía no hay áreas registradas.</p>}
 
       <div className="divide-y divide-border">{roles.map(r => <div key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-3"><span className="font-medium">{r.name}{r.nameEn && <span className="ml-2 text-sm text-black">{r.nameEn}</span>}</span><div className="flex gap-2"><button type="button" className={secondary} onClick={() => { setRoleDraft({ ...r }); clearNotice(); }}><Pencil className="size-4"/>Editar</button><button type="button" className={`${secondary} text-red-700`} onClick={() => setDeleteRole(r)}><Trash2 className="size-4"/>Eliminar</button></div></div>)}</div>
 
@@ -190,7 +190,7 @@ export default function EquipoAdmin() {
 
       <Field label={category === "socios" ? "Nombre del socio o aliado" : "Nombre completo"}><input required className={field} value={draft.name} onChange={e => patch({ name: e.target.value })}/></Field>
 
-      {category === "equipo" && <div className="space-y-2"><AdminDropdown label="Cargo" required placeholder="Selecciona un cargo" value={draft.roleId || (draft.role ? "legacy" : "")} options={[...(draft.role && !draft.roleId ? [{id:"legacy",label:`${draft.role} (cargo anterior)`}] : []),...roles.map(r=>({id:r.id,label:r.name}))]} onChange={id=>{if(id==="legacy")return;const r=roles.find(x=>x.id===id);patch({roleId:r?.id??"",role:r?.name??"",roleEn:r?.nameEn??""});}}/><button type="button" className={secondary} onClick={() => { setManageRoles(true); setRoleDraft({ id: uid(), name: "", nameEn: "" }); clearNotice(); }}><Plus className="size-4"/>Crear cargo</button></div>}
+      {category === "equipo" && <div className="space-y-2"><AdminDropdown label="Área" required placeholder="Selecciona un área" value={draft.roleId || (draft.role ? "legacy" : "")} options={[...(draft.role && !draft.roleId ? [{id:"legacy",label:`${draft.role} (área anterior)`}] : []),...roles.map(r=>({id:r.id,label:r.name}))]} onChange={id=>{if(id==="legacy")return;const r=roles.find(x=>x.id===id);patch({roleId:r?.id??"",role:r?.name??"",roleEn:r?.nameEn??""});}}/><button type="button" className={secondary} onClick={() => { setManageRoles(true); setRoleDraft({ id: uid(), name: "", nameEn: "" }); clearNotice(); }}><Plus className="size-4"/>Crear área</button></div>}
 
       {category==="socios"&&<AdminDropdown label="Categoría de socio" value={draft.partnerCategory} options={partnerCategories.map(c=>({id:c.id,label:c.name}))} onChange={partnerCategory=>patch({partnerCategory})} required/>}
       {/* El editor NO va dentro de un <label>: el navegador reenviaría cada clic al primer botón. */}
@@ -200,7 +200,7 @@ export default function EquipoAdmin() {
 
       </div></div><div className="flex flex-wrap justify-end gap-2 border-t border-slate-200 pt-4"><CloseButton onClick={() => { setDraft(null); clearNotice(); }}/><button type="submit" style={{backgroundColor:active.accent}} className={actionClass}><CheckCircle2 className="size-4"/>{busy?"Traduciendo…":"Guardar registro"}</button></div></fieldset></form> : <>
 
-      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 shadow-sm"><Search className="size-5 text-black"/><input className="w-full bg-transparent py-3 outline-none" aria-label="Buscar registros" placeholder="Buscar por nombre, cargo o texto…" value={query} onChange={e => setQuery(e.target.value)}/></div>
+      <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-4 shadow-sm"><Search className="size-5 text-black"/><input className="w-full bg-transparent py-3 outline-none" aria-label="Buscar registros" placeholder="Buscar por nombre, área o texto…" value={query} onChange={e => setQuery(e.target.value)}/></div>
 
       {!filtered.length ? <div className="rounded-3xl border border-dashed border-slate-300 bg-white px-5 py-12 text-center"><span style={{color:active.accent,backgroundColor:active.tint}} className="mx-auto grid size-20 place-items-center rounded-3xl"><active.icon className="size-9"/></span><h3 className="mt-5 text-xl font-bold text-brand-deep">{query?"No encontramos coincidencias":"Aún no hay registros"}</h3><p className="mx-auto mt-2 max-w-sm text-sm text-black">{query?"Prueba con otro nombre o palabra.":"Añade el primer perfil para empezar a completar esta sección."}</p><button type="button" className={`${actionClass} mt-5`} style={{backgroundColor:active.accent}} disabled={!ready||busy||loading} onClick={()=>query?setQuery(""):start(category)}>{query?"Limpiar búsqueda":`Añadir ${active.singular}`}</button></div> : <>{!query && filtered.length > 1 && <p className="text-sm text-black">Usa las flechas ← → de cada tarjeta para cambiar el orden en que aparecen en la web.</p>}<div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">{filtered.map((p, i) => <article key={p.id} className="group overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg motion-reduce:transform-none motion-reduce:transition-none"><div style={{backgroundColor:active.tint}} className="relative grid aspect-[16/10] place-items-center overflow-hidden">{p.image ? <img src={p.image} alt={p.name} onError={e=>{e.currentTarget.style.visibility="hidden";}} className={`size-full transition-transform duration-500 group-hover:scale-105 motion-reduce:transform-none ${p.category === "socios" ? "object-contain p-5" : "object-cover"}`}/> : <UserRound style={{color:active.accent}} className="size-16 opacity-50"/>}</div><div className="space-y-2 p-4"><h3 className="font-display text-xl font-bold text-brand-deep">{p.name}</h3>{p.category === "equipo" && <p style={{backgroundColor:active.tint,color:active.accent}} className="inline-block rounded-full px-3 py-1 text-sm font-semibold">{roleName(p)}</p>}<div className={`line-clamp-3 whitespace-pre-line text-sm text-black ${estilosTextoEnriquecido}`} dangerouslySetInnerHTML={{ __html: sanitize(p.description) }}/><div className="flex flex-wrap gap-2 pt-2">{!query && filtered.length > 1 && <><button type="button" className={secondary} title="Mover antes" aria-label={`Mover ${p.name} antes`} disabled={busy||!ready||i===0} onClick={() => void move(p, -1)}><ArrowLeft className="size-4"/></button><button type="button" className={secondary} title="Mover después" aria-label={`Mover ${p.name} después`} disabled={busy||!ready||i===filtered.length-1} onClick={() => void move(p, 1)}><ArrowRight className="size-4"/></button></>}<button type="button" className={secondary} disabled={busy||!ready} onClick={() => edit(p)}><Pencil className="size-4"/>Editar</button><button type="button" className={`${secondary} text-red-700`} disabled={busy||!ready} onClick={() => setPending({ type: "delete", person: p })}><Trash2 className="size-4"/>Eliminar</button></div></div></article>)}</div></>}
 
@@ -208,7 +208,7 @@ export default function EquipoAdmin() {
 
     {pending && <Confirm danger={pending.type === "delete"} text={`${pending.type === "delete" ? "¿Eliminar" : "¿Guardar"} el registro de ${pending.person.name}?`} onClose={() => setPending(null)} onConfirm={commit}/>}
 
-    {deleteRole && <Confirm danger text={`¿Eliminar el cargo ${deleteRole.name}?`} onClose={() => setDeleteRole(null)} onConfirm={removeRole}/>}
+    {deleteRole && <Confirm danger text={`¿Eliminar el área ${deleteRole.name}?`} onClose={() => setDeleteRole(null)} onConfirm={removeRole}/>}
 
   </div>;
 

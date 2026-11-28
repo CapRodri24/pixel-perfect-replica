@@ -16,7 +16,8 @@ import { type BloquePaisaje, type ImagenPaisaje, type TipoBloquePaisaje } from "
 import { AdminHeading, Notice, Empty, Gallery, field, primary, secondary, panel } from "./ui";
 import { AyudaEnlace, PdfEditor, VistaPreviaPdf } from "./BloquesContenido";
 import { EditorTexto, estilosTextoEnriquecido } from "./EditorTexto";
-import { EnlaceIncrustado } from "@/components/contenido/EnlaceIncrustado";
+import { EnlaceIncrustado, GrillaVideos } from "@/components/contenido/EnlaceIncrustado";
+import { agruparVideos } from "@/lib/enlaces";
 import { sanitize, plain } from "./datos";
 import { withTranslator } from "./traduccion";
 import { Selector } from "./Selector";
@@ -113,7 +114,9 @@ function VistaPrevia({ borrador, idioma }: { borrador: BorradorLocal; idioma: "e
   return (
     <div className="space-y-5 break-words">
       <h2 className="font-display text-3xl text-brand-deep">{idioma === "es" ? borrador.titulo_es : borrador.titulo_en || "Título"}</h2>
-      {borrador.bloques.map((b) => {
+      {agruparVideos(borrador.bloques, (x) => (x.tipo === "enlace" || x.tipo === "video") ? x.url : null).map((seg) => {
+        if (seg.tipo === "videos") return <GrillaVideos key={seg.items[0]?.localId} ids={seg.ids} />;
+        const b = seg.item;
         const texto = idioma === "es" ? b.texto_es : b.texto_en;
         const pie = idioma === "es" ? b.pie_es : b.pie_en;
         if (b.tipo === "subtitulo") return <h3 key={b.localId} className="font-display text-xl text-brand-deep">{texto}</h3>;
@@ -123,9 +126,9 @@ function VistaPrevia({ borrador, idioma }: { borrador: BorradorLocal; idioma: "e
         if (b.tipo === "pdf") return <VistaPreviaPdf key={b.localId} pdf={b.pdf} />;
         return <EnlaceIncrustado key={b.localId} url={b.url} />;
       })}
-      {(borrador.fotos_por.trim() || borrador.autor.trim()) && <div className="space-y-1 border-t border-border pt-4 text-sm italic text-muted-foreground">
+      {(borrador.fotos_por.trim() || plain(borrador.autor)) && <div className="space-y-1 border-t border-border pt-4 text-sm italic text-muted-foreground">
         {borrador.fotos_por.trim() && <p>{idioma === "es" ? "Fotos por:" : "Photos by:"} <span className="font-semibold not-italic text-brand-deep">{borrador.fotos_por.trim()}</span></p>}
-        {borrador.autor.trim() && <p>{idioma === "es" ? "Texto escrito por:" : "Written by:"} <span className="font-semibold not-italic text-brand-deep">{borrador.autor.trim()}</span></p>}
+        {plain(borrador.autor) && <p>{idioma === "es" ? "Texto escrito por:" : "Written by:"} <span className={`font-semibold not-italic text-brand-deep ${estilosTextoEnriquecido}`} dangerouslySetInnerHTML={{ __html: sanitize(borrador.autor) }} /></p>}
       </div>}
     </div>
   );
@@ -321,7 +324,7 @@ export default function NoticiasAdmin() {
         throw new Error("No se pudo traducir uno de los bloques al inglés. Inténtalo de nuevo.");
       }
       const { id_noticia, id_programa, id_categoria_noticia, titulo_es, titulo_en, fecha_publicacion, autor, fotos_por, bloques } = traducido;
-      const datos: NoticiaEntrada = { titulo_es, titulo_en, fecha_publicacion, autor: autor.trim(), fotos_por: fotos_por.trim(), id_programa, id_categoria_noticia, bloques: bloques.map(({ localId, ...bloque }) => bloque) };
+      const datos: NoticiaEntrada = { titulo_es, titulo_en, fecha_publicacion, autor: plain(autor) ? sanitize(autor).trim() : "", fotos_por: fotos_por.trim(), id_programa, id_categoria_noticia, bloques: bloques.map(({ localId, ...bloque }) => bloque) };
       if (id_noticia) await actualizarNoticia(id_noticia, datos);
       else await crearNoticia(datos);
       setBorrador(null);
@@ -425,9 +428,11 @@ export default function NoticiasAdmin() {
                 <label className="block text-sm font-semibold">Fotos por:
                   <input data-field-id="fotos-por" maxLength={200} className={field} value={borrador.fotos_por} onChange={(e) => patch({ fotos_por: e.target.value })} placeholder="Nombre de quien tomó las fotografías" />
                 </label>
-                <label className="block text-sm font-semibold">Texto escrito por:
-                  <input data-field-id="autor" maxLength={200} className={field} value={borrador.autor} onChange={(e) => patch({ autor: e.target.value })} placeholder="Nombre de quien escribió la noticia" />
-                </label>
+                {/* Editor de una línea: permite negrita, cursiva y enlaces (no va dentro de un <label>). */}
+                <div className="block text-sm font-semibold" data-field-id="autor"><span className="mb-1 block">Texto escrito por:</span>
+                  <EditorTexto unaLinea label="Texto escrito por" placeholder="Nombre de quien escribió la noticia" value={borrador.autor} onChange={(value) => { if (value !== borrador.autor) patch({ autor: value }); }} />
+                  <span className="mt-1 block text-xs font-normal text-muted-foreground">Para enlazar un nombre (por ejemplo, a su perfil), selecciónalo y pulsa «Enlace».</span>
+                </div>
                 <span className="block text-xs font-normal text-muted-foreground">Ambos son opcionales y se muestran al final de la noticia.</span>
               </div>
               <button type="submit" className={`${primary} w-full`} disabled={busy}>{busy ? <Loader2 className="size-4 animate-spin" /> : <Save className="size-4" />}{busy ? "Guardando…" : "Guardar noticia"}</button>

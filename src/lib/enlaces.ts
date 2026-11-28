@@ -140,3 +140,19 @@ export function tamanoLegible(bytes: number | null | undefined): string {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1).replace(".0", "")} MB`;
 }
+
+export type SegmentoVideos<T> = { tipo: "videos"; ids: string[]; items: T[] } | { tipo: "uno"; item: T };
+
+/** Junta los videos de YouTube consecutivos para mostrarlos en cuadrícula en vez de uno debajo de otro. */
+export function agruparVideos<T>(items: T[], url: (item: T) => string | null | undefined): SegmentoVideos<T>[] {
+  const out: SegmentoVideos<T>[] = [];
+  for (const item of items) {
+    const enlace = detectarEnlace(url(item));
+    if (enlace?.tipo === "youtube") {
+      const ultimo = out[out.length - 1];
+      if (ultimo?.tipo === "videos") { ultimo.ids.push(enlace.id); ultimo.items.push(item); }
+      else out.push({ tipo: "videos", ids: [enlace.id], items: [item] });
+    } else out.push({ tipo: "uno", item });
+  }
+  return out;
+}

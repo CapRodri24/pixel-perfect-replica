@@ -335,12 +335,12 @@ export function EditorialContent({
                   aria-label={
                     es ? "Videos de conservación" : "Conservation videos"
                   }
-                  className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-4 [scrollbar-width:none] sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible"
+                  className={`flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-4 [scrollbar-width:none] sm:grid sm:gap-5 sm:overflow-visible ${block.videos.length > 1 ? "sm:grid-cols-2" : "sm:grid-cols-1"}`}
                 >
                   {block.videos.map((video) => (
                     <div
                       key={video.id}
-                      className="w-[88%] max-w-[410px] shrink-0 snap-center sm:w-auto sm:max-w-none"
+                      className={`${block.videos.length > 1 ? "w-[88%] max-w-[410px]" : "w-full"} shrink-0 snap-center sm:w-auto sm:max-w-none`}
                     >
                       <EditorialVideoPlayer video={video} />
                     </div>

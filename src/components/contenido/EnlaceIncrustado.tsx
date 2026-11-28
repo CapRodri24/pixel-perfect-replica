@@ -99,6 +99,13 @@ export function ContenidoEnlace({ enlace }: { enlace: EnlaceDetectado }) {
   }
 }
 
+/** Varios videos de YouTube seguidos: cuadrícula de 2 columnas (uno solo ocupa todo el ancho). */
+export function GrillaVideos({ ids }: { ids: string[] }) {
+  return <div className={`grid gap-4 sm:gap-5 ${ids.length > 1 ? "sm:grid-cols-2" : ""}`}>
+    {ids.map((id, i) => <ContenidoEnlace key={`${id}-${i}`} enlace={{ tipo: "youtube", url: `https://www.youtube.com/watch?v=${id}`, id }} />)}
+  </div>;
+}
+
 /** Muestra el contenido de un enlace según su tipo; no muestra nada si la URL no es válida. */
 export function EnlaceIncrustado({ url }: { url: string | null | undefined }) {
   const enlace = detectarEnlace(url);

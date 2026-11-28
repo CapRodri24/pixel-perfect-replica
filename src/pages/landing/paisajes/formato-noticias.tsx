@@ -6,6 +6,8 @@ import type { BloquePublico } from "@/api/paisajesPublicosApi";
 import { obtenerNoticiaPublica, imagenNoticiaUrl, type NoticiaPublicaDetalle } from "@/api/noticiasPublicasApi";
 import { EditorialContent, type EditorialBlock } from "./formato_programa";
 import { youtubeId } from "@/lib/enlaces";
+import { sanitize, plain } from "@/pages/admin/datos";
+import { estilosTextoEnriquecido } from "@/lib/textoEnriquecido";
 import { fechaNoticia } from "./noticias-publicas";
 function textoPlano(valor: string) {
   return new DOMParser().parseFromString(valor, "text/html").body.textContent?.trim() || "";
@@ -63,9 +65,9 @@ export default function FormatoNoticias({id}:{id:string}) {
       {data.id_programa&&<Link to={`/programas?programa=${encodeURIComponent(data.id_programa)}`} className="mb-6 inline-block text-sm font-semibold text-primary hover:underline">{es?data.programa_titulo_es:data.programa_titulo_en}</Link>}
       <EditorialContent key={id} blocks={bloquesEditoriales(data.bloques,es)}/>
       {!data.bloques.length&&<p className="text-muted-foreground">{es?"Próximamente compartiremos más información.":"More information will be available soon."}</p>}
-      {(data.fotos_por?.trim()||data.autor?.trim())&&<div className="mt-10 space-y-2 border-t border-border pt-6 text-sm text-muted-foreground sm:text-base">
+      {(data.fotos_por?.trim()||plain(data.autor||""))&&<div className="mt-10 space-y-2 border-t border-border pt-6 text-sm text-muted-foreground sm:text-base">
         {data.fotos_por?.trim()&&<p className="flex flex-wrap items-center gap-2"><Camera aria-hidden="true" className="size-4 shrink-0 text-primary"/><span className="italic">{es?"Fotos por:":"Photos by:"}</span><span className="font-semibold text-brand-deep">{data.fotos_por.trim()}</span></p>}
-        {data.autor?.trim()&&<p className="flex flex-wrap items-center gap-2"><PenLine aria-hidden="true" className="size-4 shrink-0 text-primary"/><span className="italic">{es?"Texto escrito por:":"Written by:"}</span><span className="font-semibold text-brand-deep">{data.autor.trim()}</span></p>}
+        {plain(data.autor||"")&&<p className="flex flex-wrap items-center gap-2"><PenLine aria-hidden="true" className="size-4 shrink-0 text-primary"/><span className="italic">{es?"Texto escrito por:":"Written by:"}</span><span className={`font-semibold text-brand-deep ${estilosTextoEnriquecido}`} dangerouslySetInnerHTML={{__html:sanitize(data.autor||"")}}/></p>}
       </div>}
     </>}
   </div></div></article>;
